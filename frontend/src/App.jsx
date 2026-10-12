@@ -10,6 +10,7 @@ import SaathiAI from './pages/SaathiAI'
 import { LoanApply, LoanDetail, LoanList } from './pages/Loans'
 import SchemesPortal from './pages/SchemesPortal'
 import Transactions from './pages/Transactions'
+import Reports from './pages/Reports'
 import { CourseView, Learn } from './pages/Learn'
 import { Admin, AtRisk, Notifications, Profile } from './pages/Account'
 import { PrivacyPolicy, TermsOfService } from './pages/Legal'
@@ -28,6 +29,7 @@ import {
   IconBell,
   IconCreditCard,
   IconCoins,
+  IconFileText,
 } from './icons'
 
 function BellDropdown() {
@@ -183,6 +185,7 @@ function DesktopLayout({ children }) {
       if (user?.role === 'shg_leader') return 'SHG Community Hub'
       return 'Borrower Financial Portal'
     }
+    if (p === '/reports') return 'Reports & Statements Center'
     if (p === '/saathi') return 'Saathi AI Advisor'
     if (p.startsWith('/loans')) return 'Loans & Credit Facility'
     if (p === '/schemes') return 'Government Schemes & Subsidies'
@@ -209,6 +212,7 @@ function DesktopLayout({ children }) {
         primary: [
           { to: '/', label: 'Overview Console', icon: <IconHome size={18} /> },
           { to: '/admin', label: 'User Directory & Roles', icon: <IconSettings size={18} /> },
+          { to: '/reports', label: 'Reports & Analytics', icon: <IconFileText size={18} /> },
           { to: '/loans', label: 'Loan Underwriting Desk', icon: <IconCreditCard size={18} /> },
           { to: '/at-risk', label: 'At-Risk Credit Radar', icon: <IconShield size={18} /> },
           { to: '/schemes', label: 'Govt Schemes Directory', icon: <IconLandmark size={18} /> },
@@ -227,6 +231,7 @@ function DesktopLayout({ children }) {
         groupTitle: 'UNDERWRITING WORKSPACE',
         primary: [
           { to: '/', label: 'Underwriting Queue', icon: <IconHome size={18} /> },
+          { to: '/reports', label: 'Reports & Statements', icon: <IconFileText size={18} /> },
           { to: '/loans', label: 'Sanction Desk & Reviews', icon: <IconCreditCard size={18} /> },
           { to: '/at-risk', label: 'At-Risk Delinquency Radar', icon: <IconShield size={18} /> },
           { to: '/schemes', label: 'Govt Subsidy Catalog', icon: <IconLandmark size={18} /> },
@@ -245,6 +250,7 @@ function DesktopLayout({ children }) {
         groupTitle: 'COMMUNITY & GROUP HUB',
         primary: [
           { to: '/', label: 'SHG Leader Hub', icon: <IconHome size={18} /> },
+          { to: '/reports', label: 'Group Audit & Reports', icon: <IconFileText size={18} /> },
           { to: '/loans', label: 'Group Loans & Limits', icon: <IconCreditCard size={18} /> },
           { to: '/transactions', label: 'Group Passbook & Ledger', icon: <IconCoins size={18} /> },
           { to: '/schemes', label: 'Govt Schemes & Grants', icon: <IconLandmark size={18} /> },
@@ -263,6 +269,7 @@ function DesktopLayout({ children }) {
       groupTitle: 'FINANCIAL SERVICES',
       primary: [
         { to: '/', label: 'Overview', icon: <IconHome size={18} /> },
+        { to: '/reports', label: 'Reports & Certificates', icon: <IconFileText size={18} /> },
         { to: '/loans', label: 'Loans & Credit', icon: <IconCreditCard size={18} /> },
         { to: '/schemes', label: 'Govt Schemes', icon: <IconLandmark size={18} /> },
         { to: '/transactions', label: 'Passbook & Ledger', icon: <IconCoins size={18} /> },
@@ -464,6 +471,7 @@ export default function App() {
         <Route path="/loans/:id" element={<LoanDetail />} />
         <Route path="/schemes" element={<SchemesPortal />} />
         <Route path="/transactions" element={<Transactions />} />
+        <Route path="/reports" element={<Reports />} />
         <Route path="/saathi" element={<SaathiAI />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/learn" element={<Learn />} />

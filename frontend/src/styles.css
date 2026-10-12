@@ -1344,7 +1344,7 @@ tr:hover td { background: #fafafa; }
 /* Print Clean Styles */
 @media print {
   body { background: #ffffff !important; }
-  .desktop-sidebar, .desktop-top-bar, .floating-saathi-trigger, .modal-actions, .icon-btn, .desktop-global-footer {
+  .desktop-sidebar, .desktop-top-bar, .floating-saathi-trigger, .modal-actions, .icon-btn, .desktop-global-footer, .no-print {
     display: none !important;
   }
   .modal-overlay {
@@ -1358,3 +1358,10 @@ tr:hover td { background: #fafafa; }
     max-width: 100% !important;
   }
 }
+
+/* Reports & Statements Styling */
+.report-catalog-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
