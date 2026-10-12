@@ -160,10 +160,10 @@ function DesktopLayout({ children }) {
         <div className="sidebar-footer">
           <div className="user-capsule">
             <div className="avatar-circle">
-              {user?.name ? user.name.slice(0, 2).toUpperCase() : 'SD'}
+              {user?.name ? user.name.slice(0, 2).toUpperCase() : 'MB'}
             </div>
             <div className="user-capsule-text">
-              <span className="user-capsule-name">{user?.name || 'Sunita Devi'}</span>
+              <span className="user-capsule-name">{user?.name || 'Member'}</span>
               <span className="user-capsule-role">{user?.role || 'user'}</span>
             </div>
             <button className="logout-btn" onClick={logout} title="Sign Out">
@@ -219,7 +219,7 @@ function DesktopLayout({ children }) {
             {/* User Profile Avatar Pill */}
             <Link to="/profile" className="profile-pill-btn" title="View Profile">
               <div className="top-avatar">
-                {user?.name ? user.name.slice(0, 2).toUpperCase() : 'SD'}
+                {user?.name ? user.name.slice(0, 2).toUpperCase() : 'MB'}
               </div>
             </Link>
           </div>

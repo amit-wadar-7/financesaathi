@@ -44,6 +44,7 @@ class Loan(Base):
     annual_rate: Mapped[float] = mapped_column(Float)
     tenure_months: Mapped[int] = mapped_column(Integer)
     purpose: Mapped[str] = mapped_column(String(200), default="")
+    product_type: Mapped[str] = mapped_column(String(50), default="standard")  # standard|kisan_agri|shg_enterprise|pm_svanidhi|emergency_health|solar_green
     status: Mapped[str] = mapped_column(String(20), default="pending")  # pending|approved|rejected|closed
     emi: Mapped[float] = mapped_column(Float, default=0)
     ai_score: Mapped[float] = mapped_column(Float, default=0)

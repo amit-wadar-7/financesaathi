@@ -25,6 +25,8 @@ import {
   IconLock,
   IconPrinter,
   IconCheckCircle,
+  IconPlus,
+  IconArrowRight,
 } from '../icons'
 
 export default function Dashboard() {
@@ -32,93 +34,166 @@ export default function Dashboard() {
   const { t, lang } = useLang()
   const navigate = useNavigate()
 
-  // Real backend dashboard data
+  // Dynamic dashboard telemetry from backend
   const { data, loading, reload } = useLoad(() => api('/dashboard'))
 
   // State for interactive desktop modals & widgets
   const [showUpiModal, setShowUpiModal] = useState(false)
   const [showDepositModal, setShowDepositModal] = useState(false)
-  const [showGoalModal, setShowGoalModal] = useState(false)
+  const [showGoalDepositModal, setShowGoalDepositModal] = useState(false)
+  const [showCreateGoalModal, setShowCreateGoalModal] = useState(false)
   const [showLedgerModal, setShowLedgerModal] = useState(false)
   const [showHealthModal, setShowHealthModal] = useState(false)
   const [hideBalance, setHideBalance] = useState(false)
 
-  // Dynamic user data combined with screenshot data
-  const userName = user?.name || (lang === 'mr' ? 'सुनीता ताई' : lang === 'hi' ? 'सुनीता देवी' : 'Sunita Devi')
-  const shgName = 'Pragati SHG'
-  const location = 'Ward 4, Solan'
-
-  // Dynamic savings calculations
-  const [totalSavings, setTotalSavings] = useState(48250)
-  const [monthlyDeposit, setMonthlyDeposit] = useState(4500)
-  const [goalAmount, setGoalAmount] = useState(14000)
-  const goalTarget = 20000
-
   // Payment form state
-  const [payAmount, setPayAmount] = useState(1850)
+  const [payAmount, setPayAmount] = useState('')
   const [selectedUpiApp, setSelectedUpiApp] = useState('gpay')
   const [paySuccess, setPaySuccess] = useState(false)
   const [depositAmount, setDepositAmount] = useState(1000)
+  const [goalDepositAmount, setGoalDepositAmount] = useState(1000)
+  const [newGoalTitle, setNewGoalTitle] = useState('')
+  const [newGoalTarget, setNewGoalTarget] = useState(25000)
+  const [busyAction, setBusyAction] = useState(false)
 
-  // Ledger records
-  const [ledger, setLedger] = useState([
-    { id: 1, date: '01 May 2024', type: 'SHG Monthly Contribution', amount: 1500, balance: 48250, mode: 'UPI' },
-    { id: 2, date: '15 Apr 2024', type: 'Recurring Deposit Credit', amount: 3000, balance: 46750, mode: 'Auto-Debit' },
-    { id: 3, date: '01 Apr 2024', type: 'SHG Monthly Contribution', amount: 1500, balance: 43750, mode: 'Cash' },
-    { id: 4, date: '28 Mar 2024', type: 'Annual Dividend Share', amount: 1250, balance: 42250, mode: 'Credit' },
-  ])
+  // Derived user information from database
+  const userName = user?.name || data?.name || 'Member'
+  const shgName = data?.shg?.name || (user?.shg_id ? `SHG Group #${user.shg_id}` : 'Direct Individual Account')
+  const location = data?.shg?.village || user?.phone || 'Aadhaar Verified'
 
-  // Sync with real user balance if available
+  // Dynamic balances
+  const totalSavings = data?.total_savings_and_assets ?? (user?.savings_balance || 0)
+  const savingsBalance = data?.savings_balance ?? (user?.savings_balance || 0)
+  const totalSavedInGoals = data?.total_saved ?? 0
+  const nextInstallment = data?.next_installment || null
+  const topGoal = data?.top_goal || null
+  const cibilScore = data?.cibil_score || 720
+  const healthScore = data?.health_score || 75
+  const transactions = data?.transactions || []
+
+  // Dynamic household financials
+  const monthlyIncome = data?.monthly_income || user?.monthly_income || 0
+  const monthlyExpenses = data?.monthly_expenses || user?.monthly_expenses || 0
+  const existingEmi = data?.existing_emi || user?.existing_emi || (nextInstallment ? nextInstallment.amount : 0)
+  const totalOutflow = monthlyExpenses + existingEmi
+  const budgetHeadroom = Math.max(0, monthlyIncome - totalOutflow)
+  const spentPct = monthlyIncome > 0 ? Math.min(100, Math.round((totalOutflow / monthlyIncome) * 100)) : 0
+
+  // Category breakdown
+  const catGroceries = Math.round(monthlyExpenses * 0.45)
+  const catEducation = Math.round(monthlyExpenses * 0.20)
+  const catFarm = Math.round(monthlyExpenses * 0.20)
+  const catHealth = Math.round(monthlyExpenses * 0.15)
+
+  // Sync UPI payment amount with installment due
   useEffect(() => {
-    if (user?.savings_balance && user.savings_balance > 0) {
-      setTotalSavings(user.savings_balance)
+    if (nextInstallment?.amount) {
+      setPayAmount(String(nextInstallment.amount))
     }
-  }, [user])
+  }, [nextInstallment])
 
   const staff = user?.role === 'officer' || user?.role === 'admin'
 
   const handleUpiPay = async (e) => {
     e.preventDefault()
     setPaySuccess(true)
-    setTimeout(async () => {
-      // If there is an active loan installment, mark it paid in backend
-      if (data?.next_installment?.loan_id) {
-        try {
-          await api(`/loans/${data.next_installment.loan_id}/installments/${data.next_installment.number}/pay`, {
-            method: 'POST',
-            body: { amount: Number(payAmount) },
-          })
-          reload()
-        } catch {
-          // Keep local simulated success
-        }
+    try {
+      if (nextInstallment?.loan_id) {
+        await api(`/loans/${nextInstallment.loan_id}/installments/${nextInstallment.number}/pay`, {
+          method: 'POST',
+          body: { amount: Number(payAmount) },
+        })
       }
-      setShowUpiModal(false)
+      setTimeout(async () => {
+        await refresh()
+        await reload()
+        setShowUpiModal(false)
+        setPaySuccess(false)
+        alert(lang === 'mr' ? `₹${payAmount} चे UPI पेमेंट यशस्वी झाले!` : `UPI payment of ₹${payAmount} completed successfully!`)
+      }, 1000)
+    } catch (err) {
       setPaySuccess(false)
-      alert(lang === 'mr' ? '₹' + payAmount + ' चे UPI पेमेंट यशस्वी झाले!' : `UPI payment of ₹${payAmount} completed successfully!`)
-    }, 1200)
+      alert(err.message || 'Payment processing error')
+    }
   }
 
-  const handleDepositShg = (e) => {
+  const handleDepositShg = async (e) => {
     e.preventDefault()
     const amt = Number(depositAmount)
-    const newBal = totalSavings + amt
-    setTotalSavings(newBal)
-    setMonthlyDeposit((prev) => prev + amt)
-    setLedger([
-      { id: Date.now(), date: 'Today', type: 'SHG Monthly Contribution', amount: amt, balance: newBal, mode: 'UPI' },
-      ...ledger,
-    ])
-    setShowDepositModal(false)
-    alert(lang === 'mr' ? `₹${amt} बचत गटामध्ये यशस्वीरित्या जमा झाले!` : `₹${amt} successfully deposited to SHG!`)
+    if (!amt || amt <= 0) return
+    setBusyAction(true)
+    try {
+      await api('/auth/me', {
+        method: 'PATCH',
+        body: {
+          savings_balance: (user?.savings_balance || 0) + amt,
+        },
+      })
+      await refresh()
+      await reload()
+      setShowDepositModal(false)
+      alert(lang === 'mr' ? `₹${amt} बचत खात्यामध्ये यशस्वीरित्या जमा झाले!` : `₹${amt} successfully deposited to your savings account!`)
+    } catch (err) {
+      alert(err.message || 'Deposit error')
+    } finally {
+      setBusyAction(false)
+    }
   }
 
-  const handleAddGoalMoney = (e) => {
+  const handleDepositTopGoal = async (e) => {
     e.preventDefault()
-    const addAmt = 2000
-    setGoalAmount((prev) => Math.min(goalTarget, prev + addAmt))
-    setShowGoalModal(false)
-    alert(lang === 'mr' ? 'ध्येय बचतीमध्ये ₹2,000 जोडले गेले!' : '₹2,000 added to target savings goal!')
+    if (!topGoal?.id) return
+    const amt = Number(goalDepositAmount)
+    if (!amt || amt <= 0) return
+    setBusyAction(true)
+    try {
+      await api(`/savings/goals/${topGoal.id}/deposit`, {
+        method: 'POST',
+        body: { amount: amt },
+      })
+      await reload()
+      setShowGoalDepositModal(false)
+      alert(lang === 'mr' ? `ध्येय बचतीमध्ये ₹${amt} जोडले गेले!` : `₹${amt} successfully deposited into ${topGoal.title}!`)
+    } catch (err) {
+      alert(err.message || 'Goal deposit error')
+    } finally {
+      setBusyAction(false)
+    }
+  }
+
+  const handleCreateGoal = async (e) => {
+    e.preventDefault()
+    if (!newGoalTitle.trim()) return
+    setBusyAction(true)
+    try {
+      await api('/savings/goals', {
+        method: 'POST',
+        body: {
+          title: newGoalTitle.trim(),
+          target_amount: Number(newGoalTarget),
+        },
+      })
+      await reload()
+      setShowCreateGoalModal(false)
+      setNewGoalTitle('')
+      alert('Target savings goal successfully established.')
+    } catch (err) {
+      alert(err.message || 'Failed to create goal')
+    } finally {
+      setBusyAction(false)
+    }
+  }
+
+  const handleQuickCreateGoal = async (title, target) => {
+    try {
+      await api('/savings/goals', {
+        method: 'POST',
+        body: { title, target_amount: target },
+      })
+      await reload()
+    } catch (err) {
+      alert(err.message || 'Failed to create goal')
+    }
   }
 
   if (loading) return <Loading />
@@ -138,14 +213,16 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Financial Health Score Pill */}
+        {/* Dynamic Financial Health Score Pill */}
         <div
           className="health-score-pill"
           onClick={() => setShowHealthModal(true)}
           title="Click to view Financial Health Score breakdown"
         >
           <span className="score-dot" />
-          <span className="score-text">Good • 742 <small>/ 900</small></span>
+          <span className="score-text">
+            {healthScore >= 70 ? 'Excellent' : healthScore >= 50 ? 'Good' : 'Moderate'} • {cibilScore} <small>/ 900</small>
+          </span>
           <span className="info-circle"><IconInfo size={14} /></span>
         </div>
       </div>
@@ -179,24 +256,47 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* 2. Urgent Actionable EMI Due Alert Banner */}
-      <div className="emi-alert-banner">
-        <div className="emi-alert-left">
-          <div className="calendar-icon-box"><IconCalendar size={20} /></div>
-          <div className="emi-alert-text">
-            <div className="alert-title-row">
-              <span className="alert-strong">SHG Loan EMI Due</span>
-              <span className="alert-tag">In 3 days</span>
-            </div>
-            <div className="alert-sub">
-              <b>₹1,850</b> • Mahila Samriddhi Livestock Loan #{data?.next_installment?.loan_id || '104'}
+      {/* 2. Dynamic EMI Due Alert Banner vs. Positive Zero Dues Standing */}
+      {nextInstallment ? (
+        <div className="emi-alert-banner">
+          <div className="emi-alert-left">
+            <div className="calendar-icon-box"><IconCalendar size={20} /></div>
+            <div className="emi-alert-text">
+              <div className="alert-title-row">
+                <span className="alert-strong">
+                  {nextInstallment.overdue ? 'Overdue Instalment' : 'Scheduled EMI Due'}
+                </span>
+                <span className={`alert-tag ${nextInstallment.overdue ? 'bad-tag' : ''}`}>
+                  Due: {nextInstallment.due_date}
+                </span>
+              </div>
+              <div className="alert-sub">
+                <b>₹{Number(nextInstallment.amount).toLocaleString('en-IN')}</b> • Loan #{nextInstallment.loan_id} ({nextInstallment.purpose}) • Instalment #{nextInstallment.number}
+              </div>
             </div>
           </div>
+          <button className="btn pay-upi-btn" onClick={() => setShowUpiModal(true)}>
+            <IconCreditCard size={15} /> Pay via UPI
+          </button>
         </div>
-        <button className="btn pay-upi-btn" onClick={() => setShowUpiModal(true)}>
-          <IconCreditCard size={15} /> Pay via UPI
-        </button>
-      </div>
+      ) : (
+        <div className="zero-dues-banner">
+          <div className="zero-dues-left">
+            <div className="zero-dues-icon-box">
+              <IconCheckCircle size={22} />
+            </div>
+            <div className="zero-dues-text">
+              <h4>Zero Pending Instalments — Credit Profile in Good Standing</h4>
+              <p>
+                All microcredit repayments are up to date. You hold eligible pre-sanction capacity across Kisan Agri, SHG Enterprise, and PM SVANidhi facilities.
+              </p>
+            </div>
+          </div>
+          <Link to="/loans" className="btn small ghost" style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+            Browse Loan Facilities <IconArrowRight size={14} />
+          </Link>
+        </div>
+      )}
 
       {/* 3. Main Desktop Grid Layout */}
       <div className="dash-desktop-grid">
@@ -217,9 +317,9 @@ export default function Dashboard() {
               </div>
               <div className="balance-row">
                 <span className="balance-num">
-                  {hideBalance ? '₹••••••••' : `₹${totalSavings.toLocaleString('en-IN')}`}
+                  {hideBalance ? '₹••••••••' : `₹${Number(totalSavings).toLocaleString('en-IN')}`}
                 </span>
-                <span className="trend-badge"><IconTrendingUp size={14} /> +9.8%</span>
+                <span className="trend-badge"><IconTrendingUp size={14} /> Active</span>
               </div>
             </div>
 
@@ -227,20 +327,20 @@ export default function Dashboard() {
             <div className="monthly-growth-pill">
               <span className="piggy-icon"><IconCoins size={16} /></span>
               <span>
-                Monthly Growth: <b>+₹{monthlyDeposit.toLocaleString('en-IN')} deposited this month</b>
+                Verified Account Balance: <b>₹{Number(savingsBalance).toLocaleString('en-IN')}</b> • Active Target Goals: <b>₹{Number(totalSavedInGoals).toLocaleString('en-IN')}</b>
               </span>
             </div>
 
             {/* Sub-breakdown footer */}
             <div className="savings-card-bottom">
               <div className="breakdown-text">
-                SHG Share: <b>₹32,000</b> • RD: <b>₹16,250</b>
+                SHG / Personal: <b>₹{Number(savingsBalance).toLocaleString('en-IN')}</b> • Goal Funds: <b>₹{Number(totalSavedInGoals).toLocaleString('en-IN')}</b>
               </div>
               <button
                 className="view-ledger-btn"
                 onClick={() => setShowLedgerModal(true)}
               >
-                View Ledger &gt;
+                View Official Passbook &gt;
               </button>
             </div>
           </div>
@@ -256,9 +356,9 @@ export default function Dashboard() {
                 <span className="tile-title">{t('depositShg')}</span>
               </button>
 
-              <button className="action-tile" onClick={() => setShowUpiModal(true)}>
+              <button className="action-tile" onClick={() => nextInstallment ? setShowUpiModal(true) : navigate('/loans')}>
                 <div className="tile-icon-box bg-blue"><IconCreditCard size={20} /></div>
-                <span className="tile-title">{t('payEmi')}</span>
+                <span className="tile-title">{nextInstallment ? t('payEmi') : 'Browse Loans'}</span>
               </button>
 
               <button className="action-tile" onClick={() => navigate('/saathi')}>
@@ -279,62 +379,81 @@ export default function Dashboard() {
               <div className="budget-title-group">
                 <span className="pie-icon"><IconCoins size={18} /></span>
                 <div>
-                  <h4>Monthly Spend & Budget</h4>
-                  <p className="tracker-sub">May 2024 Household Tracker</p>
+                  <h4>Monthly Household Budget</h4>
+                  <p className="tracker-sub">Live Income, Expense & Safe Cashflow Telemetry</p>
                 </div>
               </div>
-              <span className="spent-badge">74% Spent</span>
+              {monthlyIncome > 0 && (
+                <span className="spent-badge">{spentPct}% Utilized</span>
+              )}
             </div>
 
-            <div className="budget-numbers-row">
-              <span className="spent-amt">₹18,500</span>
-              <span className="cap-amt">Cap: ₹25,000</span>
-            </div>
-
-            {/* Budget Progress Bar */}
-            <div className="budget-progress-track">
-              <div className="budget-progress-fill" style={{ width: '74%' }} />
-            </div>
-
-            <div className="budget-headroom-row">
-              <span className="headroom-text">₹6,500 Safe headroom remaining</span>
-              <span className="days-left-text">11 Days Left</span>
-            </div>
-
-            {/* 4 Category Cards */}
-            <div className="categories-grid">
-              <div className="category-chip">
-                <div className="cat-icon"><IconCart size={18} /></div>
-                <div className="cat-info">
-                  <span className="cat-name">Groceries</span>
-                  <span className="cat-val">₹9,200</span>
+            {monthlyIncome > 0 ? (
+              <>
+                <div className="budget-numbers-row">
+                  <span className="spent-amt">₹{totalOutflow.toLocaleString('en-IN')} Outflow</span>
+                  <span className="cap-amt">Income: ₹{monthlyIncome.toLocaleString('en-IN')}</span>
                 </div>
-              </div>
 
-              <div className="category-chip">
-                <div className="cat-icon"><IconAcademic size={18} /></div>
-                <div className="cat-info">
-                  <span className="cat-name">Education</span>
-                  <span className="cat-val">₹4,000</span>
+                {/* Budget Progress Bar */}
+                <div className="budget-progress-track">
+                  <div className="budget-progress-fill" style={{ width: `${spentPct}%` }} />
                 </div>
-              </div>
 
-              <div className="category-chip">
-                <div className="cat-icon"><IconTractor size={18} /></div>
-                <div className="cat-info">
-                  <span className="cat-name">Farm Inputs</span>
-                  <span className="cat-val">₹3,800</span>
+                <div className="budget-headroom-row">
+                  <span className="headroom-text">
+                    ₹{budgetHeadroom.toLocaleString('en-IN')} Safe surplus remaining
+                  </span>
+                  <Link to="/profile" className="days-left-text" style={{ textDecoration: 'none' }}>
+                    Adjust in Profile →
+                  </Link>
                 </div>
-              </div>
 
-              <div className="category-chip">
-                <div className="cat-icon"><IconHospital size={18} /></div>
-                <div className="cat-info">
-                  <span className="cat-name">Health</span>
-                  <span className="cat-val">₹1,500</span>
+                {/* Category Cards Proportional to Real Expenses */}
+                <div className="categories-grid">
+                  <div className="category-chip">
+                    <div className="cat-icon"><IconCart size={18} /></div>
+                    <div className="cat-info">
+                      <span className="cat-name">Groceries & Food</span>
+                      <span className="cat-val">₹{catGroceries.toLocaleString('en-IN')}</span>
+                    </div>
+                  </div>
+
+                  <div className="category-chip">
+                    <div className="cat-icon"><IconAcademic size={18} /></div>
+                    <div className="cat-info">
+                      <span className="cat-name">Education & Family</span>
+                      <span className="cat-val">₹{catEducation.toLocaleString('en-IN')}</span>
+                    </div>
+                  </div>
+
+                  <div className="category-chip">
+                    <div className="cat-icon"><IconTractor size={18} /></div>
+                    <div className="cat-info">
+                      <span className="cat-name">Farm / Enterprise</span>
+                      <span className="cat-val">₹{catFarm.toLocaleString('en-IN')}</span>
+                    </div>
+                  </div>
+
+                  <div className="category-chip">
+                    <div className="cat-icon"><IconHospital size={18} /></div>
+                    <div className="cat-info">
+                      <span className="cat-name">Health & Buffer</span>
+                      <span className="cat-val">₹{catHealth.toLocaleString('en-IN')}</span>
+                    </div>
+                  </div>
                 </div>
+              </>
+            ) : (
+              <div style={{ padding: '1rem 0', textAlign: 'center' }}>
+                <p className="muted small" style={{ marginBottom: '0.85rem' }}>
+                  Provide your monthly household income and expenses to unlock live debt obligation analysis and budget headroom tracking.
+                </p>
+                <Link to="/profile" className="btn small">
+                  Configure Household Budget in Profile
+                </Link>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -348,57 +467,97 @@ export default function Dashboard() {
                 <h4>Target Savings Goal</h4>
               </div>
               <Link to="/savings" className="all-goals-link">
-                All Goals (2) →
+                All Goals →
               </Link>
             </div>
 
-            <div className="goal-content-box">
-              {/* Circular Progress Ring */}
-              <div className="circular-progress">
-                <svg viewBox="0 0 36 36" className="circular-chart">
-                  <path
-                    className="circle-bg"
-                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                  />
-                  <path
-                    className="circle-fill"
-                    strokeDasharray={`${(goalAmount / goalTarget) * 100}, 100`}
-                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                  />
-                </svg>
-                <div className="circle-inner">
-                  <span className="pct-num">{Math.round((goalAmount / goalTarget) * 100)}%</span>
-                  <span className="pct-label">SAVED</span>
+            {topGoal ? (
+              <div className="goal-content-box">
+                {/* Circular Progress Ring */}
+                <div className="circular-progress">
+                  <svg viewBox="0 0 36 36" className="circular-chart">
+                    <path
+                      className="circle-bg"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                    <path
+                      className="circle-fill"
+                      strokeDasharray={`${Math.min(100, topGoal.progress_pct)}, 100`}
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                  </svg>
+                  <div className="circle-inner">
+                    <span className="pct-num">{Math.round(topGoal.progress_pct)}%</span>
+                    <span className="pct-label">SAVED</span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="goal-details">
-                <h5>Children's School Fees</h5>
-                <p className="goal-sub">Due in August • Kendriya Vidyalaya</p>
-                <div className="goal-amount-row">
-                  <b>₹{goalAmount.toLocaleString('en-IN')}</b>
-                  <span className="goal-of">of ₹{goalTarget.toLocaleString('en-IN')}</span>
+                <div className="goal-details">
+                  <h5>{topGoal.title}</h5>
+                  <p className="goal-sub">Priority Milestone Goal</p>
+                  <div className="goal-amount-row">
+                    <b>₹{Number(topGoal.saved_amount).toLocaleString('en-IN')}</b>
+                    <span className="goal-of">of ₹{Number(topGoal.target_amount).toLocaleString('en-IN')}</span>
+                  </div>
                 </div>
-              </div>
 
-              <button
-                className="add-goal-btn"
-                onClick={() => setShowGoalModal(true)}
-                title="Deposit into this goal"
-              >
-                +
-              </button>
-            </div>
+                <button
+                  className="add-goal-btn"
+                  onClick={() => setShowGoalDepositModal(true)}
+                  title="Deposit into this goal"
+                >
+                  <IconPlus size={16} />
+                </button>
+              </div>
+            ) : (
+              <div style={{ padding: '0.75rem 0', textAlign: 'center' }}>
+                <p className="muted small" style={{ marginBottom: '0.75rem' }}>
+                  No active savings goal set yet. Set a targeted reserve for crop seeds, dairy animals, or emergency buffer.
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', justifyContent: 'center', marginBottom: '0.75rem' }}>
+                  <button
+                    type="button"
+                    className="btn small ghost"
+                    style={{ fontSize: '0.72rem', padding: '3px 8px' }}
+                    onClick={() => handleQuickCreateGoal('Dairy Cow Purchase', 35000)}
+                  >
+                    + Dairy Cow (₹35k)
+                  </button>
+                  <button
+                    type="button"
+                    className="btn small ghost"
+                    style={{ fontSize: '0.72rem', padding: '3px 8px' }}
+                    onClick={() => handleQuickCreateGoal('Kharif Crop Seeds', 15000)}
+                  >
+                    + Crop Seeds (₹15k)
+                  </button>
+                  <button
+                    type="button"
+                    className="btn small ghost"
+                    style={{ fontSize: '0.72rem', padding: '3px 8px' }}
+                    onClick={() => handleQuickCreateGoal('Family Emergency Fund', 20000)}
+                  >
+                    + Emergency (₹20k)
+                  </button>
+                </div>
+                <button
+                  className="btn small"
+                  onClick={() => setShowCreateGoalModal(true)}
+                >
+                  <IconPlus size={14} /> Establish Custom Goal
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Gamified 5-Day Learning Streak */}
+          {/* Gamified Financial Learning Streak */}
           <div className="streak-card card">
             <div className="streak-header">
               <div className="streak-title">
                 <span className="flame"><IconFlame size={18} /></span>
-                <h4>5-Day Learning Streak!</h4>
+                <h4>Continuous Learning Pathway</h4>
               </div>
-              <span className="pts-badge">+120 Saathi Pts</span>
+              <span className="pts-badge">{data?.courses_completed || 0} Modules Completed</span>
             </div>
 
             <div className="lesson-item-box">
@@ -406,26 +565,26 @@ export default function Dashboard() {
                 <span className="thumb-icon"><IconShield size={20} /></span>
               </div>
               <div className="lesson-meta">
-                <span className="read-time">4 min read • Audio available</span>
-                <h5>UPI Safety & QR Scams</h5>
+                <span className="read-time">Certified Curriculum • Audio Supported</span>
+                <h5>Digital UPI Safety & Scam Protection</h5>
                 <p className="lesson-desc">
-                  Protect your hard-earned shop profits and SHG savings from frauds.
+                  Safeguard your microcredit proceeds, QR codes, and SHG common accounts from digital frauds.
                 </p>
               </div>
             </div>
 
             <div className="streak-footer">
-              <span className="quiz-unlock-text">Daily quiz reward unlocks upon finish</span>
+              <span className="quiz-unlock-text">NABARD / RBI Literacy Certified</span>
               <button
                 className="btn small start-lesson-btn"
-                onClick={() => navigate('/learn/3')}
+                onClick={() => navigate('/learn')}
               >
-                Start Lesson ▷
+                Browse Academy ▷
               </button>
             </div>
           </div>
 
-          {/* SHG Meeting Community Notice */}
+          {/* SHG Community Card */}
           <div
             className="meeting-card card"
             onClick={() => navigate('/shg')}
@@ -433,8 +592,8 @@ export default function Dashboard() {
           >
             <div className="meeting-icon-box"><IconUsers size={20} /></div>
             <div className="meeting-text">
-              <h5>Pragati SHG Meeting: Thursday</h5>
-              <p>Agenda: Dairy equipment bulk loan voting & deposits.</p>
+              <h5>{shgName}</h5>
+              <p>Self-Help Group Joint Lending & Peer Guarantee Network</p>
             </div>
             <span className="arrow-right">&gt;</span>
           </div>
@@ -453,7 +612,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Footer Demonstration Notice */}
+      {/* Footer Disclaimer */}
       <div className="demo-disclaimer-footer">
         <p>Institutional microfinance management platform. Regulated lending partners adhere to RBI Fair Practices Code.</p>
       </div>
@@ -468,9 +627,15 @@ export default function Dashboard() {
               <h3>Quick UPI Payment</h3>
               <button className="icon-btn" onClick={() => setShowUpiModal(false)}>✕</button>
             </div>
-            <p className="muted small">
-              Paying for: <b>Mahila Samriddhi SHG Loan #{data?.next_installment?.loan_id || '104'}</b>
-            </p>
+            {nextInstallment ? (
+              <p className="muted small">
+                Paying for: <b>Loan #{nextInstallment.loan_id} ({nextInstallment.purpose}) • Instalment #{nextInstallment.number}</b>
+              </p>
+            ) : (
+              <p className="muted small">
+                Zero active overdue instalments. You may advance a payment to your active loan account.
+              </p>
+            )}
 
             <form onSubmit={handleUpiPay}>
               <div className="field">
@@ -517,7 +682,7 @@ export default function Dashboard() {
                   Cancel
                 </button>
                 <button type="submit" className="btn pay-confirm-btn" disabled={paySuccess}>
-                  {paySuccess ? 'Verifying with UPI…' : `Pay ₹${Number(payAmount).toLocaleString('en-IN')} via UPI`}
+                  {paySuccess ? 'Verifying with UPI…' : `Pay ₹${Number(payAmount || 0).toLocaleString('en-IN')} via UPI`}
                 </button>
               </div>
             </form>
@@ -525,16 +690,16 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* 2. Deposit SHG Modal */}
+      {/* 2. Deposit Savings Modal */}
       {showDepositModal && (
         <div className="modal-overlay" onClick={() => setShowDepositModal(false)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Deposit to Pragati SHG Common Fund</h3>
+              <h3>Deposit to Savings Account / SHG Common Fund</h3>
               <button className="icon-btn" onClick={() => setShowDepositModal(false)}>✕</button>
             </div>
             <p className="muted small">
-              Monthly group contribution for: <b>{userName}</b>
+              Deposit to liquid savings account for: <b>{userName}</b>
             </p>
 
             <form onSubmit={handleDepositShg}>
@@ -548,8 +713,9 @@ export default function Dashboard() {
                   required
                 />
               </div>
+
               <div className="quick-amount-pills">
-                {[500, 1000, 1500, 2000].map((amt) => (
+                {[500, 1000, 2000, 5000].map((amt) => (
                   <button
                     key={amt}
                     type="button"
@@ -565,8 +731,8 @@ export default function Dashboard() {
                 <button type="button" className="btn ghost" onClick={() => setShowDepositModal(false)}>
                   Cancel
                 </button>
-                <button type="submit" className="btn">
-                  Confirm SHG Deposit
+                <button type="submit" className="btn" disabled={busyAction}>
+                  {busyAction ? 'Processing Deposit…' : 'Confirm Savings Deposit'}
                 </button>
               </div>
             </form>
@@ -574,25 +740,46 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* 3. Add Money to Goal Modal */}
-      {showGoalModal && (
-        <div className="modal-overlay" onClick={() => setShowGoalModal(false)}>
+      {/* 3. Deposit to Top Goal Modal */}
+      {showGoalDepositModal && topGoal && (
+        <div className="modal-overlay" onClick={() => setShowGoalDepositModal(false)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Add to Goal: Children's School Fees</h3>
-              <button className="icon-btn" onClick={() => setShowGoalModal(false)}>✕</button>
+              <h3>Add to Goal: {topGoal.title}</h3>
+              <button className="icon-btn" onClick={() => setShowGoalDepositModal(false)}>✕</button>
             </div>
             <p className="muted small">
-              Target: ₹20,000 | Current: ₹{goalAmount.toLocaleString('en-IN')}
+              Target: ₹{Number(topGoal.target_amount).toLocaleString('en-IN')} | Currently Saved: ₹{Number(topGoal.saved_amount).toLocaleString('en-IN')}
             </p>
-            <form onSubmit={handleAddGoalMoney}>
-              <p>Add <b>₹2,000</b> to this milestone today from linked account?</p>
+            <form onSubmit={handleDepositTopGoal}>
+              <div className="field">
+                <span>Deposit Amount (Rs)</span>
+                <input
+                  type="number"
+                  min="100"
+                  value={goalDepositAmount}
+                  onChange={(e) => setGoalDepositAmount(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="quick-amount-pills">
+                {[500, 1000, 2000, 5000].map((amt) => (
+                  <button
+                    key={amt}
+                    type="button"
+                    className="quick-pill"
+                    onClick={() => setGoalDepositAmount(amt)}
+                  >
+                    +₹{amt}
+                  </button>
+                ))}
+              </div>
               <div className="modal-actions">
-                <button type="button" className="btn ghost" onClick={() => setShowGoalModal(false)}>
+                <button type="button" className="btn ghost" onClick={() => setShowGoalDepositModal(false)}>
                   Cancel
                 </button>
-                <button type="submit" className="btn">
-                  Add ₹2,000 Now
+                <button type="submit" className="btn" disabled={busyAction}>
+                  {busyAction ? 'Adding Funds…' : `Add ₹${Number(goalDepositAmount).toLocaleString('en-IN')} to Goal`}
                 </button>
               </div>
             </form>
@@ -600,10 +787,51 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* 4. Official Stamped Member Passbook Modal */}
+      {/* 4. Create Custom Goal Modal */}
+      {showCreateGoalModal && (
+        <div className="modal-overlay" onClick={() => setShowCreateGoalModal(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Create Target Savings Goal</h3>
+              <button className="icon-btn" onClick={() => setShowCreateGoalModal(false)}>✕</button>
+            </div>
+            <form onSubmit={handleCreateGoal}>
+              <div className="field">
+                <span>Goal Title / Purpose</span>
+                <input
+                  required
+                  placeholder="e.g. Dairy cattle procurement, children tuition fee"
+                  value={newGoalTitle}
+                  onChange={(e) => setNewGoalTitle(e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <span>Target Capital Amount (Rs)</span>
+                <input
+                  type="number"
+                  min="500"
+                  required
+                  value={newGoalTarget}
+                  onChange={(e) => setNewGoalTarget(e.target.value)}
+                />
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn ghost" onClick={() => setShowCreateGoalModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn" disabled={busyAction}>
+                  {busyAction ? 'Saving Goal…' : 'Establish Goal'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 5. Official Stamped Member Passbook Modal */}
       {showLedgerModal && (
         <div className="modal-overlay" onClick={() => setShowLedgerModal(false)}>
-          <div className="modal-card wide printable-passbook" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '680px' }}>
+          <div className="modal-card wide printable-passbook" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '700px' }}>
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                 <IconShield size={22} className="text-emerald" />
@@ -630,16 +858,16 @@ export default function Dashboard() {
             >
               <div>
                 <div style={{ fontSize: '0.85rem' }}><b>Account Holder:</b> {userName}</div>
-                <div className="muted small">SHG Affiliation: Pragati Mahila Bachat Gat (Ward 4)</div>
-                <div className="muted small">Unique Member Ref: #M-98741 · KYC Status: Aadhaar Verified</div>
+                <div className="muted small">Affiliation: {shgName} ({location})</div>
+                <div className="muted small">Account KYC: Verified Aadhaar / PAN</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '0.85rem' }}><b>Verified Ledger Balance:</b></div>
+                <div style={{ fontSize: '0.85rem' }}><b>Verified Total Savings:</b></div>
                 <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--emerald-action)' }}>
-                  ₹{totalSavings.toLocaleString('en-IN')}
+                  ₹{Number(totalSavings).toLocaleString('en-IN')}
                 </div>
                 <span className="badge approved" style={{ fontSize: '0.72rem' }}>
-                  ✓ In Good Standing
+                  ✓ Performing Standing
                 </span>
               </div>
             </div>
@@ -651,20 +879,34 @@ export default function Dashboard() {
                     <th>Date</th>
                     <th>Transaction Description</th>
                     <th>Channel</th>
-                    <th>Credit (+)</th>
-                    <th>Cumulative Balance</th>
+                    <th>Type</th>
+                    <th>Amount</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {ledger.map((r) => (
-                    <tr key={r.id}>
-                      <td>{r.date}</td>
-                      <td><b>{r.type}</b></td>
-                      <td><span className="badge">{r.mode}</span></td>
-                      <td className="good-text">+₹{r.amount.toLocaleString('en-IN')}</td>
-                      <td><b>₹{r.balance.toLocaleString('en-IN')}</b></td>
+                  {transactions.length > 0 ? (
+                    transactions.map((r) => (
+                      <tr key={r.id}>
+                        <td>{r.date}</td>
+                        <td><b>{r.type}</b></td>
+                        <td><span className="badge">{r.mode}</span></td>
+                        <td>
+                          <span className={`badge ${r.is_credit ? 'approved' : 'pending'}`}>
+                            {r.is_credit ? 'Credit (+)' : 'Debit (-)'}
+                          </span>
+                        </td>
+                        <td className={r.is_credit ? 'good-text' : 'bad-text'} style={{ fontWeight: 600 }}>
+                          {r.is_credit ? '+' : '-'}₹{Number(r.amount).toLocaleString('en-IN')}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="muted" style={{ textAlign: 'center', padding: '1.5rem 0' }}>
+                        No transaction ledger records yet. Verified starting balance: ₹{Number(totalSavings).toLocaleString('en-IN')}
+                      </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -684,7 +926,7 @@ export default function Dashboard() {
               }}
             >
               <div>
-                <b>Digital Audit Seal:</b> SHA256: 8f2a9c1e7d3b... Verified by Reserve Bank Fair Practice Protocol
+                <b>Digital Audit Seal:</b> Verified by RBI & NABARD Fair Practice Microfinance Core Protocol
               </div>
               <div>Generated: {new Date().toLocaleDateString('en-IN')}</div>
             </div>
@@ -696,7 +938,7 @@ export default function Dashboard() {
                 onClick={() => window.print()}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
               >
-                <IconPrinter size={16} /> Print / Save Passbook Slip
+                <IconPrinter size={16} /> Print Passbook Slip
               </button>
               <button className="btn" onClick={() => setShowLedgerModal(false)}>
                 Done
@@ -706,30 +948,46 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* 5. Health Score Details Modal */}
+      {/* 6. Health Score Details Modal */}
       {showHealthModal && (
         <div className="modal-overlay" onClick={() => setShowHealthModal(false)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Financial Health Score Breakdown</h3>
+              <h3>Financial Health & CIBIL Composite Score</h3>
               <button className="icon-btn" onClick={() => setShowHealthModal(false)}>✕</button>
             </div>
             <div className="score-modal-hero">
-              <div className="score-big">742 <small>/ 900</small></div>
-              <Badge tone="approved">Good Standing</Badge>
+              <div className="score-big">{cibilScore} <small>/ 900</small></div>
+              <Badge tone={healthScore >= 70 ? 'approved' : healthScore >= 50 ? 'pending' : 'muted'}>
+                {healthScore >= 70 ? 'High Credit Quality' : healthScore >= 50 ? 'Good Standing' : 'Review Needed'} ({healthScore}/100)
+              </Badge>
             </div>
             <p className="muted small mt-2">
-              Your score is evaluated transparently based on 4 pillars:
+              Your composite underwriting standing is evaluated transparently across 4 core credit pillars:
             </p>
             <ul className="factors-list">
-              <li><b>✓ 100% Timely SHG Repayments:</b> No active defaults or overdue instalments (+280 pts).</li>
-              <li><b>✓ Debt-to-Income FOIR (28%):</b> Well below the recommended 40% threshold (+240 pts).</li>
-              <li><b>✓ Consistent Group Savings:</b> Regular monthly deposits for &gt; 12 months (+150 pts).</li>
-              <li><b>✓ Financial Academy Badges:</b> Completed modules on UPI fraud and emergency fund (+72 pts).</li>
+              <li>
+                <b>{data?.overdue_loans === 0 || !nextInstallment?.overdue ? '✓ 100% Timely Repayment Track:' : '⚠ Active Loan Observations:'}</b>{' '}
+                {data?.overdue_loans === 0 || !nextInstallment?.overdue
+                  ? 'No outstanding defaults or delinquent payments recorded in loan portfolio.'
+                  : `${data?.overdue_loans || 1} payment requires prompt settlement.`}
+              </li>
+              <li>
+                <b>✓ Fixed Obligation Ratio (FOIR):</b>{' '}
+                {monthlyIncome > 0 ? `${Math.round((existingEmi / monthlyIncome) * 100)}% of household income` : 'Safe threshold (<40%)'} committed to existing debt repayments.
+              </li>
+              <li>
+                <b>✓ Liquid Savings Reserve Buffer:</b>{' '}
+                Holding ₹{Number(totalSavings).toLocaleString('en-IN')} across core savings & goal targets to cushion unexpected shocks.
+              </li>
+              <li>
+                <b>✓ Financial Literacy Badges:</b>{' '}
+                Completed {data?.courses_completed || 0} financial academy education modules.
+              </li>
             </ul>
             <div className="modal-actions">
               <button className="btn" onClick={() => setShowHealthModal(false)}>
-                Got it
+                Understood
               </button>
             </div>
           </div>

@@ -7,12 +7,21 @@ from . import models  # noqa: F401  (register tables)
 from .config import CORS_ORIGINS
 from .database import Base, SessionLocal, engine
 from .routers import auth, community, literacy, loans, staff, tools
+from sqlalchemy import text
 from .seed import seed
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(engine)
+    with engine.connect() as con:
+        try:
+            cols = [c[1] for c in con.execute(text("PRAGMA table_info(loans)"))]
+            if cols and "product_type" not in cols:
+                con.execute(text("ALTER TABLE loans ADD COLUMN product_type VARCHAR(50) DEFAULT 'standard'"))
+                con.commit()
+        except Exception:
+            pass
     with SessionLocal() as db:
         seed(db)
     yield

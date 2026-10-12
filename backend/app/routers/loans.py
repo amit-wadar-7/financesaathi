@@ -52,6 +52,7 @@ def apply_for_loan(body: schemas.LoanIn, user: models.User = Depends(get_current
                        body.amount, body.annual_rate, body.tenure_months)
     loan = models.Loan(user_id=user.id, shg_id=user.shg_id if body.group_loan else None, amount=body.amount,
                        annual_rate=body.annual_rate, tenure_months=body.tenure_months, purpose=body.purpose,
+                       product_type=body.product_type,
                        emi=result["emi"], ai_score=result["score"], ai_band=result["band"],
                        ai_factors=result["factors"])
     for d in body.documents:

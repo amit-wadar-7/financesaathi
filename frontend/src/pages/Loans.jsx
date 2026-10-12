@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api, money } from '../api'
 import { useAuth } from '../auth'
 import { useLang } from '../i18n'
@@ -15,31 +15,217 @@ import {
   IconFileText,
   IconArrowRight,
   IconCoins,
+  IconTractor,
+  IconUsers,
+  IconCart,
+  IconHospital,
+  IconZap,
+  IconCheck,
 } from '../icons'
 
-const PURPOSE_PRESETS = [
-  'Dairy & Livestock Purchase',
-  'Crop Cultivation & Kharif Seeds',
-  'Kirana Store Working Capital',
-  'Solar Irrigation Pump Installation',
+export const LOAN_PRODUCTS = [
+  {
+    id: 'kisan_agri',
+    title: 'Kisan Agri & Harvest Facility',
+    subtitle: 'Crop Cultivation, Seeds, Fertilizers & Farm Equipment',
+    category: 'agri',
+    icon: <IconTractor size={22} />,
+    tag: '3% Interest Subvention Eligible',
+    apr: 7.0,
+    defaultAmount: 30000,
+    minAmount: 5000,
+    maxAmount: 100000,
+    tenures: [6, 12, 18, 24],
+    defaultTenure: 12,
+    features: [
+      'Seasonal repayment aligned with Rabi & Kharif harvest cycles',
+      'NABARD & Kisan Credit Card guideline compliant',
+      'Disaster grace period & zero prepayment penalty',
+    ],
+    presets: [
+      'Kharif Hybrid Seeds & Fertilizers',
+      'Micro-Drip Irrigation Accessories',
+      'Tractor & Harvester Service Rental',
+      'Borewell Submersible Pump Replacement',
+    ],
+    docs: [
+      ['aadhaar', 'Aadhaar / Official ID Proof'],
+      ['land_record', 'Land Record (7/12 Extract) or Cultivator Declaration'],
+      ['income_proof', 'Panchayat Agri Income Certificate'],
+    ],
+  },
+  {
+    id: 'mahila_shakti',
+    title: 'Mahila Shakti SHG Enterprise Loan',
+    subtitle: 'Joint-Liability Collateral-Free Credit for Women Micro-Entrepreneurs',
+    category: 'shg',
+    icon: <IconUsers size={22} />,
+    tag: 'SHG Peer Guarantee Backed',
+    apr: 11.5,
+    defaultAmount: 40000,
+    minAmount: 10000,
+    maxAmount: 75000,
+    tenures: [12, 18, 24, 36],
+    defaultTenure: 18,
+    features: [
+      'Backed by Self-Help Group peer guarantee (no physical asset pledge)',
+      'Special 1.5% interest rebate on 100% timely group repayment',
+      'Comprehensive capacity building & financial literacy mentoring',
+    ],
+    presets: [
+      'Dairy Cow & Cattle Procurement',
+      'Tailoring & Garment Boutique Unit',
+      'Kirana Store Inventory Expansion',
+      'Handicraft, Pottery & Food Processing Unit',
+    ],
+    docs: [
+      ['aadhaar', 'Aadhaar / Voter ID Proof'],
+      ['shg_resolution', 'SHG Meeting Resolution & Peer Guarantee Letter'],
+      ['address_proof', 'Ration Card / Electricity Bill Proof'],
+    ],
+  },
+  {
+    id: 'pm_svanidhi',
+    title: 'PM SVANidhi Micro-Vendor Credit',
+    subtitle: 'Working Capital Facility for Urban & Semi-Urban Street Vendors',
+    category: 'vendor',
+    icon: <IconCart size={22} />,
+    tag: '7% Interest Subsidy Directly Credited',
+    apr: 9.0,
+    defaultAmount: 15000,
+    minAmount: 5000,
+    maxAmount: 50000,
+    tenures: [6, 12],
+    defaultTenure: 12,
+    features: [
+      'Tiered credit progression: ₹10,000 → ₹20,000 → ₹50,000 upon on-time settlement',
+      'Monthly digital cashback incentives on QR UPI transactions',
+      'Zero collateral or margin money required',
+    ],
+    presets: [
+      'Street Vendor Daily Working Capital',
+      'Kirana Shop Fast-Moving Stock Refill',
+      'Handcart / Vending Stall Refurbishment',
+      'Electronic Weighing Scale & Refrigerator Asset',
+    ],
+    docs: [
+      ['aadhaar', 'Aadhaar / Official ID Proof'],
+      ['vendor_cert', 'Street Vendor Certificate (CoVR / ULB Letter)'],
+      ['income_proof', 'Bank Passbook / UPI QR Statement'],
+    ],
+  },
+  {
+    id: 'emergency_health',
+    title: 'Emergency Medical & Contingency Pool',
+    subtitle: 'Rapid Express Sanction for Unexpected Health & Social Shocks',
+    category: 'emergency',
+    icon: <IconHospital size={22} />,
+    tag: '24-Hour Express Sanction',
+    apr: 8.5,
+    defaultAmount: 20000,
+    minAmount: 5000,
+    maxAmount: 30000,
+    tenures: [3, 6, 12],
+    defaultTenure: 6,
+    features: [
+      'Express sanction disbursed within 24 hours of doctor estimate',
+      'Zero penalty for early repayment or foreclosure',
+      'Protected by community contingency risk fund',
+    ],
+    presets: [
+      'Urgent Hospitalization & Life-Saving Medicines',
+      'Accident & Trauma Emergency Care',
+      'Diagnostic Tests, Scans & Prescriptions',
+      'Travel & Food Allowance for Outstation Treatment',
+    ],
+    docs: [
+      ['aadhaar', 'Aadhaar / Family Member ID'],
+      ['hospital_estimate', 'Hospital Admission Slip or Doctor Prescription'],
+      ['address_proof', 'Ration Card / Local Residence Proof'],
+    ],
+  },
+  {
+    id: 'solar_green',
+    title: 'PM-KUSUM Solar & Green Asset Loan',
+    subtitle: 'Clean Energy Infrastructure for Irrigation Pumps & Rural Power',
+    category: 'solar',
+    icon: <IconZap size={22} />,
+    tag: 'Green Concessional Financing',
+    apr: 6.5,
+    defaultAmount: 60000,
+    minAmount: 20000,
+    maxAmount: 150000,
+    tenures: [12, 24, 36, 48],
+    defaultTenure: 24,
+    features: [
+      'Subsidy integration with Central/State PM-KUSUM components',
+      'Direct reduction in household diesel and electricity expenses',
+      'Long-term asset warranty and insurance coverage backed',
+    ],
+    presets: [
+      'Solar Irrigation Submersible Pump (3HP / 5HP)',
+      'Rooftop Solar for Cottage Enterprise / Dairy',
+      'Solar Micro-Cold Storage Unit',
+      'Solar Grain Dryer & Flour Mill Installation',
+    ],
+    docs: [
+      ['aadhaar', 'Aadhaar Proof'],
+      ['land_record', 'Agricultural Land / Rooftop Ownership Proof'],
+      ['equipment_quotation', 'Authorized Solar Vendor Equipment Quotation'],
+    ],
+  },
+  {
+    id: 'standard',
+    title: 'Custom Microcredit Proposal',
+    subtitle: 'General Purpose Flexible Credit for Trade, Home & Life Goals',
+    category: 'custom',
+    icon: <IconCreditCard size={22} />,
+    tag: 'Tailored Terms & Schedule',
+    apr: 12.0,
+    defaultAmount: 25000,
+    minAmount: 1000,
+    maxAmount: 100000,
+    tenures: [6, 12, 18, 24, 36],
+    defaultTenure: 12,
+    features: [
+      'Reducing balance interest calculation methodology',
+      'Flexible tenure customized to household cashflow profile',
+      'Standard RBI Fair Practices Code conforming appraisal',
+    ],
+    presets: [
+      'Home Roofing & Water Tank Repair',
+      'Vocational Training & Skill Certification',
+      'Debt Consolidation of High-Interest Informal Loans',
+      'Wholesale Trade Working Capital',
+    ],
+    docs: [
+      ['aadhaar', 'Aadhaar / Official ID Proof'],
+      ['income_proof', 'Panchayat Income Slip / Bank Passbook'],
+      ['address_proof', 'Ration Card / Electricity Bill Proof'],
+    ],
+  },
 ]
 
 export function LoanList() {
   const { user } = useAuth()
   const { t } = useLang()
+  const [activeTab, setActiveTab] = useState('catalog')
   const [status, setStatus] = useState('')
+  const [productFilter, setProductFilter] = useState('')
   const [search, setSearch] = useState('')
   const { data, error, loading } = useLoad(() => api('/loans' + (status ? '?status=' + status : '')), [status])
   const staff = user.role === 'officer' || user.role === 'admin'
 
   const loans = data || []
   const filteredLoans = loans.filter((l) => {
+    if (productFilter && l.product_type !== productFilter) return false
     if (!search.trim()) return true
     const q = search.toLowerCase()
     return (
       String(l.id).includes(q) ||
       (l.borrower_name && l.borrower_name.toLowerCase().includes(q)) ||
-      (l.purpose && l.purpose.toLowerCase().includes(q))
+      (l.purpose && l.purpose.toLowerCase().includes(q)) ||
+      (l.product_type && l.product_type.toLowerCase().includes(q))
     )
   })
 
@@ -48,159 +234,322 @@ export function LoanList() {
   const pendingCount = loans.filter((l) => l.status === 'pending').length
   const totalVolume = loans.reduce((acc, l) => acc + (l.amount || 0), 0)
 
+  const getProductTitle = (type) => {
+    const p = LOAN_PRODUCTS.find((x) => x.id === type)
+    return p ? p.title : 'Standard Facility'
+  }
+
   return (
     <>
       <div className="row between" style={{ marginBottom: '1.25rem', alignItems: 'flex-start' }}>
         <div>
           <h2>{t('loans')}</h2>
           <p className="muted" style={{ margin: '0.2rem 0 0 0' }}>
-            Micro-credit facilities, joint-liability applications, and credit appraisal
+            Institutional credit products, joint-liability applications, and automated underwriting
           </p>
         </div>
         {!staff && (
-          <Link className="btn" to="/loans/new" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+          <Link
+            className="btn"
+            to="/loans/new"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+          >
             <IconPlus size={16} /> {t('newLoan')}
           </Link>
         )}
       </div>
 
+      {/* Portfolio Quick Statistics */}
       <div className="grid" style={{ marginBottom: '1.25rem' }}>
-        <Stat label="Total Loan Records" value={totalLoans} sub="In active portfolio" />
-        <Stat label="Approved & Disbursed" value={activeCount} sub="Performing assets" />
+        <Stat label="Total Loan Records" value={totalLoans} sub="Active portfolio volume" />
+        <Stat label="Approved & Active" value={activeCount} sub="Performing credit assets" />
         <Stat label="Pending Sanctions" value={pendingCount} sub="Under officer review" />
         <Stat label="Total Sanction Volume" value={money(totalVolume)} sub="Disbursed capital" />
       </div>
 
+      {/* Main View Switcher Tabs */}
       <div
         style={{
-          background: '#ffffff',
-          border: '1px solid var(--border-hairline)',
-          borderRadius: '8px',
-          padding: '0.75rem 1rem',
-          marginBottom: '1rem',
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '0.75rem',
+          gap: '0.5rem',
+          borderBottom: '2px solid var(--border-hairline)',
+          marginBottom: '1.25rem',
         }}
       >
-        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-          {[
-            { id: '', label: 'All Statuses' },
-            { id: 'pending', label: 'Pending Review' },
-            { id: 'approved', label: 'Approved & Active' },
-            { id: 'rejected', label: 'Rejected' },
-            { id: 'closed', label: 'Repaid & Closed' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              className={'btn small ' + (status === tab.id ? '' : 'ghost')}
-              style={{ fontSize: '0.8rem', padding: '5px 10px' }}
-              onClick={() => setStatus(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '260px' }}>
-          <input
-            placeholder="Search loan #, borrower, purpose..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ fontSize: '0.82rem', padding: '6px 10px' }}
-          />
-        </div>
+        <button
+          type="button"
+          className={`btn ${activeTab === 'catalog' ? '' : 'ghost'}`}
+          style={{
+            borderRadius: '6px 6px 0 0',
+            borderBottom: activeTab === 'catalog' ? '2px solid var(--emerald-brand)' : 'none',
+            fontWeight: activeTab === 'catalog' ? 700 : 500,
+          }}
+          onClick={() => setActiveTab('catalog')}
+        >
+          Specialized Loan Catalog ({LOAN_PRODUCTS.length})
+        </button>
+        <button
+          type="button"
+          className={`btn ${activeTab === 'portfolio' ? '' : 'ghost'}`}
+          style={{
+            borderRadius: '6px 6px 0 0',
+            borderBottom: activeTab === 'portfolio' ? '2px solid var(--emerald-brand)' : 'none',
+            fontWeight: activeTab === 'portfolio' ? 700 : 500,
+          }}
+          onClick={() => setActiveTab('portfolio')}
+        >
+          {staff ? 'Applications Portfolio' : 'My Applied Loans'} ({totalLoans})
+        </button>
       </div>
 
-      <Alert>{error}</Alert>
+      {/* Tab 1: Specialized Loan Catalog */}
+      {activeTab === 'catalog' && (
+        <div>
+          <div className="row between" style={{ alignItems: 'center', marginBottom: '0.5rem' }}>
+            <div>
+              <h3 style={{ margin: 0 }}>Institutional Loan Facilities</h3>
+              <p className="muted small" style={{ margin: '0.2rem 0 0 0' }}>
+                Select an institutional microcredit product tailored to your livelihood and enterprise needs
+              </p>
+            </div>
+          </div>
 
-      {loading ? (
-        <Loading />
-      ) : (
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Loan Reference</th>
-                {(staff || user.role === 'shg_leader') && <th>Borrower Name</th>}
-                <th>Sanction Amount</th>
-                <th>Monthly EMI</th>
-                <th>Tenure</th>
-                <th>AI Affordability Band</th>
-                <th>Underwriting Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredLoans.map((l) => (
-                <tr key={l.id}>
-                  <td>
-                    <Link to={'/loans/' + l.id} style={{ fontWeight: 600 }}>
-                      #{l.id} {l.group_loan ? <span className="muted small">(SHG)</span> : ''}
-                    </Link>
-                  </td>
-                  {(staff || user.role === 'shg_leader') && (
-                    <td>
-                      <div style={{ fontWeight: 600 }}>{l.borrower_name}</div>
-                      <div className="muted small">{l.purpose || 'General microfinance'}</div>
-                    </td>
-                  )}
-                  <td style={{ fontWeight: 600 }}>{money(l.amount)}</td>
-                  <td>{money(l.emi)}</td>
-                  <td>{l.tenure_months} mo @ {l.annual_rate}%</td>
-                  <td>
-                    <Badge tone={l.ai_band}>{t(l.ai_band)}</Badge>
-                  </td>
-                  <td>
-                    <Badge>{l.status}</Badge>
-                  </td>
-                  <td>
-                    <Link to={'/loans/' + l.id} className="btn small ghost">
-                      View Dossier
-                    </Link>
-                  </td>
-                </tr>
+          <div className="loan-catalog-grid">
+            {LOAN_PRODUCTS.map((p) => (
+              <div key={p.id} className={`loan-product-card ${p.id === 'kisan_agri' ? 'featured' : ''}`}>
+                <div className="product-card-top">
+                  <div className={`product-icon-box ${p.category}`}>
+                    {p.icon}
+                  </div>
+                  <div className="product-header-info">
+                    <h4>{p.title}</h4>
+                    <span className="product-tag-pill green">{p.tag}</span>
+                  </div>
+                </div>
+
+                <p className="muted small" style={{ margin: '0 0 0.5rem 0', minHeight: '36px' }}>
+                  {p.subtitle}
+                </p>
+
+                <div className="product-metrics-bar">
+                  <div className="product-metric-item">
+                    <span className="metric-label">Annual APR</span>
+                    <span className="metric-val text-emerald">{p.apr}% p.a.</span>
+                  </div>
+                  <div className="product-metric-item">
+                    <span className="metric-label">Max Sanction</span>
+                    <span className="metric-val">{money(p.maxAmount)}</span>
+                  </div>
+                  <div className="product-metric-item">
+                    <span className="metric-label">Tenure Window</span>
+                    <span className="metric-val">{p.tenures[0]} - {p.tenures[p.tenures.length - 1]} Months</span>
+                  </div>
+                  <div className="product-metric-item">
+                    <span className="metric-label">Default Starter</span>
+                    <span className="metric-val">{money(p.defaultAmount)}</span>
+                  </div>
+                </div>
+
+                <ul className="product-features-list">
+                  {p.features.map((feat, idx) => (
+                    <li key={idx}>
+                      <span className="check-icon"><IconCheck size={14} /></span>
+                      <span>{feat}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <Link
+                  to={`/loans/new?product=${p.id}`}
+                  className="btn product-apply-btn"
+                >
+                  Apply for This Facility <IconArrowRight size={14} />
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Tab 2: Applications & Dossiers Portfolio */}
+      {activeTab === 'portfolio' && (
+        <div>
+          <div
+            style={{
+              background: '#ffffff',
+              border: '1px solid var(--border-hairline)',
+              borderRadius: '8px',
+              padding: '0.75rem 1rem',
+              marginBottom: '1rem',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+            }}
+          >
+            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+              {[
+                { id: '', label: 'All Statuses' },
+                { id: 'pending', label: 'Pending Review' },
+                { id: 'approved', label: 'Approved & Active' },
+                { id: 'rejected', label: 'Rejected' },
+                { id: 'closed', label: 'Repaid & Closed' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  className={'btn small ' + (status === tab.id ? '' : 'ghost')}
+                  style={{ fontSize: '0.8rem', padding: '5px 10px' }}
+                  onClick={() => setStatus(tab.id)}
+                >
+                  {tab.label}
+                </button>
               ))}
-              {filteredLoans.length === 0 && (
-                <tr>
-                  <td colSpan={staff || user.role === 'shg_leader' ? 8 : 7} className="muted" style={{ textAlign: 'center', padding: '2rem 0' }}>
-                    No loan applications matching the selected criteria.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <select
+                value={productFilter}
+                onChange={(e) => setProductFilter(e.target.value)}
+                style={{ fontSize: '0.82rem', padding: '6px 8px', borderRadius: '4px' }}
+              >
+                <option value="">All Loan Products</option>
+                {LOAN_PRODUCTS.map((prod) => (
+                  <option key={prod.id} value={prod.id}>
+                    {prod.title}
+                  </option>
+                ))}
+              </select>
+
+              <input
+                placeholder="Search loan #, borrower..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{ fontSize: '0.82rem', padding: '6px 10px', width: '220px' }}
+              />
+            </div>
+          </div>
+
+          <Alert>{error}</Alert>
+
+          {loading ? (
+            <Loading />
+          ) : (
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Loan Reference</th>
+                    <th>Product Program</th>
+                    {(staff || user.role === 'shg_leader') && <th>Borrower Name</th>}
+                    <th>Principal</th>
+                    <th>Monthly EMI</th>
+                    <th>Tenure</th>
+                    <th>AI Affordability</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredLoans.map((l) => {
+                    const prodType = l.product_type || 'standard'
+                    return (
+                      <tr key={l.id}>
+                        <td>
+                          <Link to={'/loans/' + l.id} style={{ fontWeight: 600 }}>
+                            #{l.id} {l.group_loan ? <span className="muted small">(SHG)</span> : ''}
+                          </Link>
+                        </td>
+                        <td>
+                          <span className={`product-type-badge ${prodType}`}>
+                            {getProductTitle(prodType)}
+                          </span>
+                        </td>
+                        {(staff || user.role === 'shg_leader') && (
+                          <td>
+                            <div style={{ fontWeight: 600 }}>{l.borrower_name}</div>
+                            <div className="muted small">{l.purpose || 'General microfinance'}</div>
+                          </td>
+                        )}
+                        <td style={{ fontWeight: 600 }}>{money(l.amount)}</td>
+                        <td>{money(l.emi)}</td>
+                        <td>{l.tenure_months} mo @ {l.annual_rate}%</td>
+                        <td>
+                          <Badge tone={l.ai_band}>{t(l.ai_band)}</Badge>
+                        </td>
+                        <td>
+                          <Badge>{l.status}</Badge>
+                        </td>
+                        <td>
+                          <Link to={'/loans/' + l.id} className="btn small ghost">
+                            View Dossier
+                          </Link>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                  {filteredLoans.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={staff || user.role === 'shg_leader' ? 9 : 8}
+                        className="muted"
+                        style={{ textAlign: 'center', padding: '2rem 0' }}
+                      >
+                        No loan applications matching the selected criteria.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
     </>
   )
 }
 
-const DOCS = [
-  ['aadhaar', 'Aadhaar / Official ID Proof'],
-  ['income_proof', 'Panchayat Income Certificate / Bank Slip'],
-  ['address_proof', 'Ration Card / Electricity Bill Proof'],
-]
-
 export function LoanApply() {
   const { user } = useAuth()
   const { t } = useLang()
   const nav = useNavigate()
+  const [searchParams] = useSearchParams()
+  const initialProductId = searchParams.get('product') || 'standard'
+
+  const [selectedProduct, setSelectedProduct] = useState(
+    LOAN_PRODUCTS.find((p) => p.id === initialProductId) || LOAN_PRODUCTS[0]
+  )
+
   const [f, setF] = useState({
-    amount: 25000,
-    annual_rate: 12,
-    tenure_months: 12,
+    product_type: selectedProduct.id,
+    amount: selectedProduct.defaultAmount,
+    annual_rate: selectedProduct.apr,
+    tenure_months: selectedProduct.defaultTenure,
     purpose: '',
-    group_loan: false,
+    group_loan: selectedProduct.id === 'mahila_shakti',
     documents: [],
   })
+
   const [preview, setPreview] = useState(null)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   const hasProfile = user.monthly_income > 0
+
+  // Switch product when user selects a different facility
+  const handleProductChange = (prod) => {
+    setSelectedProduct(prod)
+    setF({
+      ...f,
+      product_type: prod.id,
+      amount: prod.defaultAmount,
+      annual_rate: prod.apr,
+      tenure_months: prod.defaultTenure,
+      purpose: prod.presets[0] || '',
+      group_loan: prod.id === 'mahila_shakti',
+      documents: [],
+    })
+  }
 
   useEffect(() => {
     if (!hasProfile || !(f.amount > 0) || !(f.tenure_months > 0)) return
@@ -259,7 +608,7 @@ export function LoanApply() {
         <div>
           <h2>{t('newLoan')}</h2>
           <p className="muted" style={{ margin: '0.2rem 0 0 0' }}>
-            Submit microcredit proposal with automated AI affordability check and RBI fair practices compliance
+            Submit microcredit proposal with automated AI affordability underwriting and RBI fair practices compliance
           </p>
         </div>
       </div>
@@ -270,15 +619,55 @@ export function LoanApply() {
         </Alert>
       )}
 
+      {/* Product Selection Bar */}
+      <div style={{ marginBottom: '1.25rem' }}>
+        <span className="muted small" style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600 }}>
+          Select Credit Product Program:
+        </span>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          {LOAN_PRODUCTS.map((prod) => (
+            <button
+              key={prod.id}
+              type="button"
+              className={`btn small ${selectedProduct.id === prod.id ? '' : 'ghost'}`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                fontSize: '0.82rem',
+                border: selectedProduct.id === prod.id ? '2px solid var(--emerald-brand)' : '1px solid var(--border-hairline)',
+              }}
+              onClick={() => handleProductChange(prod)}
+            >
+              {prod.title}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="two-col">
-        <Card title="Loan Proposal Parameters">
+        <Card title={`Application: ${selectedProduct.title}`}>
+          <div
+            style={{
+              background: 'var(--canvas-bg)',
+              padding: '0.75rem',
+              borderRadius: '6px',
+              borderLeft: '3px solid var(--emerald-brand)',
+              marginBottom: '1rem',
+            }}
+          >
+            <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{selectedProduct.tag}</div>
+            <p className="muted small" style={{ margin: '0.2rem 0 0 0' }}>{selectedProduct.subtitle}</p>
+          </div>
+
           <form onSubmit={submit}>
             <Alert>{err}</Alert>
 
             <Field label={t('amount')}>
               <input
                 type="number"
-                min="1000"
+                min={selectedProduct.minAmount}
+                max={selectedProduct.maxAmount}
                 step="500"
                 required
                 value={f.amount}
@@ -288,15 +677,15 @@ export function LoanApply() {
 
             <div style={{ marginBottom: '1rem' }}>
               <span className="muted small" style={{ display: 'block', marginBottom: '0.35rem' }}>
-                Tenure Options (Months):
+                Tenure Options for {selectedProduct.title}:
               </span>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                {[6, 12, 18, 24].map((m) => (
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                {selectedProduct.tenures.map((m) => (
                   <button
                     key={m}
                     type="button"
                     className={'btn small ' + (f.tenure_months === m ? '' : 'ghost')}
-                    style={{ flex: 1, fontSize: '0.8rem' }}
+                    style={{ flex: 1, minWidth: '70px', fontSize: '0.8rem' }}
                     onClick={() => setF({ ...f, tenure_months: m })}
                   >
                     {m} Months
@@ -338,15 +727,16 @@ export function LoanApply() {
                 value={f.purpose}
                 onChange={set('purpose')}
                 placeholder="e.g. Dairy cattle procurement, fertilizer stock"
+                required
               />
             </Field>
 
             <div style={{ marginBottom: '1rem' }}>
               <span className="muted small" style={{ display: 'block', marginBottom: '0.3rem' }}>
-                Common Purpose Presets:
+                Recommended Purpose Presets:
               </span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
-                {PURPOSE_PRESETS.map((p, i) => (
+                {selectedProduct.presets.map((p, i) => (
                   <button
                     key={i}
                     type="button"
@@ -387,9 +777,9 @@ export function LoanApply() {
 
             <div style={{ marginTop: '0.75rem', marginBottom: '1.25rem' }}>
               <p className="muted small" style={{ fontWeight: 600, marginBottom: '0.5rem' }}>
-                Statutory KYC Documents to Pledge:
+                Program KYC Documents to Pledge:
               </p>
-              {DOCS.map(([k, label]) => (
+              {selectedProduct.docs.map(([k, label]) => (
                 <label className="check" key={k} style={{ display: 'block', marginBottom: '0.4rem' }}>
                   <input
                     type="checkbox"
@@ -536,6 +926,9 @@ export function LoanDetail() {
   const remainingAmount = Math.max(0, totalScheduledAmount - totalPaidAmount)
   const repaymentPct = totalScheduledAmount > 0 ? Math.round((totalPaidAmount / totalScheduledAmount) * 100) : 0
 
+  const prodType = l.product_type || 'standard'
+  const productInfo = LOAN_PRODUCTS.find((p) => p.id === prodType) || LOAN_PRODUCTS[LOAN_PRODUCTS.length - 1]
+
   return (
     <>
       <div style={{ marginBottom: '1rem' }}>
@@ -545,8 +938,11 @@ export function LoanDetail() {
       </div>
 
       <div className="row between" style={{ marginBottom: '1.25rem', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
           <h2>Loan Dossier #{l.id}</h2>
+          <span className={`product-type-badge ${prodType}`}>
+            {productInfo.title}
+          </span>
           <Badge>{l.status}</Badge>
           {l.shg_id && <Badge tone="pending">SHG Joint Liability</Badge>}
         </div>
@@ -616,7 +1012,7 @@ export function LoanDetail() {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <IconFileText size={16} className="text-muted" />
-                    <span>{d.doc_type.replace('_', ' ').toUpperCase()}</span>
+                    <span>{d.doc_type.replace(/_/g, ' ').toUpperCase()}</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     {d.verified ? (

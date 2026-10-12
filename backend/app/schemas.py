@@ -62,6 +62,7 @@ class LoanIn(BaseModel):
     annual_rate: float = Field(ge=0, le=60)
     tenure_months: int = Field(ge=1, le=120)
     purpose: str = Field(default="", max_length=200)
+    product_type: str = Field(default="standard", max_length=50)
     group_loan: bool = False
     documents: list[str] = Field(default_factory=list, description="e.g. ['aadhaar', 'income_proof']")
 
@@ -98,6 +99,7 @@ class LoanOut(ORM):
     annual_rate: float
     tenure_months: int
     purpose: str
+    product_type: str = "standard"
     status: str
     emi: float
     ai_score: float
