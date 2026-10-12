@@ -47,13 +47,15 @@ def dashboard(user: models.User = Depends(get_current_user), db: Session = Depen
 
     loans = db.scalars(select(models.Loan).where(models.Loan.user_id == user.id)).all()
     outstanding, next_due = 0.0, None
+    next_due_date = None
     for ln in loans:
         if ln.status != "approved":
             continue
         for i in ln.installments:
             if i.status != "paid":
                 outstanding += i.amount - i.paid_amount
-                if next_due is None or i.due_date < next_due["due_date"]:
+                if next_due_date is None or i.due_date < next_due_date:
+                    next_due_date = i.due_date
                     next_due = {
                         "loan_id": ln.id,
                         "purpose": ln.purpose or "Microfinance Facility",
