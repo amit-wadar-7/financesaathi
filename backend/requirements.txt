@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+pydantic
+email-validator
+pyjwt
+bcrypt
+scikit-learn==1.9.0
+numpy
+joblib
+pytest
+httpx
+# For PostgreSQL later: psycopg2-binary
