@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { api, money } from '../api'
 import { useAuth } from '../auth'
 import { useLang } from '../i18n'
-import { Alert, Badge, Card, Loading, useLoad } from '../ui'
+import { Alert, Badge, Card, Loading, Progress, Stat, useLoad } from '../ui'
 import {
   IconInfo,
   IconCalendar,
@@ -28,15 +28,745 @@ import {
   IconCalculator,
   IconLandmark,
   IconAward,
+  IconClock,
+  IconAlertTriangle,
+  IconCheck,
 } from '../icons'
 
-export default function Dashboard() {
-  const { user, refresh } = useAuth()
-  const { t, lang } = useLang()
-  const navigate = useNavigate()
+/* =========================================================================
+   1. ADMIN DASHBOARD WORKSPACE
+   ========================================================================= */
+function AdminDashboardView({ data, reload }) {
+  const users = useLoad(() => api('/admin/users'))
+  const audit = useLoad(() => api('/admin/audit?limit=15'))
+  const [msg, setMsg] = useState({ kind: 'error', text: '' })
+  const [runningReminders, setRunningReminders] = useState(false)
+  const [searchUser, setSearchUser] = useState('')
 
-  // Real backend dashboard data
-  const { data, loading, reload } = useLoad(() => api('/dashboard'))
+  const handleSetRole = async (userId, newRole) => {
+    setMsg({ kind: 'error', text: '' })
+    try {
+      await api(`/admin/users/${userId}/role`, { method: 'PATCH', body: { role: newRole } })
+      setMsg({ kind: 'success', text: `User #${userId} role successfully changed to ${newRole.toUpperCase()}.` })
+      users.reload()
+      audit.reload()
+    } catch (err) {
+      setMsg({ kind: 'error', text: err.message })
+    }
+  }
+
+  const handleRunReminders = async () => {
+    setRunningReminders(true)
+    setMsg({ kind: 'error', text: '' })
+    try {
+      const res = await api('/admin/run-reminders', { method: 'POST' })
+      setMsg({ kind: 'success', text: `Automated engine dispatched ${res.created} upcoming installment notification(s).` })
+      audit.reload()
+      reload()
+    } catch (err) {
+      setMsg({ kind: 'error', text: err.message })
+    } finally {
+      setRunningReminders(false)
+    }
+  }
+
+  const userList = (users.data || []).filter((u) => {
+    if (!searchUser.trim()) return true
+    const q = searchUser.toLowerCase()
+    return u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || u.role.includes(q)
+  })
+
+  const auditEvents = audit.data || []
+  const loansByStatus = data?.loans_by_status || {}
+
+  return (
+    <div className="page-container">
+      {/* Admin Header */}
+      <div className="page-header-row">
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span className="badge approved" style={{ fontWeight: 700 }}>SYSTEM ADMINISTRATOR CONSOLE</span>
+          </div>
+          <h2>Enterprise Operations & Governance Hub</h2>
+          <p className="page-subtitle">
+            Centralized platform oversight, user role-based access control, statutory audit trails, and automated batch cron engines
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '0.6rem' }}>
+          <button
+            type="button"
+            className="btn"
+            onClick={handleRunReminders}
+            disabled={runningReminders}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+          >
+            <IconClock size={16} /> {runningReminders ? 'Dispatching Reminders…' : 'Run EMI Reminders Cron'}
+          </button>
+        </div>
+      </div>
+
+      <Alert kind={msg.kind}>{msg.text}</Alert>
+
+      {/* Admin Platform KPIs */}
+      <div className="grid" style={{ marginBottom: '1.25rem' }}>
+        <Stat
+          label="Total Registered Users"
+          value={data?.total_users || users.data?.length || 0}
+          sub="Platform user directory"
+        />
+        <Stat
+          label="Pending Underwriting"
+          value={data?.pending_review || loansByStatus.pending || 0}
+          sub="Awaiting officer decision"
+        />
+        <Stat
+          label="Active Performing Loans"
+          value={loansByStatus.approved || 0}
+          sub="Capital disbursed & performing"
+        />
+        <Stat
+          label="Overdue Delinquencies"
+          value={data?.overdue_loans || 0}
+          sub="Requires early warning action"
+        />
+      </div>
+
+      <div className="two-col" style={{ alignItems: 'start', marginBottom: '1.25rem' }}>
+        {/* User Directory & Role Assignment */}
+        <div className="card">
+          <div className="row between" style={{ alignItems: 'center', marginBottom: '0.85rem' }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.05rem' }}>User Directory & Privilege Management</h3>
+              <span className="muted small">Promote or assign permissions across roles</span>
+            </div>
+            <input
+              placeholder="Search user name, email..."
+              value={searchUser}
+              onChange={(e) => setSearchUser(e.target.value)}
+              style={{ width: '200px', fontSize: '0.82rem', padding: '5px 8px' }}
+            />
+          </div>
+
+          {users.loading ? (
+            <Loading />
+          ) : (
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>User ID</th>
+                    <th>User Name</th>
+                    <th>Email</th>
+                    <th>Assigned Role</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {userList.map((u) => (
+                    <tr key={u.id}>
+                      <td style={{ fontWeight: 600 }}>#{u.id}</td>
+                      <td>
+                        <div style={{ fontWeight: 600, color: 'var(--slate-900)' }}>{u.name}</div>
+                        <span className="muted small">{u.phone || 'No phone'}</span>
+                      </td>
+                      <td className="small">{u.email}</td>
+                      <td>
+                        <select
+                          value={u.role}
+                          onChange={(e) => handleSetRole(u.id, e.target.value)}
+                          style={{
+                            padding: '4px 8px',
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            borderRadius: '4px',
+                            background: u.role === 'admin' ? '#f1f5f9' : u.role === 'officer' ? '#eff6ff' : '#ffffff',
+                          }}
+                        >
+                          <option value="user">USER (Borrower)</option>
+                          <option value="officer">OFFICER (Credit Underwriter)</option>
+                          <option value="shg_leader">SHG_LEADER (Group Head)</option>
+                          <option value="admin">ADMIN (Superuser)</option>
+                        </select>
+                      </td>
+                    </tr>
+                  ))}
+                  {userList.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="muted" style={{ textAlign: 'center', padding: '1.5rem 0' }}>
+                        No users matching query.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Audit Trail & Quick Links */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div className="card">
+            <div className="row between" style={{ alignItems: 'center', marginBottom: '0.85rem' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.05rem' }}>Immutable Statutory Audit Log</h3>
+                <span className="muted small">Real-time DPDP Act 2023 compliance record</span>
+              </div>
+              <button type="button" className="btn small ghost" onClick={() => audit.reload()}>
+                Refresh
+              </button>
+            </div>
+
+            {audit.loading ? (
+              <Loading />
+            ) : (
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>Action</th>
+                      <th>Entity</th>
+                      <th>Operation Details</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {auditEvents.slice(0, 8).map((ev) => (
+                      <tr key={ev.id}>
+                        <td style={{ fontSize: '0.76rem', whiteSpace: 'nowrap' }}>
+                          {new Date(ev.created_at + 'Z').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                        <td>
+                          <span className="badge neutral" style={{ fontSize: '0.7rem' }}>{ev.action}</span>
+                        </td>
+                        <td className="small">
+                          {ev.entity} #{ev.entity_id}
+                        </td>
+                        <td className="small muted" style={{ maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {ev.detail || '-'}
+                        </td>
+                      </tr>
+                    ))}
+                    {auditEvents.length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="muted" style={{ textAlign: 'center', padding: '1.5rem 0' }}>
+                          No audit events recorded yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Quick Admin Actions Card */}
+          <div className="card">
+            <h4 style={{ margin: '0 0 0.5rem 0' }}>Superuser Operations</h4>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <Link to="/loans" className="btn small ghost">
+                Review All Loans ({loansByStatus.pending || 0} Pending)
+              </Link>
+              <Link to="/at-risk" className="btn small ghost">
+                At-Risk Delinquency Radar
+              </Link>
+              <Link to="/schemes" className="btn small ghost">
+                Government Welfare Catalog
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* =========================================================================
+   2. LOAN OFFICER DASHBOARD WORKSPACE
+   ========================================================================= */
+function OfficerDashboardView({ data, reload }) {
+  const pendingLoans = useLoad(() => api('/loans?status=pending'))
+  const atRisk = useLoad(() => api('/officer/at-risk'))
+
+  const pendingList = pendingLoans.data || []
+  const atRiskList = atRisk.data || []
+
+  return (
+    <div className="page-container">
+      {/* Officer Header */}
+      <div className="page-header-row">
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span className="badge pending" style={{ fontWeight: 700 }}>CREDIT UNDERWRITING TERMINAL</span>
+          </div>
+          <h2>Loan Officer Sanction & Risk Workbench</h2>
+          <p className="page-subtitle">
+            Statutory credit appraisal, AI affordability evaluation, KYC authentication, and Portfolio-at-Risk (PAR) mitigation
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '0.6rem' }}>
+          <Link
+            to="/loans"
+            className="btn"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+          >
+            <IconCreditCard size={16} /> All Loan Files ({pendingList.length})
+          </Link>
+        </div>
+      </div>
+
+      {/* Officer KPIs */}
+      <div className="grid" style={{ marginBottom: '1.25rem' }}>
+        <Stat
+          label="Underwriting Queue"
+          value={pendingList.length}
+          sub="Awaiting sanction decision"
+        />
+        <Stat
+          label="Approved Active Loans"
+          value={data?.loans_by_status?.approved || 0}
+          sub="Performing assets"
+        />
+        <Stat
+          label="Overdue Delinquencies"
+          value={data?.overdue_loans || 0}
+          sub="Requires borrower contact"
+        />
+        <Stat
+          label="At-Risk Credit Flagged"
+          value={atRiskList.length}
+          sub="Early warning triggers"
+        />
+      </div>
+
+      <div className="two-col" style={{ alignItems: 'start', marginBottom: '1.25rem' }}>
+        {/* Pending Applications Queue */}
+        <div className="card">
+          <div className="row between" style={{ alignItems: 'center', marginBottom: '0.85rem' }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.05rem' }}>Pending Applications Awaiting Sanction</h3>
+              <span className="muted small">Review AI scores, authenticate KYC documents, and approve</span>
+            </div>
+            <span className="badge pending">{pendingList.length} In Queue</span>
+          </div>
+
+          {pendingLoans.loading ? (
+            <Loading />
+          ) : (
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Ref #</th>
+                    <th>Borrower</th>
+                    <th>Principal</th>
+                    <th>AI Score</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingList.map((ln) => (
+                    <tr key={ln.id}>
+                      <td style={{ fontWeight: 600 }}>#{ln.id}</td>
+                      <td>
+                        <div style={{ fontWeight: 600, color: 'var(--slate-900)' }}>{ln.borrower_name}</div>
+                        <span className="muted small">{ln.purpose || 'General'}</span>
+                      </td>
+                      <td style={{ fontWeight: 700 }}>{money(ln.amount)}</td>
+                      <td>
+                        <Badge tone={ln.ai_band}>{ln.ai_score ? `${ln.ai_score}/100` : ln.ai_band}</Badge>
+                      </td>
+                      <td>
+                        <Link to={`/loans/${ln.id}`} className="btn small">
+                          Sanction Review
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                  {pendingList.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="muted" style={{ textAlign: 'center', padding: '2rem 0' }}>
+                        Underwriting queue clear! Zero pending applications awaiting review.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Early Warning Risk Radar */}
+        <div className="card">
+          <div className="row between" style={{ alignItems: 'center', marginBottom: '0.85rem' }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.05rem' }}>Portfolio at Risk (PAR) Early Warning</h3>
+              <span className="muted small">Automated ML delinquency detection</span>
+            </div>
+            <Link to="/at-risk" className="small" style={{ fontWeight: 600 }}>
+              Full Risk Radar →
+            </Link>
+          </div>
+
+          {atRisk.loading ? (
+            <Loading />
+          ) : (
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Ref</th>
+                    <th>Borrower</th>
+                    <th>Overdue Count</th>
+                    <th>Risk Rationale</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {atRiskList.slice(0, 6).map((item) => (
+                    <tr key={item.loan_id}>
+                      <td>
+                        <Link to={`/loans/${item.loan_id}`} style={{ fontWeight: 600 }}>
+                          #{item.loan_id}
+                        </Link>
+                      </td>
+                      <td style={{ fontWeight: 600 }}>{item.borrower}</td>
+                      <td>
+                        <Badge tone="overdue">{item.overdue} Overdue</Badge>
+                      </td>
+                      <td className="small" style={{ color: 'var(--rose-600)' }}>
+                        {item.reasons.join(', ')}
+                      </td>
+                      <td>
+                        <Link to={`/loans/${item.loan_id}`} className="btn small ghost">
+                          Dossier
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                  {atRiskList.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="muted" style={{ textAlign: 'center', padding: '2rem 0' }}>
+                        Zero accounts flagged for delinquency risk.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* =========================================================================
+   3. SHG LEADER DASHBOARD WORKSPACE
+   ========================================================================= */
+function SHGLeaderDashboardView({ user, refresh }) {
+  const [shgSummaryData, setShgSummaryData] = useState(null)
+  const [loadingShg, setLoadingShg] = useState(true)
+  const [showCreateShg, setShowCreateShg] = useState(false)
+  const [showAddMember, setShowAddMember] = useState(false)
+  const [shgNameInput, setShgNameInput] = useState('Pragati Mahila Bachat Gat')
+  const [shgVillageInput, setShgVillageInput] = useState('Ward 4, Solan')
+  const [memberEmailInput, setMemberEmailInput] = useState('')
+  const [err, setErr] = useState('')
+  const [msg, setMsg] = useState('')
+
+  const loadShg = async () => {
+    setLoadingShg(true)
+    try {
+      if (user?.shg_id) {
+        const s = await api(`/shgs/${user.shg_id}/summary`)
+        setShgSummaryData(s)
+      } else {
+        setShgSummaryData(null)
+      }
+    } catch {
+      setShgSummaryData(null)
+    } finally {
+      setLoadingShg(false)
+    }
+  }
+
+  useEffect(() => {
+    loadShg()
+  }, [user])
+
+  const handleCreateSHG = async (e) => {
+    e.preventDefault()
+    setErr('')
+    setMsg('')
+    try {
+      const created = await api('/shgs', {
+        method: 'POST',
+        body: { name: shgNameInput.trim(), village: shgVillageInput.trim() },
+      })
+      await refresh()
+      setShowCreateShg(false)
+      setMsg(`SHG "${created.name}" established successfully!`)
+      loadShg()
+    } catch (x) {
+      setErr(x.message)
+    }
+  }
+
+  const handleAddMember = async (e) => {
+    e.preventDefault()
+    if (!user?.shg_id || !memberEmailInput.trim()) return
+    setErr('')
+    setMsg('')
+    try {
+      await api(`/shgs/${user.shg_id}/members`, {
+        method: 'POST',
+        body: { email: memberEmailInput.trim() },
+      })
+      setMemberEmailInput('')
+      setShowAddMember(false)
+      setMsg('Member enrolled into SHG group successfully!')
+      loadShg()
+    } catch (x) {
+      setErr(x.message)
+    }
+  }
+
+  if (loadingShg) return <Loading />
+
+  return (
+    <div className="page-container">
+      {/* SHG Header */}
+      <div className="page-header-row">
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span className="badge approved" style={{ fontWeight: 700 }}>SHG LEADER FEDERATION HUB</span>
+          </div>
+          <h2>Self-Help Group (SHG) Governance Desk</h2>
+          <p className="page-subtitle">
+            Joint-liability member roll, NABARD SHG-Bank Linkage coordination, and peer-guarantee microcredit voting
+          </p>
+        </div>
+        <div>
+          {shgSummaryData ? (
+            <button
+              type="button"
+              className="btn"
+              onClick={() => setShowAddMember(true)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+            >
+              <IconPlus size={16} /> Enroll New Member
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="btn emerald"
+              onClick={() => setShowCreateShg(true)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+            >
+              <IconPlus size={16} /> Establish SHG Group
+            </button>
+          )}
+        </div>
+      </div>
+
+      {msg && <Alert kind="success">{msg}</Alert>}
+      {err && <Alert kind="error">{err}</Alert>}
+
+      {shgSummaryData ? (
+        <>
+          {/* Group Overview Stats */}
+          <div className="grid" style={{ marginBottom: '1.25rem' }}>
+            <Stat
+              label="SHG Group Name"
+              value={shgSummaryData.name}
+              sub={`Village: ${shgSummaryData.village}`}
+            />
+            <Stat
+              label="Enrolled Group Members"
+              value={shgSummaryData.members?.length || 0}
+              sub="Joint liability members"
+            />
+            <Stat
+              label="Collective Active Loans"
+              value={shgSummaryData.group_loans || 0}
+              sub="Peer guaranteed facilities"
+            />
+            <Stat
+              label="Group Outstanding Capital"
+              value={money(shgSummaryData.outstanding || 0)}
+              sub={`${shgSummaryData.overdue_installments || 0} Overdue instalments`}
+            />
+          </div>
+
+          <div className="two-col" style={{ alignItems: 'start' }}>
+            {/* Member Roster */}
+            <div className="card">
+              <div className="row between" style={{ alignItems: 'center', marginBottom: '0.85rem' }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.05rem' }}>Registered Member Roster</h3>
+                  <span className="muted small">Self-Help Group joint-liability members</span>
+                </div>
+                <button
+                  type="button"
+                  className="btn small ghost"
+                  onClick={() => setShowAddMember(true)}
+                >
+                  + Add Member
+                </button>
+              </div>
+
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Member ID</th>
+                      <th>Legal Name</th>
+                      <th>Affiliation Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(shgSummaryData.members || []).map((m) => (
+                      <tr key={m.id}>
+                        <td style={{ fontWeight: 600 }}>#{m.id}</td>
+                        <td style={{ fontWeight: 600, color: 'var(--slate-900)' }}>{m.name}</td>
+                        <td>
+                          <span className="badge approved">Active Member</span>
+                        </td>
+                      </tr>
+                    ))}
+                    {(shgSummaryData.members || []).length === 0 && (
+                      <tr>
+                        <td colSpan={3} className="muted" style={{ textAlign: 'center', padding: '1.5rem 0' }}>
+                          No members registered yet. Click "Enroll New Member" above.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Group Linkage Guidelines Card */}
+            <div className="card">
+              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.05rem' }}>NABARD SHG-Bank Linkage Scheme Standards</h3>
+              <p className="muted small" style={{ marginBottom: '1rem' }}>
+                Under Reserve Bank of India & NABARD guidelines, active SHGs must observe the <b>Panchasutra</b> code of governance:
+              </p>
+              <ul className="factors-list" style={{ paddingLeft: '1rem', fontSize: '0.82rem' }}>
+                <li><b>1. Regular Weekly / Monthly Meetings:</b> Maintain quorum and recorded meeting minutes.</li>
+                <li><b>2. Mandatory Group Savings:</b> Deposit common thrift funds prior to external borrowing.</li>
+                <li><b>3. Internal Lending:</b> Prioritize member emergency funds and health reserves.</li>
+                <li><b>4. Timely Loan Repayments:</b> Ensure 100% on-time repayment to unlock 1.5% interest rebates.</li>
+                <li><b>5. Transparent Books of Accounts:</b> Up-to-date member passbooks and digital ledgers.</li>
+              </ul>
+              <div style={{ marginTop: '1.25rem' }}>
+                <Link to="/loans" className="btn small">
+                  View Joint Liability Loan Proposals →
+                </Link>
+              </div>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="card" style={{ textAlign: 'center', padding: '3.5rem 1rem' }}>
+          <div style={{ maxWidth: '440px', margin: '0 auto' }}>
+            <div style={{ width: '48px', height: '48px', background: 'var(--emerald-50)', color: 'var(--emerald-600)', borderRadius: '50%', display: 'grid', placeItems: 'center', margin: '0 auto 1rem' }}>
+              <IconUsers size={24} />
+            </div>
+            <h3 style={{ marginBottom: '0.5rem' }}>Establish Your Self-Help Group (SHG)</h3>
+            <p className="muted small" style={{ marginBottom: '1.25rem' }}>
+              As a designated SHG Leader, register your group name and village to enroll members, coordinate joint-liability loans, and access subsidized bank credit.
+            </p>
+            <button className="btn" onClick={() => setShowCreateShg(true)}>
+              Register Self-Help Group Now
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Create SHG Modal */}
+      {showCreateShg && (
+        <div className="modal-overlay" onClick={() => setShowCreateShg(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Register Self-Help Group (SHG)</h3>
+              <button className="icon-btn" onClick={() => setShowCreateShg(false)}>✕</button>
+            </div>
+            <form onSubmit={handleCreateSHG}>
+              <div className="field">
+                <span>SHG Group Name</span>
+                <input
+                  required
+                  value={shgNameInput}
+                  onChange={(e) => setShgNameInput(e.target.value)}
+                  placeholder="e.g. Pragati Mahila Bachat Gat"
+                />
+              </div>
+              <div className="field">
+                <span>Village / Gram Panchayat / Ward</span>
+                <input
+                  required
+                  value={shgVillageInput}
+                  onChange={(e) => setShgVillageInput(e.target.value)}
+                  placeholder="e.g. Ward 4, Solan"
+                />
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn ghost" onClick={() => setShowCreateShg(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn">
+                  Establish Group
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Member Modal */}
+      {showAddMember && (
+        <div className="modal-overlay" onClick={() => setShowAddMember(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Enroll Member into {shgSummaryData?.name}</h3>
+              <button className="icon-btn" onClick={() => setShowAddMember(false)}>✕</button>
+            </div>
+            <p className="muted small">
+              The member must be registered with an account email on the platform first.
+            </p>
+            <form onSubmit={handleAddMember}>
+              <div className="field">
+                <span>Member Email Address</span>
+                <input
+                  type="email"
+                  required
+                  value={memberEmailInput}
+                  onChange={(e) => setMemberEmailInput(e.target.value)}
+                  placeholder="e.g. pooja.patil.test@example.com"
+                />
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn ghost" onClick={() => setShowAddMember(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn">
+                  Enroll Member
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* =========================================================================
+   4. BORROWER / MEMBER DASHBOARD WORKSPACE
+   ========================================================================= */
+function BorrowerDashboardView({ data, user, refresh, reload }) {
+  const navigate = useNavigate()
+  const { t, lang } = useLang()
 
   // State for interactive modals
   const [showUpiModal, setShowUpiModal] = useState(false)
@@ -66,8 +796,6 @@ export default function Dashboard() {
   const location = data?.shg?.village || user?.phone || 'Aadhaar Verified'
 
   const totalSavings = data?.total_savings_and_assets ?? (user?.savings_balance || 0)
-  const savingsBalance = data?.savings_balance ?? (user?.savings_balance || 0)
-  const totalSavedInGoals = data?.total_saved ?? 0
   const nextInstallment = data?.next_installment || null
   const topGoal = data?.top_goal || null
   const cibilScore = data?.cibil_score || 740
@@ -88,8 +816,6 @@ export default function Dashboard() {
       setPayAmount(String(nextInstallment.amount))
     }
   }, [nextInstallment])
-
-  const staff = user?.role === 'officer' || user?.role === 'admin'
 
   const handleUpiPay = async (e) => {
     e.preventDefault()
@@ -136,8 +862,6 @@ export default function Dashboard() {
       setBusyAction(false)
     }
   }
-
-  if (loading) return <Loading />
 
   return (
     <div className="page-container">
@@ -197,25 +921,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Staff Notice (if Officer / Admin) */}
-      {staff && (
-        <div className="card" style={{ marginBottom: '1.25rem', background: '#f8fafc', borderLeft: '4px solid var(--slate-900)' }}>
-          <div className="row between" style={{ alignItems: 'center' }}>
-            <div>
-              <h4 style={{ margin: '0 0 0.2rem 0' }}>Staff Lending Terminal Active</h4>
-              <p className="muted small" style={{ margin: 0 }}>
-                {data?.pending_review || 0} applications awaiting underwriting review • {data?.overdue_loans || 0} overdue facilities.
-              </p>
-            </div>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <Link to="/at-risk" className="btn small ghost">Risk Alerts</Link>
-              <Link to="/loans" className="btn small">Review Applications</Link>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 2. Primary Action Banner: Active Repayment Due vs Pre-Approved Offer */}
+      {/* 2. Primary Action Banner */}
       {nextInstallment ? (
         <div className="emi-alert-banner">
           <div className="emi-alert-left">
@@ -389,7 +1095,7 @@ export default function Dashboard() {
 
         {/* Right Column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          {/* Household Cashflow & Safe Borrowing Headroom */}
+          {/* Household Cashflow & Capacity */}
           <div className="card">
             <div className="row between" style={{ alignItems: 'center', marginBottom: '0.75rem' }}>
               <h3 style={{ margin: 0, fontSize: '1.05rem' }}>Household Cashflow & Capacity</h3>
@@ -528,9 +1234,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ================= MODALS ================= */}
-
-      {/* 1. UPI Payment Modal */}
+      {/* UPI Payment Modal */}
       {showUpiModal && (
         <div className="modal-overlay" onClick={() => setShowUpiModal(false)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
@@ -607,7 +1311,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* 2. Add Funds Modal */}
+      {/* Add Funds Modal */}
       {showDepositModal && (
         <div className="modal-overlay" onClick={() => setShowDepositModal(false)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
@@ -658,7 +1362,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* 3. Health Score Details Modal */}
+      {/* Health Score Details Modal */}
       {showHealthModal && (
         <div className="modal-overlay" onClick={() => setShowHealthModal(false)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
@@ -696,4 +1400,32 @@ export default function Dashboard() {
       )}
     </div>
   )
+}
+
+/* =========================================================================
+   MAIN DASHBOARD ROUTER: DYNAMICALLY ADAPTS TO USER'S ROLE
+   ========================================================================= */
+export default function Dashboard() {
+  const { user, refresh } = useAuth()
+  const { data, loading, reload } = useLoad(() => api('/dashboard'))
+
+  if (loading) return <Loading />
+
+  // 1. System Administrator Workspace
+  if (user?.role === 'admin') {
+    return <AdminDashboardView data={data} reload={reload} />
+  }
+
+  // 2. Loan / Credit Officer Workspace
+  if (user?.role === 'officer') {
+    return <OfficerDashboardView data={data} reload={reload} />
+  }
+
+  // 3. SHG Group Leader Workspace
+  if (user?.role === 'shg_leader') {
+    return <SHGLeaderDashboardView user={user} refresh={refresh} />
+  }
+
+  // 4. Default Borrower / Member Workspace
+  return <BorrowerDashboardView data={data} user={user} refresh={refresh} reload={reload} />
 }

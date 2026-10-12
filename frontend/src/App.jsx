@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { api } from './api'
 import { useAuth } from './auth'
 import { useLang } from './i18n'
@@ -87,42 +87,197 @@ function BellDropdown() {
   )
 }
 
+const DEMO_PERSONAS = [
+  { role: 'user', label: 'Borrower', desc: 'Borrower Portal (Pooja)', email: 'borrower@syra-demo.com', pw: 'borrower123' },
+  { role: 'officer', label: 'Loan Officer', desc: 'Underwriting & Sanctions', email: 'officer@syra-demo.com', pw: 'officer123' },
+  { role: 'shg_leader', label: 'SHG Leader', desc: 'Joint Liability & Group Desk', email: 'leader@syra-demo.com', pw: 'leader123' },
+  { role: 'admin', label: 'Super Admin', desc: 'System Executive & Roles', email: 'admin@syra-demo.com', pw: 'admin123' },
+]
+
+function RolePerspectiveSwitcher() {
+  const { user, login } = useAuth()
+  const [switching, setSwitching] = useState(false)
+  const [open, setOpen] = useState(false)
+  const navigate = useNavigate()
+
+  const currentRole = user?.role || 'user'
+  const currentPersona = DEMO_PERSONAS.find((p) => p.role === currentRole) || DEMO_PERSONAS[0]
+
+  const switchRole = async (target) => {
+    if (target.role === currentRole) {
+      setOpen(false)
+      return
+    }
+    setSwitching(true)
+    setOpen(false)
+    try {
+      await login(target.email, target.pw)
+      navigate('/')
+    } catch (err) {
+      console.error('Failed to switch perspective', err)
+    } finally {
+      setSwitching(false)
+    }
+  }
+
+  return (
+    <div className="role-switcher-container">
+      <button
+        className="role-switcher-btn"
+        onClick={() => setOpen(!open)}
+        disabled={switching}
+        title="Switch perspective between roles"
+        aria-label="Switch perspective"
+      >
+        <span className="role-label-tag">{switching ? 'Switching…' : 'Persona:'}</span>
+        <span className="role-current-name">{currentPersona.label}</span>
+        <span className="role-arrow">{open ? '▲' : '▼'}</span>
+      </button>
+
+      {open && (
+        <div className="role-switcher-popup">
+          <div className="role-switcher-popup-header">
+            <span>Switch Role Perspective</span>
+            <small className="muted">Instant Preview</small>
+          </div>
+          <div className="role-switcher-list">
+            {DEMO_PERSONAS.map((p) => {
+              const active = p.role === currentRole
+              return (
+                <button
+                  key={p.role}
+                  className={`role-switcher-item ${active ? 'active' : ''}`}
+                  onClick={() => switchRole(p)}
+                  disabled={switching}
+                >
+                  <div className="role-item-main">
+                    <span className="role-item-title">{p.label}</span>
+                    <span className="role-item-email">{p.desc}</span>
+                  </div>
+                  {active ? (
+                    <span className="active-indicator">Active</span>
+                  ) : (
+                    <span className="switch-to-pill">Switch</span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function DesktopLayout({ children }) {
   const { user, logout } = useAuth()
   const { t, lang, setLang } = useLang()
   const location = useLocation()
   const [floatingChatOpen, setFloatingChatOpen] = useState(false)
 
-  const staff = user?.role === 'officer' || user?.role === 'admin'
-
   const getContextTitle = () => {
     const p = location.pathname
-    if (p === '/') return 'Account Overview'
+    if (p === '/') {
+      if (user?.role === 'admin') return 'Admin Executive Console'
+      if (user?.role === 'officer') return 'Credit Underwriting Desk'
+      if (user?.role === 'shg_leader') return 'SHG Community Hub'
+      return 'Borrower Financial Portal'
+    }
     if (p === '/saathi') return 'Saathi AI Advisor'
-    if (p.startsWith('/loans')) return 'Loans & Credit'
+    if (p.startsWith('/loans')) return 'Loans & Credit Facility'
     if (p === '/schemes') return 'Government Schemes & Subsidies'
-    if (p === '/transactions') return 'Passbook & Transactions'
+    if (p === '/transactions') return 'Passbook & Digital Ledger'
     if (p.startsWith('/learn')) return 'Financial Academy'
-    if (p === '/at-risk') return 'At-Risk Portfolio'
-    if (p === '/admin') return 'Administration'
+    if (p === '/at-risk') return 'At-Risk Credit Radar'
+    if (p === '/admin') return 'User Directory & Governance'
     if (p === '/profile') return 'Borrower Profile & KYC'
+    if (p === '/notifications') return 'Notification Alerts'
     return 'FinanceSaathi'
   }
 
-  const primaryNavItems = [
-    { to: '/', label: 'Overview', icon: <IconHome size={18} /> },
-    { to: '/loans', label: 'Loans & Credit', icon: <IconCreditCard size={18} /> },
-    { to: '/schemes', label: 'Govt Schemes', icon: <IconLandmark size={18} /> },
-    { to: '/transactions', label: 'Passbook & Ledger', icon: <IconCoins size={18} /> },
-    { to: '/saathi', label: 'Saathi AI Advisor', icon: <IconBot size={18} />, isAi: true },
-    { to: '/profile', label: 'Profile & KYC', icon: <IconUser size={18} /> },
-  ]
+  const getRoleLabel = () => {
+    if (user?.role === 'admin') return 'Super Admin'
+    if (user?.role === 'officer') return 'Credit Officer'
+    if (user?.role === 'shg_leader') return 'SHG Leader'
+    return 'Verified Borrower'
+  }
 
-  const secondaryNavItems = [
-    { to: '/learn', label: 'Financial Academy', icon: <IconAcademic size={18} /> },
-    ...(staff ? [{ to: '/at-risk', label: 'At-Risk Credit', icon: <IconShield size={18} /> }] : []),
-    ...(user?.role === 'admin' ? [{ to: '/admin', label: 'Admin Console', icon: <IconSettings size={18} /> }] : []),
-  ]
+  const getNavItems = () => {
+    if (user?.role === 'admin') {
+      return {
+        groupTitle: 'EXECUTIVE CONSOLE',
+        primary: [
+          { to: '/', label: 'Overview Console', icon: <IconHome size={18} /> },
+          { to: '/admin', label: 'User Directory & Roles', icon: <IconSettings size={18} /> },
+          { to: '/loans', label: 'Loan Underwriting Desk', icon: <IconCreditCard size={18} /> },
+          { to: '/at-risk', label: 'At-Risk Credit Radar', icon: <IconShield size={18} /> },
+          { to: '/schemes', label: 'Govt Schemes Directory', icon: <IconLandmark size={18} /> },
+          { to: '/transactions', label: 'Audit Transactions', icon: <IconCoins size={18} /> },
+        ],
+        secondaryGroupTitle: 'PLATFORM GOVERNANCE',
+        secondary: [
+          { to: '/learn', label: 'Financial Academy', icon: <IconAcademic size={18} /> },
+          { to: '/notifications', label: 'System Audit Alerts', icon: <IconBell size={18} /> },
+        ],
+      }
+    }
+
+    if (user?.role === 'officer') {
+      return {
+        groupTitle: 'UNDERWRITING WORKSPACE',
+        primary: [
+          { to: '/', label: 'Underwriting Queue', icon: <IconHome size={18} /> },
+          { to: '/loans', label: 'Sanction Desk & Reviews', icon: <IconCreditCard size={18} /> },
+          { to: '/at-risk', label: 'At-Risk Delinquency Radar', icon: <IconShield size={18} /> },
+          { to: '/schemes', label: 'Govt Subsidy Catalog', icon: <IconLandmark size={18} /> },
+          { to: '/transactions', label: 'Borrower Passbooks', icon: <IconCoins size={18} /> },
+        ],
+        secondaryGroupTitle: 'FIELD OPERATIONS',
+        secondary: [
+          { to: '/learn', label: 'Academy Modules', icon: <IconAcademic size={18} /> },
+          { to: '/notifications', label: 'Credit Risk Alerts', icon: <IconBell size={18} /> },
+        ],
+      }
+    }
+
+    if (user?.role === 'shg_leader') {
+      return {
+        groupTitle: 'COMMUNITY & GROUP HUB',
+        primary: [
+          { to: '/', label: 'SHG Leader Hub', icon: <IconHome size={18} /> },
+          { to: '/loans', label: 'Group Loans & Limits', icon: <IconCreditCard size={18} /> },
+          { to: '/transactions', label: 'Group Passbook & Ledger', icon: <IconCoins size={18} /> },
+          { to: '/schemes', label: 'Govt Schemes & Grants', icon: <IconLandmark size={18} /> },
+          { to: '/saathi', label: 'Saathi AI Advisor', icon: <IconBot size={18} />, isAi: true },
+        ],
+        secondaryGroupTitle: 'GROUP DEVELOPMENT',
+        secondary: [
+          { to: '/learn', label: 'Financial Literacy', icon: <IconAcademic size={18} /> },
+          { to: '/profile', label: 'SHG Profile & KYC', icon: <IconUser size={18} /> },
+        ],
+      }
+    }
+
+    // Default: Borrower (user)
+    return {
+      groupTitle: 'FINANCIAL SERVICES',
+      primary: [
+        { to: '/', label: 'Overview', icon: <IconHome size={18} /> },
+        { to: '/loans', label: 'Loans & Credit', icon: <IconCreditCard size={18} /> },
+        { to: '/schemes', label: 'Govt Schemes', icon: <IconLandmark size={18} /> },
+        { to: '/transactions', label: 'Passbook & Ledger', icon: <IconCoins size={18} /> },
+        { to: '/saathi', label: 'Saathi AI Advisor', icon: <IconBot size={18} />, isAi: true },
+        { to: '/profile', label: 'Profile & KYC', icon: <IconUser size={18} /> },
+      ],
+      secondaryGroupTitle: 'EDUCATION & TOOLS',
+      secondary: [
+        { to: '/learn', label: 'Financial Academy', icon: <IconAcademic size={18} /> },
+        { to: '/notifications', label: 'Reminders & Alerts', icon: <IconBell size={18} /> },
+      ],
+    }
+  }
+
+  const nav = getNavItems()
 
   return (
     <div className="desktop-shell">
@@ -139,8 +294,8 @@ function DesktopLayout({ children }) {
 
         {/* Navigation Links */}
         <nav className="sidebar-nav">
-          <div className="nav-group-title">FINANCIAL SERVICES</div>
-          {primaryNavItems.map((item) => (
+          <div className="nav-group-title">{nav.groupTitle}</div>
+          {nav.primary.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -155,8 +310,8 @@ function DesktopLayout({ children }) {
             </NavLink>
           ))}
 
-          <div className="nav-group-title" style={{ marginTop: '1rem' }}>EDUCATION & TOOLS</div>
-          {secondaryNavItems.map((item) => (
+          <div className="nav-group-title" style={{ marginTop: '1rem' }}>{nav.secondaryGroupTitle}</div>
+          {nav.secondary.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -178,7 +333,7 @@ function DesktopLayout({ children }) {
             </div>
             <div className="user-capsule-text">
               <span className="user-capsule-name">{user?.name || 'Member'}</span>
-              <span className="user-capsule-role">{user?.role || 'user'}</span>
+              <span className="user-capsule-role">{getRoleLabel()}</span>
             </div>
             <button className="logout-btn" onClick={logout} title="Sign Out">
               ⏻
@@ -201,6 +356,9 @@ function DesktopLayout({ children }) {
           </div>
 
           <div className="top-bar-right">
+            {/* Quick 1-Click Role Perspective Switcher */}
+            <RolePerspectiveSwitcher />
+
             {/* Multilingual Pill Toggles (EN | हि | मरा) */}
             <div className="lang-toggle-pills" role="group" aria-label="Language selection">
               <button

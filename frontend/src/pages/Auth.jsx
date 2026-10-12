@@ -89,9 +89,10 @@ export function Login() {
       <div style={{ marginTop: '1.2rem', padding: '0.8rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
         <p className="small muted" style={{ margin: '0 0 0.5rem', fontWeight: 600 }}>Quick 1-Click Demo Logins:</p>
         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-          <button type="button" className="quick-pill" onClick={() => fillDemo('admin@syra-demo.com', 'admin123')}>Admin</button>
+          <button type="button" className="quick-pill" onClick={() => fillDemo('borrower@syra-demo.com', 'borrower123')}>Borrower</button>
           <button type="button" className="quick-pill" onClick={() => fillDemo('officer@syra-demo.com', 'officer123')}>Loan Officer</button>
           <button type="button" className="quick-pill" onClick={() => fillDemo('leader@syra-demo.com', 'leader123')}>SHG Leader</button>
+          <button type="button" className="quick-pill" onClick={() => fillDemo('admin@syra-demo.com', 'admin123')}>Admin</button>
         </div>
       </div>
 

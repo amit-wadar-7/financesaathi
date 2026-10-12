@@ -336,6 +336,142 @@ a:hover {
   box-shadow: var(--shadow-subtle);
 }
 
+/* Instant Role Perspective Switcher */
+.role-switcher-container {
+  position: relative;
+}
+
+.role-switcher-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 4px 10px;
+  background: var(--slate-100);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--slate-800);
+  cursor: pointer;
+  font-size: 0.78rem;
+  transition: all 0.15s ease;
+}
+
+.role-switcher-btn:hover {
+  background: var(--slate-200);
+  border-color: var(--slate-300);
+}
+
+.role-label-tag {
+  color: var(--slate-500);
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.role-current-name {
+  font-weight: 700;
+  color: var(--emerald-800);
+  background: var(--emerald-50);
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--emerald-200);
+}
+
+.role-arrow {
+  font-size: 0.65rem;
+  color: var(--slate-400);
+}
+
+.role-switcher-popup {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: 270px;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-hover);
+  z-index: 60;
+  overflow: hidden;
+}
+
+.role-switcher-popup-header {
+  padding: 0.65rem 0.85rem;
+  background: var(--slate-50);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--slate-700);
+}
+
+.role-switcher-list {
+  padding: 0.35rem 0;
+}
+
+.role-switcher-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.85rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.role-switcher-item:hover {
+  background: var(--slate-50);
+}
+
+.role-switcher-item.active {
+  background: var(--emerald-50);
+}
+
+.role-item-main {
+  display: flex;
+  flex-direction: column;
+}
+
+.role-item-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--slate-800);
+}
+
+.role-item-email {
+  font-size: 0.7rem;
+  color: var(--slate-500);
+}
+
+.active-indicator {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--emerald-700);
+  background: #ffffff;
+  border: 1px solid var(--emerald-300);
+  padding: 2px 7px;
+  border-radius: var(--radius-xs);
+}
+
+.switch-to-pill {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--slate-500);
+  background: var(--slate-100);
+  border: 1px solid var(--border-color);
+  padding: 2px 7px;
+  border-radius: var(--radius-xs);
+}
+
+.role-switcher-item:hover .switch-to-pill {
+  background: var(--slate-900);
+  color: #ffffff;
+  border-color: var(--slate-900);
+}
+
 .bell-btn {
   background: transparent;
   border: 1px solid var(--border-color);

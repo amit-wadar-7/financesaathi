@@ -10,6 +10,7 @@ DEMO_USERS = [
     ("Admin", "admin@syra-demo.com", "admin123", "admin"),
     ("Loan Officer", "officer@syra-demo.com", "officer123", "officer"),
     ("SHG Leader", "leader@syra-demo.com", "leader123", "shg_leader"),
+    ("Pooja Patil (Borrower)", "borrower@syra-demo.com", "borrower123", "user"),
 ]
 
 
