@@ -11,6 +11,8 @@ import { LoanApply, LoanDetail, LoanList } from './pages/Loans'
 import SchemesPortal from './pages/SchemesPortal'
 import Transactions from './pages/Transactions'
 import Reports from './pages/Reports'
+import Tools from './pages/Tools'
+import { Savings, SHG } from './pages/Community'
 import { CourseView, Learn } from './pages/Learn'
 import { Admin, AtRisk, Notifications, Profile } from './pages/Account'
 import { PrivacyPolicy, TermsOfService } from './pages/Legal'
@@ -186,6 +188,9 @@ function DesktopLayout({ children }) {
       return 'Borrower Financial Portal'
     }
     if (p === '/reports') return 'Reports & Statements Center'
+    if (p === '/tools') return 'Financial Decision Calculators'
+    if (p === '/savings') return 'Household Savings & Goals'
+    if (p === '/community') return 'SHG Community Hub'
     if (p === '/saathi') return 'Saathi AI Advisor'
     if (p.startsWith('/loans')) return 'Loans & Credit Facility'
     if (p === '/schemes') return 'Government Schemes & Subsidies'
@@ -221,6 +226,7 @@ function DesktopLayout({ children }) {
         secondaryGroupTitle: 'PLATFORM GOVERNANCE',
         secondary: [
           { to: '/learn', label: 'Financial Academy', icon: <IconAcademic size={18} /> },
+          { to: '/tools', label: 'Decision Models', icon: <IconCalculator size={18} /> },
           { to: '/notifications', label: 'System Audit Alerts', icon: <IconBell size={18} /> },
         ],
       }
@@ -240,6 +246,7 @@ function DesktopLayout({ children }) {
         secondaryGroupTitle: 'FIELD OPERATIONS',
         secondary: [
           { to: '/learn', label: 'Academy Modules', icon: <IconAcademic size={18} /> },
+          { to: '/tools', label: 'Credit Risk Calculators', icon: <IconCalculator size={18} /> },
           { to: '/notifications', label: 'Credit Risk Alerts', icon: <IconBell size={18} /> },
         ],
       }
@@ -258,6 +265,9 @@ function DesktopLayout({ children }) {
         ],
         secondaryGroupTitle: 'GROUP DEVELOPMENT',
         secondary: [
+          { to: '/community', label: 'SHG Member Roster', icon: <IconUsers size={18} /> },
+          { to: '/savings', label: 'Group Savings Goals', icon: <IconTarget size={18} /> },
+          { to: '/tools', label: 'Financial Calculators', icon: <IconCalculator size={18} /> },
           { to: '/learn', label: 'Financial Literacy', icon: <IconAcademic size={18} /> },
           { to: '/profile', label: 'SHG Profile & KYC', icon: <IconUser size={18} /> },
         ],
@@ -279,6 +289,8 @@ function DesktopLayout({ children }) {
       secondaryGroupTitle: 'EDUCATION & TOOLS',
       secondary: [
         { to: '/learn', label: 'Financial Academy', icon: <IconAcademic size={18} /> },
+        { to: '/tools', label: 'Financial Calculators', icon: <IconCalculator size={18} /> },
+        { to: '/savings', label: 'Savings & Targets', icon: <IconTarget size={18} /> },
         { to: '/notifications', label: 'Reminders & Alerts', icon: <IconBell size={18} /> },
       ],
     }
@@ -472,6 +484,9 @@ export default function App() {
         <Route path="/schemes" element={<SchemesPortal />} />
         <Route path="/transactions" element={<Transactions />} />
         <Route path="/reports" element={<Reports />} />
+        <Route path="/tools" element={<Tools />} />
+        <Route path="/savings" element={<Savings />} />
+        <Route path="/community" element={<SHG />} />
         <Route path="/saathi" element={<SaathiAI />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/learn" element={<Learn />} />

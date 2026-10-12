@@ -27,6 +27,8 @@ export default function Transactions() {
   const [depositAmt, setDepositAmt] = useState(1000)
   const [busyDeposit, setBusyDeposit] = useState(false)
 
+  const [statusMsg, setStatusMsg] = useState({ kind: '', text: '' })
+
   const transactions = dashData?.transactions || []
   const savingsBalance = dashData?.savings_balance ?? (user?.savings_balance || 0)
   const totalAssets = dashData?.total_savings_and_assets ?? savingsBalance
@@ -57,6 +59,7 @@ export default function Transactions() {
     const amt = Number(depositAmt)
     if (!amt || amt <= 0) return
     setBusyDeposit(true)
+    setStatusMsg({ kind: '', text: '' })
     try {
       await api('/auth/me', {
         method: 'PATCH',
@@ -67,9 +70,12 @@ export default function Transactions() {
       await refresh()
       await reload()
       setShowDepositModal(false)
-      alert(lang === 'mr' ? `₹${amt} बचत खात्यामध्ये जमा झाले!` : `₹${amt} successfully deposited!`)
+      setStatusMsg({
+        kind: 'success',
+        text: lang === 'mr' ? `₹${amt.toLocaleString()} बचत खात्यामध्ये यशस्वीरित्या जमा झाले!` : `₹${amt.toLocaleString()} successfully deposited into verified savings account!`
+      })
     } catch (err) {
-      alert(err.message || 'Deposit failed')
+      setStatusMsg({ kind: 'error', text: err.message || 'Deposit failed' })
     } finally {
       setBusyDeposit(false)
     }
@@ -79,6 +85,9 @@ export default function Transactions() {
 
   return (
     <div className="page-container">
+      {/* Status Alert Banner */}
+      <Alert kind={statusMsg.kind}>{statusMsg.text}</Alert>
+
       {/* Page Header */}
       <div className="page-header-row">
         <div>

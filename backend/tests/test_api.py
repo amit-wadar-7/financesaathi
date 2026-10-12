@@ -131,3 +131,23 @@ def test_staff_views(client, staff):
     assert client.get("/officer/at-risk", headers=staff["officer"]).status_code == 200
     assert client.get("/officer/at-risk", headers=make_user(client, "plain@x.com")).status_code == 403
     assert "created" in client.post("/admin/run-reminders", headers=staff["admin"]).json()
+
+
+def test_reports_catalog_and_data(client, staff):
+    user = make_user(client, "report_user@x.com")
+    cat = client.get("/reports/catalog", headers=user).json()
+    assert len(cat["catalog"]) >= 8
+    
+    # Test specific report types
+    r1 = client.get("/reports/data/par-aging", headers=staff["officer"]).json()
+    assert "buckets" in r1 and "par_percentage" in r1
+
+    r2 = client.get("/reports/data/tax-certificate", headers=user).json()
+    assert "certificate_number" in r2 and "principal_repaid" in r2
+
+    r3 = client.get("/reports/data/credit-health", headers=user).json()
+    assert "bureau_score" in r3 and "factors" in r3
+
+    r4 = client.get("/reports/data/rbi-compliance", headers=staff["admin"]).json()
+    assert r4["psl_achieved_pct"] >= 75.0
+

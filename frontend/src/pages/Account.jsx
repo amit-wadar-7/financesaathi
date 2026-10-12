@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api, money } from '../api'
 import { useAuth } from '../auth'
@@ -20,14 +20,29 @@ export function Profile() {
   const { user, refresh } = useAuth()
   const { t, setLang } = useLang()
   const [f, setF] = useState({
-    name: user.name,
-    phone: user.phone || '',
-    language: user.language,
-    monthly_income: user.monthly_income,
-    monthly_expenses: user.monthly_expenses,
-    existing_emi: user.existing_emi,
-    savings_balance: user.savings_balance,
+    name: user?.name || '',
+    phone: user?.phone || '',
+    language: user?.language || 'en',
+    monthly_income: user?.monthly_income || 0,
+    monthly_expenses: user?.monthly_expenses || 0,
+    existing_emi: user?.existing_emi || 0,
+    savings_balance: user?.savings_balance || 0,
   })
+
+  useEffect(() => {
+    if (user) {
+      setF({
+        name: user.name || '',
+        phone: user.phone || '',
+        language: user.language || 'en',
+        monthly_income: user.monthly_income || 0,
+        monthly_expenses: user.monthly_expenses || 0,
+        existing_emi: user.existing_emi || 0,
+        savings_balance: user.savings_balance || 0,
+      })
+    }
+  }, [user])
+
   const [msg, setMsg] = useState({ kind: 'error', text: '' })
   const [saving, setSaving] = useState(false)
 

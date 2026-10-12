@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 from sqlalchemy import JSON, Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -6,8 +6,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .database import Base
 
 
-def now():
-    return datetime.utcnow()
+def now() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class SHG(Base):

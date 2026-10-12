@@ -53,7 +53,7 @@ def submit_quiz(course_id: int, body: schemas.QuizSubmitIn, user=Depends(get_cur
         db.add(prog)
     prog.best_score = max(prog.best_score or 0, score)
     prog.completed = prog.best_score >= 60
-    prog.updated_at = datetime.utcnow()
+    prog.updated_at = models.now()
     db.commit()
     return {"score": score, "passed": score >= 60, "results": results}
 

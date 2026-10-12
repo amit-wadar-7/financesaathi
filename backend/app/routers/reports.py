@@ -357,7 +357,7 @@ def get_report_data(
             principal_paid = 18450.0
             interest_paid = 2850.0
 
-        cert_no = f"FS/CERT/FY24-25/{target_user.id:04d}-{int(datetime.utcnow().timestamp()) % 100000}"
+        cert_no = f"FS/CERT/FY24-25/{target_user.id:04d}-{int(models.now().timestamp()) % 100000}"
 
         return {
             "title": "Annual Interest Certificate & Fiscal Subsidy Statement",

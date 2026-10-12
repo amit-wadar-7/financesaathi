@@ -93,7 +93,7 @@ def decide(loan_id: int, body: schemas.DecisionIn, officer: models.User = Depend
         raise HTTPException(404, "Loan not found")
     if loan.status != "pending":
         raise HTTPException(409, f"Loan is already {loan.status}")
-    loan.officer_id, loan.officer_note, loan.decided_at = officer.id, body.note, datetime.utcnow()
+    loan.officer_id, loan.officer_note, loan.decided_at = officer.id, body.note, models.now()
     if body.approve:
         loan.status = "approved"
         for row in finance.amortization(loan.amount, loan.annual_rate, loan.tenure_months, date.today()):

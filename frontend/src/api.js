@@ -30,4 +30,4 @@ export async function api(path, { method = 'GET', body, auth = true } = {}) {
 }
 
 export const qs = (obj) => new URLSearchParams(obj).toString()
-export const money = (n) => 'Rs ' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })
+export const money = (n) => '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })

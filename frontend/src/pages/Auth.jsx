@@ -106,7 +106,7 @@ export function Login() {
 export function Register() {
   const { register } = useAuth()
   const { t, lang } = useLang()
-  const [f, setF] = useState({ name: 'Sunita Devi', email: '', phone: '9876543210', password: 'password123' })
+  const [f, setF] = useState({ name: '', email: '', phone: '', password: '' })
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -130,16 +130,16 @@ export function Register() {
       <form onSubmit={submit}>
         <Alert>{err}</Alert>
         <Field label={t('name')}>
-          <input required minLength={2} value={f.name} onChange={set('name')} />
+          <input required minLength={2} value={f.name} onChange={set('name')} placeholder="Legal Full Name (as per Aadhaar)" />
         </Field>
         <Field label={t('email')}>
-          <input type="email" required value={f.email} onChange={set('email')} placeholder="e.g. sunita@shg.com" />
+          <input type="email" required value={f.email} onChange={set('email')} placeholder="e.g. member@shg.com" />
         </Field>
         <Field label={t('phone')}>
-          <input value={f.phone} onChange={set('phone')} />
+          <input value={f.phone} onChange={set('phone')} placeholder="+91 98XXXXXXXX" />
         </Field>
         <Field label={t('password') + ' (min 6)'}>
-          <input type="password" required minLength={6} value={f.password} onChange={set('password')} />
+          <input type="password" required minLength={6} value={f.password} onChange={set('password')} placeholder="Choose a secure password" />
         </Field>
         <button className="btn" style={{ width: '100%' }} disabled={busy}>
           {busy ? 'Creating Account…' : t('register')}
