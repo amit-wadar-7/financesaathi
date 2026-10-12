@@ -21,67 +21,100 @@ import {
   IconHospital,
   IconZap,
   IconCheck,
+  IconCalculator,
+  IconPrinter,
+  IconAward,
 } from '../icons'
 
 export const LOAN_PRODUCTS = [
   {
     id: 'kisan_agri',
     title: 'Kisan Agri & Harvest Facility',
-    subtitle: 'Crop Cultivation, Seeds, Fertilizers & Farm Equipment',
+    subtitle: 'Crop Cultivation, Hybrid Seeds, Fertilizers & Farm Implements',
     category: 'agri',
     icon: <IconTractor size={22} />,
     tag: '3% Interest Subvention Eligible',
     apr: 7.0,
-    defaultAmount: 30000,
+    defaultAmount: 40000,
     minAmount: 5000,
-    maxAmount: 100000,
+    maxAmount: 150000,
     tenures: [6, 12, 18, 24],
     defaultTenure: 12,
     features: [
-      'Seasonal repayment aligned with Rabi & Kharif harvest cycles',
+      'Seasonal repayment aligned with Rabi & Kharif harvest sales',
       'NABARD & Kisan Credit Card guideline compliant',
-      'Disaster grace period & zero prepayment penalty',
+      'Crop calamity grace period & zero foreclosure penalty',
     ],
     presets: [
       'Kharif Hybrid Seeds & Fertilizers',
       'Micro-Drip Irrigation Accessories',
       'Tractor & Harvester Service Rental',
-      'Borewell Submersible Pump Replacement',
+      'Borewell Submersible Pump Repair',
     ],
     docs: [
-      ['aadhaar', 'Aadhaar / Official ID Proof'],
-      ['land_record', 'Land Record (7/12 Extract) or Cultivator Declaration'],
+      ['aadhaar', 'Aadhaar / Voter ID Proof'],
+      ['land_record', 'Land Revenue Record (7/12 Extract) or Cultivator Declaration'],
       ['income_proof', 'Panchayat Agri Income Certificate'],
+    ],
+  },
+  {
+    id: 'pm_mudra',
+    title: 'PM MUDRA MSME Business Credit',
+    subtitle: 'Working Capital & Equipment for Small Non-Farm Enterprises',
+    category: 'msme',
+    icon: <IconCart size={22} />,
+    tag: 'Collateral-Free MUDRA Backed',
+    apr: 8.5,
+    defaultAmount: 50000,
+    minAmount: 10000,
+    maxAmount: 200000,
+    tenures: [12, 18, 24, 36],
+    defaultTenure: 18,
+    features: [
+      'Zero collateral security required for Shishu and Kishore tiers',
+      'Special MUDRA RuPay card for recurring trade purchases',
+      'Concessional interest subvention for manufacturing & shop units',
+    ],
+    presets: [
+      'Kirana Store Stock Refill & Inventory Expansion',
+      'Small Flour Mill / Grinding Machinery',
+      'Apparel & Readymade Garment Inventory',
+      'Handloom & Handicraft Raw Material Purchase',
+    ],
+    docs: [
+      ['aadhaar', 'Aadhaar / PAN Card Proof'],
+      ['business_proof', 'Shop License / Udyam Aadhaar Registration'],
+      ['income_proof', 'Bank Account Statement (Last 6 Months)'],
     ],
   },
   {
     id: 'mahila_shakti',
     title: 'Mahila Shakti SHG Enterprise Loan',
-    subtitle: 'Joint-Liability Collateral-Free Credit for Women Micro-Entrepreneurs',
+    subtitle: 'Collateral-Free Joint Liability Credit for Women Entrepreneurs',
     category: 'shg',
     icon: <IconUsers size={22} />,
     tag: 'SHG Peer Guarantee Backed',
-    apr: 11.5,
-    defaultAmount: 40000,
+    apr: 11.0,
+    defaultAmount: 35000,
     minAmount: 10000,
     maxAmount: 75000,
     tenures: [12, 18, 24, 36],
     defaultTenure: 18,
     features: [
-      'Backed by Self-Help Group peer guarantee (no physical asset pledge)',
-      'Special 1.5% interest rebate on 100% timely group repayment',
-      'Comprehensive capacity building & financial literacy mentoring',
+      'Backed by Self-Help Group social peer collateral',
+      'Prompt repayment interest incentive of 1.5% cashback',
+      'Comprehensive financial training & group mentorship',
     ],
     presets: [
       'Dairy Cow & Cattle Procurement',
-      'Tailoring & Garment Boutique Unit',
-      'Kirana Store Inventory Expansion',
-      'Handicraft, Pottery & Food Processing Unit',
+      'Tailoring & Garment Workshop Unit',
+      'Spice Processing & Pickle Packaging Unit',
+      'Village Grocery Store Stock Expansion',
     ],
     docs: [
-      ['aadhaar', 'Aadhaar / Voter ID Proof'],
+      ['aadhaar', 'Aadhaar / Official ID Proof'],
       ['shg_resolution', 'SHG Meeting Resolution & Peer Guarantee Letter'],
-      ['address_proof', 'Ration Card / Electricity Bill Proof'],
+      ['address_proof', 'Ration Card / Local Residence Proof'],
     ],
   },
   {
@@ -89,7 +122,7 @@ export const LOAN_PRODUCTS = [
     title: 'PM SVANidhi Micro-Vendor Credit',
     subtitle: 'Working Capital Facility for Urban & Semi-Urban Street Vendors',
     category: 'vendor',
-    icon: <IconCart size={22} />,
+    icon: <IconCoins size={22} />,
     tag: '7% Interest Subsidy Directly Credited',
     apr: 9.0,
     defaultAmount: 15000,
@@ -98,15 +131,15 @@ export const LOAN_PRODUCTS = [
     tenures: [6, 12],
     defaultTenure: 12,
     features: [
-      'Tiered credit progression: ₹10,000 → ₹20,000 → ₹50,000 upon on-time settlement',
-      'Monthly digital cashback incentives on QR UPI transactions',
-      'Zero collateral or margin money required',
+      'Tiered credit ladder: ₹10k → ₹20k → ₹50k on prompt repayment',
+      'Monthly digital cashback incentives on UPI QR collections',
+      'Zero processing fee and zero margin deposit',
     ],
     presets: [
-      'Street Vendor Daily Working Capital',
-      'Kirana Shop Fast-Moving Stock Refill',
-      'Handcart / Vending Stall Refurbishment',
-      'Electronic Weighing Scale & Refrigerator Asset',
+      'Daily Street Vending Working Capital',
+      'Fast-Moving Kirana Retail Refill',
+      'Vending Handcart Repair & Refurbishment',
+      'Digital Weighing Scale & Stock Setup',
     ],
     docs: [
       ['aadhaar', 'Aadhaar / Official ID Proof'],
@@ -116,8 +149,8 @@ export const LOAN_PRODUCTS = [
   },
   {
     id: 'emergency_health',
-    title: 'Emergency Medical & Contingency Pool',
-    subtitle: 'Rapid Express Sanction for Unexpected Health & Social Shocks',
+    title: 'Emergency Medical & Social Relief',
+    subtitle: 'Express 24-Hour Paperless Sanction for Health Contingencies',
     category: 'emergency',
     icon: <IconHospital size={22} />,
     tag: '24-Hour Express Sanction',
@@ -128,15 +161,15 @@ export const LOAN_PRODUCTS = [
     tenures: [3, 6, 12],
     defaultTenure: 6,
     features: [
-      'Express sanction disbursed within 24 hours of doctor estimate',
-      'Zero penalty for early repayment or foreclosure',
-      'Protected by community contingency risk fund',
+      'Express sanction disbursed within 24 hours of hospital slip',
+      'Zero pre-closure penalty and zero paperwork fees',
+      'Repayable in flexible weekly or monthly micro-installments',
     ],
     presets: [
-      'Urgent Hospitalization & Life-Saving Medicines',
-      'Accident & Trauma Emergency Care',
+      'Urgent Hospitalization & Medicine Expenses',
+      'Emergency Accident Care & Surgery',
       'Diagnostic Tests, Scans & Prescriptions',
-      'Travel & Food Allowance for Outstation Treatment',
+      'Travel & Caregiver Expenses for City Hospital',
     ],
     docs: [
       ['aadhaar', 'Aadhaar / Family Member ID'],
@@ -146,8 +179,8 @@ export const LOAN_PRODUCTS = [
   },
   {
     id: 'solar_green',
-    title: 'PM-KUSUM Solar & Green Asset Loan',
-    subtitle: 'Clean Energy Infrastructure for Irrigation Pumps & Rural Power',
+    title: 'PM-KUSUM Solar & Clean Energy Loan',
+    subtitle: 'Concessional Financing for Solar Pumps & Agri Clean Power',
     category: 'solar',
     icon: <IconZap size={22} />,
     tag: 'Green Concessional Financing',
@@ -158,63 +191,90 @@ export const LOAN_PRODUCTS = [
     tenures: [12, 24, 36, 48],
     defaultTenure: 24,
     features: [
-      'Subsidy integration with Central/State PM-KUSUM components',
-      'Direct reduction in household diesel and electricity expenses',
-      'Long-term asset warranty and insurance coverage backed',
+      'Integrated with PM-KUSUM Central & State capital subsidies',
+      'Replaces costly recurring diesel generator expenses',
+      'Includes warranty and equipment insurance coverage',
     ],
     presets: [
       'Solar Irrigation Submersible Pump (3HP / 5HP)',
-      'Rooftop Solar for Cottage Enterprise / Dairy',
-      'Solar Micro-Cold Storage Unit',
-      'Solar Grain Dryer & Flour Mill Installation',
+      'Rooftop Solar Array for Dairy / Cottage Unit',
+      'Solar Micro Cold-Storage Unit',
+      'Solar Flour Mill & Grain Dryer Installation',
     ],
     docs: [
       ['aadhaar', 'Aadhaar Proof'],
-      ['land_record', 'Agricultural Land / Rooftop Ownership Proof'],
-      ['equipment_quotation', 'Authorized Solar Vendor Equipment Quotation'],
+      ['land_record', 'Agricultural Land Ownership Proof'],
+      ['equipment_quotation', 'Authorized Solar Vendor Quotation'],
     ],
   },
   {
-    id: 'standard',
-    title: 'Custom Microcredit Proposal',
-    subtitle: 'General Purpose Flexible Credit for Trade, Home & Life Goals',
+    id: 'personal_edu',
+    title: 'Personal & Higher Education Microcredit',
+    subtitle: 'Tuition Fees, School Expenses & Vocational Skill Training',
     category: 'custom',
     icon: <IconCreditCard size={22} />,
-    tag: 'Tailored Terms & Schedule',
-    apr: 12.0,
+    tag: 'Flexible Reducing Balance',
+    apr: 10.5,
     defaultAmount: 25000,
-    minAmount: 1000,
-    maxAmount: 100000,
+    minAmount: 5000,
+    maxAmount: 80000,
     tenures: [6, 12, 18, 24, 36],
     defaultTenure: 12,
     features: [
-      'Reducing balance interest calculation methodology',
-      'Flexible tenure customized to household cashflow profile',
-      'Standard RBI Fair Practices Code conforming appraisal',
+      'Transparent reducing balance interest computation',
+      'Grace period until academic term completion',
+      'Direct fee disbursal to accredited vocational institute',
     ],
     presets: [
-      'Home Roofing & Water Tank Repair',
-      'Vocational Training & Skill Certification',
-      'Debt Consolidation of High-Interest Informal Loans',
-      'Wholesale Trade Working Capital',
+      'Children College / School Annual Tuition Fee',
+      'Vocational Computer & IT Skill Certification',
+      'Home Roofing & Water Tank Monsoon Repair',
+      'High-Interest Informal Debt Consolidation',
     ],
     docs: [
-      ['aadhaar', 'Aadhaar / Official ID Proof'],
-      ['income_proof', 'Panchayat Income Slip / Bank Passbook'],
+      ['aadhaar', 'Aadhaar Proof'],
+      ['income_proof', 'Income Certificate / Bank Passbook'],
       ['address_proof', 'Ration Card / Electricity Bill Proof'],
     ],
   },
 ]
 
+// Pure EMI formula calculation
+function calculateEmi(principal, annualRate, tenureMonths) {
+  const p = Number(principal) || 0
+  const r = (Number(annualRate) || 0) / 12 / 100
+  const n = Number(tenureMonths) || 1
+  if (p <= 0 || n <= 0) return { emi: 0, totalInterest: 0, totalPayment: 0 }
+  if (r === 0) {
+    const emi = Math.round(p / n)
+    return { emi, totalInterest: 0, totalPayment: p }
+  }
+  const factor = Math.pow(1 + r, n)
+  const emi = Math.round((p * r * factor) / (factor - 1))
+  const totalPayment = emi * n
+  const totalInterest = Math.max(0, totalPayment - p)
+  return { emi, totalInterest, totalPayment }
+}
+
 export function LoanList() {
   const { user } = useAuth()
   const { t } = useLang()
-  const [activeTab, setActiveTab] = useState('catalog')
+  const nav = useNavigate()
+  const [activeTab, setActiveTab] = useState('marketplace') // 'marketplace', 'calculator', 'portfolio'
   const [status, setStatus] = useState('')
   const [productFilter, setProductFilter] = useState('')
   const [search, setSearch] = useState('')
   const { data, error, loading } = useLoad(() => api('/loans' + (status ? '?status=' + status : '')), [status])
   const staff = user.role === 'officer' || user.role === 'admin'
+
+  // EMI Calculator State
+  const [calcAmount, setCalcAmount] = useState(40000)
+  const [calcRate, setCalcRate] = useState(8.5)
+  const [calcTenure, setCalcTenure] = useState(12)
+
+  const calcResult = calculateEmi(calcAmount, calcRate, calcTenure)
+  const principalPct = calcResult.totalPayment > 0 ? Math.round((calcAmount / calcResult.totalPayment) * 100) : 100
+  const interestPct = 100 - principalPct
 
   const loans = data || []
   const filteredLoans = loans.filter((l) => {
@@ -229,23 +289,23 @@ export function LoanList() {
     )
   })
 
-  const totalLoans = loans.length
-  const activeCount = loans.filter((l) => l.status === 'approved').length
-  const pendingCount = loans.filter((l) => l.status === 'pending').length
-  const totalVolume = loans.reduce((acc, l) => acc + (l.amount || 0), 0)
-
   const getProductTitle = (type) => {
     const p = LOAN_PRODUCTS.find((x) => x.id === type)
     return p ? p.title : 'Standard Facility'
   }
 
+  const handleApplyWithCalc = () => {
+    nav(`/loans/new?amount=${calcAmount}&rate=${calcRate}&tenure=${calcTenure}`)
+  }
+
   return (
-    <>
-      <div className="row between" style={{ marginBottom: '1.25rem', alignItems: 'flex-start' }}>
+    <div className="page-container">
+      {/* Page Header */}
+      <div className="page-header-row">
         <div>
-          <h2>{t('loans')}</h2>
-          <p className="muted" style={{ margin: '0.2rem 0 0 0' }}>
-            Institutional credit products, joint-liability applications, and automated underwriting
+          <h2>Loans & Credit Facilities</h2>
+          <p className="page-subtitle">
+            Regulated institutional microcredit, livelihood financing, live EMI appraisal, and automated underwriting
           </p>
         </div>
         {!staff && (
@@ -254,66 +314,39 @@ export function LoanList() {
             to="/loans/new"
             style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
           >
-            <IconPlus size={16} /> {t('newLoan')}
+            <IconPlus size={16} /> New Loan Application
           </Link>
         )}
       </div>
 
-      {/* Portfolio Quick Statistics */}
-      <div className="grid" style={{ marginBottom: '1.25rem' }}>
-        <Stat label="Total Loan Records" value={totalLoans} sub="Active portfolio volume" />
-        <Stat label="Approved & Active" value={activeCount} sub="Performing credit assets" />
-        <Stat label="Pending Sanctions" value={pendingCount} sub="Under officer review" />
-        <Stat label="Total Sanction Volume" value={money(totalVolume)} sub="Disbursed capital" />
-      </div>
-
-      {/* Main View Switcher Tabs */}
-      <div
-        style={{
-          display: 'flex',
-          gap: '0.5rem',
-          borderBottom: '2px solid var(--border-hairline)',
-          marginBottom: '1.25rem',
-        }}
-      >
+      {/* Main Tab Controls */}
+      <div className="card tab-bar-card">
         <button
           type="button"
-          className={`btn ${activeTab === 'catalog' ? '' : 'ghost'}`}
-          style={{
-            borderRadius: '6px 6px 0 0',
-            borderBottom: activeTab === 'catalog' ? '2px solid var(--emerald-brand)' : 'none',
-            fontWeight: activeTab === 'catalog' ? 700 : 500,
-          }}
-          onClick={() => setActiveTab('catalog')}
+          className={`tab-btn ${activeTab === 'marketplace' ? 'active' : ''}`}
+          onClick={() => setActiveTab('marketplace')}
         >
-          Specialized Loan Catalog ({LOAN_PRODUCTS.length})
+          Loan Facilities ({LOAN_PRODUCTS.length})
         </button>
         <button
           type="button"
-          className={`btn ${activeTab === 'portfolio' ? '' : 'ghost'}`}
-          style={{
-            borderRadius: '6px 6px 0 0',
-            borderBottom: activeTab === 'portfolio' ? '2px solid var(--emerald-brand)' : 'none',
-            fontWeight: activeTab === 'portfolio' ? 700 : 500,
-          }}
+          className={`tab-btn ${activeTab === 'calculator' ? 'active' : ''}`}
+          onClick={() => setActiveTab('calculator')}
+        >
+          Interactive EMI Calculator
+        </button>
+        <button
+          type="button"
+          className={`tab-btn ${activeTab === 'portfolio' ? 'active' : ''}`}
           onClick={() => setActiveTab('portfolio')}
         >
-          {staff ? 'Applications Portfolio' : 'My Applied Loans'} ({totalLoans})
+          {staff ? 'Applications Portfolio' : 'My Active Loans'} ({loans.length})
         </button>
       </div>
 
-      {/* Tab 1: Specialized Loan Catalog */}
-      {activeTab === 'catalog' && (
+      {/* TAB 1: Specialized Loan Facilities Marketplace */}
+      {activeTab === 'marketplace' && (
         <div>
-          <div className="row between" style={{ alignItems: 'center', marginBottom: '0.5rem' }}>
-            <div>
-              <h3 style={{ margin: 0 }}>Institutional Loan Facilities</h3>
-              <p className="muted small" style={{ margin: '0.2rem 0 0 0' }}>
-                Select an institutional microcredit product tailored to your livelihood and enterprise needs
-              </p>
-            </div>
-          </div>
-
           <div className="loan-catalog-grid">
             {LOAN_PRODUCTS.map((p) => (
               <div key={p.id} className={`loan-product-card ${p.id === 'kisan_agri' ? 'featured' : ''}`}>
@@ -337,15 +370,15 @@ export function LoanList() {
                     <span className="metric-val text-emerald">{p.apr}% p.a.</span>
                   </div>
                   <div className="product-metric-item">
-                    <span className="metric-label">Max Sanction</span>
+                    <span className="metric-label">Max Limit</span>
                     <span className="metric-val">{money(p.maxAmount)}</span>
                   </div>
                   <div className="product-metric-item">
-                    <span className="metric-label">Tenure Window</span>
+                    <span className="metric-label">Tenure Range</span>
                     <span className="metric-val">{p.tenures[0]} - {p.tenures[p.tenures.length - 1]} Months</span>
                   </div>
                   <div className="product-metric-item">
-                    <span className="metric-label">Default Starter</span>
+                    <span className="metric-label">Starter Value</span>
                     <span className="metric-val">{money(p.defaultAmount)}</span>
                   </div>
                 </div>
@@ -371,23 +404,165 @@ export function LoanList() {
         </div>
       )}
 
-      {/* Tab 2: Applications & Dossiers Portfolio */}
+      {/* TAB 2: Interactive EMI Calculator */}
+      {activeTab === 'calculator' && (
+        <div className="two-col" style={{ alignItems: 'start' }}>
+          {/* Controls Card */}
+          <div className="card">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+              <IconCalculator size={22} className="text-emerald" />
+              <h3 style={{ margin: 0 }}>Interactive Loan EMI Calculator</h3>
+            </div>
+
+            {/* Slider 1: Principal Amount */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <div className="row between" style={{ marginBottom: '0.4rem' }}>
+                <span className="slider-label">Loan Principal Amount:</span>
+                <span className="slider-value">₹{calcAmount.toLocaleString('en-IN')}</span>
+              </div>
+              <input
+                type="range"
+                className="fin-slider"
+                min="5000"
+                max="300000"
+                step="5000"
+                value={calcAmount}
+                onChange={(e) => setCalcAmount(Number(e.target.value))}
+              />
+              <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.5rem' }}>
+                {[15000, 30000, 50000, 100000, 200000].map((amt) => (
+                  <button
+                    key={amt}
+                    type="button"
+                    className={`btn small ${calcAmount === amt ? 'emerald' : 'ghost'}`}
+                    style={{ flex: 1, fontSize: '0.72rem', padding: '3px 4px' }}
+                    onClick={() => setCalcAmount(amt)}
+                  >
+                    ₹{amt >= 100000 ? `${amt / 100000}L` : `${amt / 1000}k`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Slider 2: Interest Rate */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <div className="row between" style={{ marginBottom: '0.4rem' }}>
+                <span className="slider-label">Annual Interest Rate (APR):</span>
+                <span className="slider-value text-emerald">{calcRate}% p.a.</span>
+              </div>
+              <input
+                type="range"
+                className="fin-slider"
+                min="5"
+                max="24"
+                step="0.5"
+                value={calcRate}
+                onChange={(e) => setCalcRate(Number(e.target.value))}
+              />
+              <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.5rem' }}>
+                {[
+                  { r: 6.5, l: '6.5% (Solar)' },
+                  { r: 7.0, l: '7.0% (Kisan)' },
+                  { r: 8.5, l: '8.5% (MUDRA)' },
+                  { r: 11.0, l: '11% (SHG)' },
+                ].map((item) => (
+                  <button
+                    key={item.r}
+                    type="button"
+                    className={`btn small ${calcRate === item.r ? 'emerald' : 'ghost'}`}
+                    style={{ flex: 1, fontSize: '0.72rem', padding: '3px 4px' }}
+                    onClick={() => setCalcRate(item.r)}
+                  >
+                    {item.l}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Slider 3: Tenure Months */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <div className="row between" style={{ marginBottom: '0.4rem' }}>
+                <span className="slider-label">Repayment Tenure:</span>
+                <span className="slider-value">{calcTenure} Months ({calcTenure / 12 >= 1 ? `${(calcTenure / 12).toFixed(1)} yr` : 'Micro'})</span>
+              </div>
+              <input
+                type="range"
+                className="fin-slider"
+                min="3"
+                max="48"
+                step="3"
+                value={calcTenure}
+                onChange={(e) => setCalcTenure(Number(e.target.value))}
+              />
+              <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.5rem' }}>
+                {[6, 12, 18, 24, 36].map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    className={`btn small ${calcTenure === m ? 'emerald' : 'ghost'}`}
+                    style={{ flex: 1, fontSize: '0.72rem', padding: '3px 4px' }}
+                    onClick={() => setCalcTenure(m)}
+                  >
+                    {m} Mo
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Results Summary Card */}
+          <div className="card" style={{ background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)' }}>
+            <span className="muted small" style={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Estimated Monthly Obligation
+            </span>
+            <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--slate-900)', margin: '0.2rem 0' }}>
+              ₹{calcResult.emi.toLocaleString('en-IN')}
+              <span style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--slate-500)', marginLeft: '6px' }}>/ month</span>
+            </div>
+
+            <div style={{ background: '#ffffff', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1rem', margin: '1rem 0' }}>
+              <div className="row between" style={{ padding: '0.35rem 0', borderBottom: '1px solid #f1f5f9' }}>
+                <span className="muted small">Principal Borrowed:</span>
+                <b>₹{calcAmount.toLocaleString('en-IN')}</b>
+              </div>
+              <div className="row between" style={{ padding: '0.35rem 0', borderBottom: '1px solid #f1f5f9' }}>
+                <span className="muted small">Total Interest Accrued:</span>
+                <b className="text-emerald">+₹{calcResult.totalInterest.toLocaleString('en-IN')}</b>
+              </div>
+              <div className="row between" style={{ padding: '0.5rem 0 0 0' }}>
+                <span style={{ fontWeight: 600 }}>Total Repayment Outflow:</span>
+                <span style={{ fontSize: '1.1rem', fontWeight: 800 }}>₹{calcResult.totalPayment.toLocaleString('en-IN')}</span>
+              </div>
+            </div>
+
+            {/* Split Progress Bar */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <div className="row between small" style={{ marginBottom: '0.35rem' }}>
+                <span>Principal Share ({principalPct}%)</span>
+                <span>Interest Share ({interestPct}%)</span>
+              </div>
+              <div style={{ height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden', display: 'flex' }}>
+                <div style={{ width: `${principalPct}%`, background: 'var(--emerald-600)' }} />
+                <div style={{ width: `${interestPct}%`, background: '#f59e0b' }} />
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="btn w-100"
+              onClick={handleApplyWithCalc}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', padding: '10px' }}
+            >
+              Apply for ₹{calcAmount.toLocaleString('en-IN')} Facility <IconArrowRight size={15} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: Active Applications & Dossiers Portfolio */}
       {activeTab === 'portfolio' && (
         <div>
-          <div
-            style={{
-              background: '#ffffff',
-              border: '1px solid var(--border-hairline)',
-              borderRadius: '8px',
-              padding: '0.75rem 1rem',
-              marginBottom: '1rem',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '0.75rem',
-            }}
-          >
+          <div className="card filter-bar-card">
             <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
               {[
                 { id: '', label: 'All Statuses' },
@@ -400,7 +575,6 @@ export function LoanList() {
                   key={tab.id}
                   type="button"
                   className={'btn small ' + (status === tab.id ? '' : 'ghost')}
-                  style={{ fontSize: '0.8rem', padding: '5px 10px' }}
                   onClick={() => setStatus(tab.id)}
                 >
                   {tab.label}
@@ -441,19 +615,19 @@ export function LoanList() {
                 <thead>
                   <tr>
                     <th>Loan Reference</th>
-                    <th>Product Program</th>
-                    {(staff || user.role === 'shg_leader') && <th>Borrower Name</th>}
+                    <th>Product Facility</th>
+                    {(staff || user.role === 'shg_leader') && <th>Borrower</th>}
                     <th>Principal</th>
                     <th>Monthly EMI</th>
                     <th>Tenure</th>
-                    <th>AI Affordability</th>
+                    <th>Affordability</th>
                     <th>Status</th>
                     <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredLoans.map((l) => {
-                    const prodType = l.product_type || 'standard'
+                    const prodType = l.product_type || 'kisan_agri'
                     return (
                       <tr key={l.id}>
                         <td>
@@ -469,7 +643,7 @@ export function LoanList() {
                         {(staff || user.role === 'shg_leader') && (
                           <td>
                             <div style={{ fontWeight: 600 }}>{l.borrower_name}</div>
-                            <div className="muted small">{l.purpose || 'General microfinance'}</div>
+                            <div className="muted small">{l.purpose || 'General'}</div>
                           </td>
                         )}
                         <td style={{ fontWeight: 600 }}>{money(l.amount)}</td>
@@ -494,9 +668,9 @@ export function LoanList() {
                       <td
                         colSpan={staff || user.role === 'shg_leader' ? 9 : 8}
                         className="muted"
-                        style={{ textAlign: 'center', padding: '2rem 0' }}
+                        style={{ textAlign: 'center', padding: '2.5rem 0' }}
                       >
-                        No loan applications matching the selected criteria.
+                        No active loans found matching criteria.
                       </td>
                     </tr>
                   )}
@@ -506,7 +680,7 @@ export function LoanList() {
           )}
         </div>
       )}
-    </>
+    </div>
   )
 }
 
@@ -515,19 +689,22 @@ export function LoanApply() {
   const { t } = useLang()
   const nav = useNavigate()
   const [searchParams] = useSearchParams()
-  const initialProductId = searchParams.get('product') || 'standard'
 
-  const [selectedProduct, setSelectedProduct] = useState(
-    LOAN_PRODUCTS.find((p) => p.id === initialProductId) || LOAN_PRODUCTS[0]
-  )
+  const queryProduct = searchParams.get('product')
+  const queryAmount = searchParams.get('amount')
+  const queryRate = searchParams.get('rate')
+  const queryTenure = searchParams.get('tenure')
 
+  const initialProd = LOAN_PRODUCTS.find((p) => p.id === queryProduct) || LOAN_PRODUCTS[0]
+
+  const [selectedProduct, setSelectedProduct] = useState(initialProd)
   const [f, setF] = useState({
-    product_type: selectedProduct.id,
-    amount: selectedProduct.defaultAmount,
-    annual_rate: selectedProduct.apr,
-    tenure_months: selectedProduct.defaultTenure,
-    purpose: '',
-    group_loan: selectedProduct.id === 'mahila_shakti',
+    product_type: initialProd.id,
+    amount: queryAmount ? Number(queryAmount) : initialProd.defaultAmount,
+    annual_rate: queryRate ? Number(queryRate) : initialProd.apr,
+    tenure_months: queryTenure ? Number(queryTenure) : initialProd.defaultTenure,
+    purpose: initialProd.presets[0] || '',
+    group_loan: initialProd.id === 'mahila_shakti',
     documents: [],
   })
 
@@ -536,7 +713,6 @@ export function LoanApply() {
   const [busy, setBusy] = useState(false)
   const hasProfile = user.monthly_income > 0
 
-  // Switch product when user selects a different facility
   const handleProductChange = (prod) => {
     setSelectedProduct(prod)
     setF({
@@ -603,12 +779,12 @@ export function LoanApply() {
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
 
   return (
-    <>
-      <div className="row between" style={{ marginBottom: '1.25rem', alignItems: 'flex-start' }}>
+    <div className="page-container">
+      <div className="page-header-row">
         <div>
-          <h2>{t('newLoan')}</h2>
-          <p className="muted" style={{ margin: '0.2rem 0 0 0' }}>
-            Submit microcredit proposal with automated AI affordability underwriting and RBI fair practices compliance
+          <h2>Submit Loan Proposal</h2>
+          <p className="page-subtitle">
+            3-Step institutional microcredit submission with automated AI credit affordability underwriting
           </p>
         </div>
       </div>
@@ -620,23 +796,17 @@ export function LoanApply() {
       )}
 
       {/* Product Selection Bar */}
-      <div style={{ marginBottom: '1.25rem' }}>
+      <div className="card" style={{ marginBottom: '1.25rem', padding: '1rem' }}>
         <span className="muted small" style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600 }}>
-          Select Credit Product Program:
+          Select Credit Program:
         </span>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
           {LOAN_PRODUCTS.map((prod) => (
             <button
               key={prod.id}
               type="button"
-              className={`btn small ${selectedProduct.id === prod.id ? '' : 'ghost'}`}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                fontSize: '0.82rem',
-                border: selectedProduct.id === prod.id ? '2px solid var(--emerald-brand)' : '1px solid var(--border-hairline)',
-              }}
+              className={`btn small ${selectedProduct.id === prod.id ? 'emerald' : 'ghost'}`}
+              style={{ fontSize: '0.8rem' }}
               onClick={() => handleProductChange(prod)}
             >
               {prod.title}
@@ -646,13 +816,13 @@ export function LoanApply() {
       </div>
 
       <div className="two-col">
-        <Card title={`Application: ${selectedProduct.title}`}>
+        <Card title={`Application Form: ${selectedProduct.title}`}>
           <div
             style={{
-              background: 'var(--canvas-bg)',
+              background: 'var(--slate-50)',
               padding: '0.75rem',
               borderRadius: '6px',
-              borderLeft: '3px solid var(--emerald-brand)',
+              borderLeft: '3px solid var(--emerald-600)',
               marginBottom: '1rem',
             }}
           >
@@ -677,14 +847,14 @@ export function LoanApply() {
 
             <div style={{ marginBottom: '1rem' }}>
               <span className="muted small" style={{ display: 'block', marginBottom: '0.35rem' }}>
-                Tenure Options for {selectedProduct.title}:
+                Tenure Options:
               </span>
               <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                 {selectedProduct.tenures.map((m) => (
                   <button
                     key={m}
                     type="button"
-                    className={'btn small ' + (f.tenure_months === m ? '' : 'ghost')}
+                    className={'btn small ' + (f.tenure_months === m ? 'emerald' : 'ghost')}
                     style={{ flex: 1, minWidth: '70px', fontSize: '0.8rem' }}
                     onClick={() => setF({ ...f, tenure_months: m })}
                   >
@@ -726,14 +896,14 @@ export function LoanApply() {
               <input
                 value={f.purpose}
                 onChange={set('purpose')}
-                placeholder="e.g. Dairy cattle procurement, fertilizer stock"
+                placeholder="e.g. Dairy cow purchase, hybrid seeds, inventory"
                 required
               />
             </Field>
 
             <div style={{ marginBottom: '1rem' }}>
               <span className="muted small" style={{ display: 'block', marginBottom: '0.3rem' }}>
-                Recommended Purpose Presets:
+                Preset Livelihood Purposes:
               </span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
                 {selectedProduct.presets.map((p, i) => (
@@ -754,7 +924,7 @@ export function LoanApply() {
               <label
                 className="check"
                 style={{
-                  background: 'var(--canvas-bg)',
+                  background: 'var(--slate-50)',
                   padding: '0.75rem',
                   borderRadius: '6px',
                   display: 'flex',
@@ -769,15 +939,15 @@ export function LoanApply() {
                   onChange={(e) => setF({ ...f, group_loan: e.target.checked })}
                 />
                 <div>
-                  <span style={{ fontWeight: 600 }}>Joint Liability Group (SHG) Facility</span>
-                  <div className="muted small">Backed by peer-guarantee from your Self-Help Group</div>
+                  <span style={{ fontWeight: 600 }}>Joint Liability Group (SHG) Guarantee</span>
+                  <div className="muted small">Pledged with peer guarantee from your Self-Help Group</div>
                 </div>
               </label>
             )}
 
             <div style={{ marginTop: '0.75rem', marginBottom: '1.25rem' }}>
               <p className="muted small" style={{ fontWeight: 600, marginBottom: '0.5rem' }}>
-                Program KYC Documents to Pledge:
+                Required Statutory KYC Documents to Pledge:
               </p>
               {selectedProduct.docs.map(([k, label]) => (
                 <label className="check" key={k} style={{ display: 'block', marginBottom: '0.4rem' }}>
@@ -792,35 +962,36 @@ export function LoanApply() {
             </div>
 
             <button
-              className="btn"
+              className="btn w-100"
               disabled={busy || !hasProfile}
-              style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}
+              style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', padding: '10px' }}
             >
-              <IconShield size={16} /> Submit Loan Application
+              <IconShield size={16} /> Submit Loan Application for Sanction
             </button>
           </form>
         </Card>
 
-        <Card title="AI Affordability Engine (Live Pre-Check)">
+        {/* Live AI Underwriting Check */}
+        <Card title="Live AI Affordability Evaluation">
           {!preview ? (
             <p className="muted">{hasProfile ? 'Evaluating repayment capacity…' : t('fillProfile')}</p>
           ) : (
             <>
               <div
                 style={{
-                  background: 'var(--canvas-bg)',
+                  background: 'var(--slate-50)',
                   padding: '1rem',
                   borderRadius: '8px',
                   marginBottom: '1rem',
-                  border: '1px solid var(--border-hairline)',
+                  border: '1px solid var(--border-color)',
                 }}
               >
                 <div className="row between" style={{ marginBottom: '0.5rem' }}>
-                  <span className="muted small">Model Decision Readiness</span>
+                  <span className="muted small">AI Underwriting Readiness</span>
                   <Badge tone={preview.band}>{t(preview.band)}</Badge>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--navy-primary)' }}>
+                  <span style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--slate-900)' }}>
                     {preview.score}
                   </span>
                   <span className="muted small">/ 100 Safe Underwriting Score</span>
@@ -847,11 +1018,11 @@ export function LoanApply() {
 
               <div
                 style={{
-                  background: 'var(--canvas-bg)',
+                  background: 'var(--slate-50)',
                   padding: '0.75rem',
                   borderRadius: '6px',
                   marginTop: '1rem',
-                  borderLeft: '3px solid var(--emerald-action)',
+                  borderLeft: '3px solid var(--emerald-600)',
                 }}
               >
                 <div className="small">
@@ -865,7 +1036,7 @@ export function LoanApply() {
           )}
         </Card>
       </div>
-    </>
+    </div>
   )
 }
 
@@ -926,14 +1097,14 @@ export function LoanDetail() {
   const remainingAmount = Math.max(0, totalScheduledAmount - totalPaidAmount)
   const repaymentPct = totalScheduledAmount > 0 ? Math.round((totalPaidAmount / totalScheduledAmount) * 100) : 0
 
-  const prodType = l.product_type || 'standard'
-  const productInfo = LOAN_PRODUCTS.find((p) => p.id === prodType) || LOAN_PRODUCTS[LOAN_PRODUCTS.length - 1]
+  const prodType = l.product_type || 'kisan_agri'
+  const productInfo = LOAN_PRODUCTS.find((p) => p.id === prodType) || LOAN_PRODUCTS[0]
 
   return (
-    <>
+    <div className="page-container">
       <div style={{ marginBottom: '1rem' }}>
         <Link to="/loans" className="btn small ghost" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-          ← {t('back')} to Loans Portfolio
+          ← Back to Loans Portfolio
         </Link>
       </div>
 
@@ -946,8 +1117,15 @@ export function LoanDetail() {
           <Badge>{l.status}</Badge>
           {l.shg_id && <Badge tone="pending">SHG Joint Liability</Badge>}
         </div>
-        <div className="muted small">
-          Created on {new Date(l.created_at + 'Z').toLocaleDateString()}
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button
+            type="button"
+            className="btn small ghost"
+            onClick={() => window.print()}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+          >
+            <IconPrinter size={15} /> Print Statement
+          </button>
         </div>
       </div>
 
@@ -990,7 +1168,7 @@ export function LoanDetail() {
           </div>
           <Factors factors={l.ai_factors} />
           <p className="muted small" style={{ marginTop: '0.75rem', marginBottom: 0 }}>
-            Underwriting rules conform to RBI Master Direction – Reserve Bank of India (Regulatory Framework for Microfinance Loans) Directions, 2022.
+            Underwriting rules conform to RBI Master Direction – Regulatory Framework for Microfinance Loans Directions, 2022.
           </p>
         </Card>
 
@@ -1007,7 +1185,7 @@ export function LoanDetail() {
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     padding: '0.5rem 0',
-                    borderBottom: '1px solid var(--border-hairline)',
+                    borderBottom: '1px solid var(--border-color)',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -1037,7 +1215,7 @@ export function LoanDetail() {
         <Card title="Credit Officer Sanction Terminal" style={{ marginBottom: '1.25rem' }}>
           <Field label="Statutory Underwriting Notes / Conditions">
             <input
-              placeholder="e.g. Sanctioned subject to SHG leader joint guarantee verification"
+              placeholder="e.g. Sanctioned subject to peer joint guarantee confirmation"
               value={note}
               onChange={(e) => setNote(e.target.value)}
             />
@@ -1051,21 +1229,6 @@ export function LoanDetail() {
             </button>
           </div>
         </Card>
-      )}
-
-      {l.officer_note && (
-        <div
-          style={{
-            background: '#ffffff',
-            border: '1px solid var(--border-hairline)',
-            borderRadius: '8px',
-            padding: '1rem',
-            marginBottom: '1.25rem',
-          }}
-        >
-          <span className="muted small" style={{ fontWeight: 600 }}>Credit Officer Recorded Note:</span>
-          <p style={{ margin: '0.25rem 0 0 0', fontStyle: 'italic' }}>"{l.officer_note}"</p>
-        </div>
       )}
 
       {l.status !== 'pending' && l.status !== 'rejected' && (
@@ -1108,7 +1271,7 @@ export function LoanDetail() {
                               setCustomPayAmt(String(i.amount - (i.paid_amount || 0)))
                             }}
                           >
-                            <IconCreditCard size={14} /> {t('pay')}
+                            <IconCreditCard size={14} /> Pay via UPI
                           </button>
                         )}
                         {i.status === 'paid' && (
@@ -1127,21 +1290,20 @@ export function LoanDetail() {
       )}
 
       {paymentModal && (
-        <div className="modal-backdrop" onClick={() => setPaymentModal(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+        <div className="modal-overlay" onClick={() => setPaymentModal(null)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
             <div className="row between" style={{ marginBottom: '1rem', alignItems: 'center' }}>
               <h3 style={{ margin: 0 }}>Settle Instalment #{paymentModal.number}</h3>
               <button
                 type="button"
-                className="btn small ghost"
+                className="icon-btn"
                 onClick={() => setPaymentModal(null)}
-                style={{ padding: '2px 8px', fontSize: '1rem' }}
               >
                 ✕
               </button>
             </div>
 
-            <div style={{ background: 'var(--canvas-bg)', padding: '0.85rem', borderRadius: '6px', marginBottom: '1rem' }}>
+            <div style={{ background: 'var(--slate-50)', padding: '0.85rem', borderRadius: '6px', marginBottom: '1rem' }}>
               <div className="row between small" style={{ marginBottom: '0.3rem' }}>
                 <span>Due Date:</span>
                 <b>{paymentModal.due_date}</b>
@@ -1150,13 +1312,9 @@ export function LoanDetail() {
                 <span>Scheduled Amount:</span>
                 <b>{money(paymentModal.amount)}</b>
               </div>
-              <div className="row between small" style={{ marginBottom: '0.3rem' }}>
+              <div className="row between small">
                 <span>Principal Component:</span>
                 <span>{money(paymentModal.principal_part)}</span>
-              </div>
-              <div className="row between small">
-                <span>Interest Component:</span>
-                <span>{money(paymentModal.interest_part)}</span>
               </div>
             </div>
 
@@ -1170,17 +1328,17 @@ export function LoanDetail() {
               />
             </Field>
 
-            <div className="row" style={{ gap: '0.5rem', marginTop: '1.25rem' }}>
-              <button className="btn" onClick={recordPayment} style={{ flex: 1 }}>
-                Confirm Payment
-              </button>
+            <div className="modal-actions">
               <button className="btn ghost" onClick={() => setPaymentModal(null)}>
                 Cancel
+              </button>
+              <button className="btn" onClick={recordPayment}>
+                Confirm UPI Payment
               </button>
             </div>
           </div>
         </div>
       )}
-    </>
+    </div>
   )
 }
