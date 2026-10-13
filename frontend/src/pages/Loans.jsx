@@ -70,7 +70,7 @@ export const LOAN_PRODUCTS = [
     defaultAmount: 50000,
     minAmount: 10000,
     maxAmount: 200000,
-    tenures: [12, 18, 24, 36],
+    tenures: [6, 12, 18, 24, 36],
     defaultTenure: 18,
     features: [
       'Zero collateral security required for Shishu and Kishore tiers',
@@ -96,12 +96,12 @@ export const LOAN_PRODUCTS = [
     category: 'shg',
     icon: <IconUsers size={22} />,
     tag: 'SHG Peer Guarantee Backed',
-    apr: 11.0,
+    apr: 8.5,
     defaultAmount: 35000,
-    minAmount: 10000,
-    maxAmount: 75000,
-    tenures: [12, 18, 24, 36],
-    defaultTenure: 18,
+    minAmount: 5000,
+    maxAmount: 150000,
+    tenures: [6, 12, 18, 24],
+    defaultTenure: 12,
     features: [
       'Backed by Self-Help Group social peer collateral',
       'Prompt repayment interest incentive of 1.5% cashback',
@@ -116,7 +116,6 @@ export const LOAN_PRODUCTS = [
     docs: [
       ['aadhaar', 'Aadhaar / Official ID Proof'],
       ['shg_resolution', 'SHG Meeting Resolution & Peer Guarantee Letter'],
-      ['address_proof', 'Ration Card / Local Residence Proof'],
     ],
   },
   {
@@ -126,9 +125,9 @@ export const LOAN_PRODUCTS = [
     category: 'vendor',
     icon: <IconCoins size={22} />,
     tag: '7% Interest Subsidy Directly Credited',
-    apr: 9.0,
-    defaultAmount: 15000,
-    minAmount: 5000,
+    apr: 7.0,
+    defaultAmount: 10000,
+    minAmount: 2000,
     maxAmount: 50000,
     tenures: [6, 12],
     defaultTenure: 12,
@@ -145,8 +144,7 @@ export const LOAN_PRODUCTS = [
     ],
     docs: [
       ['aadhaar', 'Aadhaar / Official ID Proof'],
-      ['vendor_cert', 'Street Vendor Certificate (CoVR / ULB Letter)'],
-      ['income_proof', 'Bank Passbook / UPI QR Statement'],
+      ['vendor_certificate', 'Street Vendor Certificate (CoVR / ULB Letter)'],
     ],
   },
   {
@@ -156,10 +154,10 @@ export const LOAN_PRODUCTS = [
     category: 'emergency',
     icon: <IconHospital size={22} />,
     tag: '24-Hour Express Sanction',
-    apr: 8.5,
-    defaultAmount: 20000,
-    minAmount: 5000,
-    maxAmount: 30000,
+    apr: 6.0,
+    defaultAmount: 15000,
+    minAmount: 2000,
+    maxAmount: 40000,
     tenures: [3, 6, 12],
     defaultTenure: 6,
     features: [
@@ -174,23 +172,21 @@ export const LOAN_PRODUCTS = [
       'Travel & Caregiver Expenses for City Hospital',
     ],
     docs: [
-      ['aadhaar', 'Aadhaar / Family Member ID'],
-      ['hospital_estimate', 'Hospital Admission Slip or Doctor Prescription'],
-      ['address_proof', 'Ration Card / Local Residence Proof'],
+      ['aadhaar', 'Aadhaar Card Proof'],
     ],
   },
   {
     id: 'solar_green',
-    title: 'PM-KUSUM Solar & Clean Energy Loan',
+    title: 'Clean Energy Solar Pump Financing',
     subtitle: 'Concessional Financing for Solar Pumps & Agri Clean Power',
     category: 'solar',
     icon: <IconZap size={22} />,
     tag: 'Green Concessional Financing',
     apr: 6.5,
-    defaultAmount: 60000,
-    minAmount: 20000,
-    maxAmount: 150000,
-    tenures: [12, 24, 36, 48],
+    defaultAmount: 75000,
+    minAmount: 15000,
+    maxAmount: 300000,
+    tenures: [12, 24, 36, 48, 60],
     defaultTenure: 24,
     features: [
       'Integrated with PM-KUSUM Central & State capital subsidies',
@@ -205,38 +201,66 @@ export const LOAN_PRODUCTS = [
     ],
     docs: [
       ['aadhaar', 'Aadhaar Proof'],
-      ['land_record', 'Agricultural Land Ownership Proof'],
-      ['equipment_quotation', 'Authorized Solar Vendor Quotation'],
+      ['quotation_invoice', 'Authorized Vendor Quotation & Proforma Invoice'],
+      ['land_record', 'Agricultural Land Ownership Proof (7/12)'],
     ],
   },
   {
-    id: 'personal_edu',
-    title: 'Personal & Higher Education Microcredit',
-    subtitle: 'Tuition Fees, School Expenses & Vocational Skill Training',
-    category: 'custom',
-    icon: <IconCreditCard size={22} />,
-    tag: 'Flexible Reducing Balance',
-    apr: 10.5,
+    id: 'artisan_micro',
+    title: 'Rural Artisan & Handloom Microcredit',
+    subtitle: 'Raw Material & Working Capital for Craftspersons & Weavers',
+    category: 'artisan',
+    icon: <IconAward size={22} />,
+    tag: 'PM Vishwakarma Concessional Rate',
+    apr: 8.0,
     defaultAmount: 25000,
     minAmount: 5000,
     maxAmount: 80000,
-    tenures: [6, 12, 18, 24, 36],
+    tenures: [6, 12, 18, 24],
     defaultTenure: 12,
     features: [
-      'Transparent reducing balance interest computation',
-      'Grace period until academic term completion',
-      'Direct fee disbursal to accredited vocational institute',
+      'Low 8.0% interest rate with Ministry of MSME backing',
+      'Tool-kit and modern handloom equipment incentive eligibility',
+      'Mandi and exhibition fair advance credit facility',
     ],
     presets: [
-      'Children College / School Annual Tuition Fee',
-      'Vocational Computer & IT Skill Certification',
-      'Home Roofing & Water Tank Monsoon Repair',
-      'High-Interest Informal Debt Consolidation',
+      'Handloom Silk & Cotton Yarn Procurement',
+      'Pottery, Terracotta & Clay Craft Processing Kiln',
+      'Carpentry & Woodcraft Electric Precision Tools',
+      'Leather Footwear & Traditional Embroidery Materials',
     ],
     docs: [
-      ['aadhaar', 'Aadhaar Proof'],
-      ['income_proof', 'Income Certificate / Bank Passbook'],
-      ['address_proof', 'Ration Card / Electricity Bill Proof'],
+      ['aadhaar', 'Aadhaar Card'],
+      ['artisan_card', 'Pehchan Artisan ID Card / Vishwakarma Certificate'],
+    ],
+  },
+  {
+    id: 'standard',
+    title: 'Standard Microfinance Term Loan',
+    subtitle: 'General Purpose Livelihood & Income Generation Credit',
+    category: 'custom',
+    icon: <IconCreditCard size={22} />,
+    tag: 'RBI Fair Practice Code Compliant',
+    apr: 12.0,
+    defaultAmount: 30000,
+    minAmount: 2000,
+    maxAmount: 100000,
+    tenures: [3, 6, 12, 18, 24],
+    defaultTenure: 12,
+    features: [
+      'Transparent reducing-balance interest calculation',
+      'Zero hidden charges, zero prepayment penalty',
+      'Bi-lingual loan sanction agreement in local language',
+    ],
+    presets: [
+      'Livestock Fodder & Feed Bulk Purchase',
+      'Small Commercial Vehicle Downpayment',
+      'Solar Home Lighting System Installation',
+      'Seasonal Inventory Working Capital',
+    ],
+    docs: [
+      ['aadhaar', 'Aadhaar Card'],
+      ['income_proof', 'Self-Declaration of Livelihood Income'],
     ],
   },
 ]
@@ -786,6 +810,46 @@ export function LoanApply() {
         </div>
       </div>
 
+      {/* 3-Step Visual Progress Stepper */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '1.25rem',
+          background: 'var(--card-bg)',
+          padding: '0.85rem 1.25rem',
+          borderRadius: 'var(--radius-md)',
+          border: '1px solid var(--border-color)',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <span style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--emerald-600)', color: '#fff', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: '0.85rem' }}>1</span>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: '0.82rem' }}>Step 1: Facility & Amount</div>
+            <div className="muted small" style={{ fontSize: '0.72rem' }}>{selectedProduct.title}</div>
+          </div>
+        </div>
+        <div style={{ flex: 1, minWidth: '40px', height: '2px', background: 'var(--border-color)' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <span style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--emerald-600)', color: '#fff', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: '0.85rem' }}>2</span>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: '0.82rem' }}>Step 2: Term & Purpose</div>
+            <div className="muted small" style={{ fontSize: '0.72rem' }}>₹{Number(f.amount).toLocaleString('en-IN')} • {f.tenure_months} mo</div>
+          </div>
+        </div>
+        <div style={{ flex: 1, minWidth: '40px', height: '2px', background: 'var(--border-color)' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <span style={{ width: '28px', height: '28px', borderRadius: '50%', background: f.documents.length > 0 ? 'var(--emerald-600)' : 'var(--slate-200)', color: f.documents.length > 0 ? '#fff' : 'var(--slate-600)', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: '0.85rem' }}>3</span>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: '0.82rem' }}>Step 3: KYC & Underwriting</div>
+            <div className="muted small" style={{ fontSize: '0.72rem' }}>{f.documents.length} KYC Documents Attached</div>
+          </div>
+        </div>
+      </div>
+
       {!hasProfile && (
         <Alert kind="warn">
           {t('fillProfile')} <Link to="/profile">{t('profile')}</Link>
@@ -863,15 +927,13 @@ export function LoanApply() {
 
             <div className="row" style={{ gap: '0.75rem' }}>
               <div style={{ flex: 1 }}>
-                <Field label={t('rate')}>
+                <Field label={`${t('rate')} (% p.a. - Set by institutional policy)`}>
                   <input
                     type="number"
-                    min="0"
-                    max="60"
-                    step="0.1"
-                    required
+                    readOnly
+                    disabled
+                    style={{ background: 'var(--slate-100)', cursor: 'not-allowed', fontWeight: 600, color: 'var(--slate-700)' }}
                     value={f.annual_rate}
-                    onChange={set('annual_rate')}
                   />
                 </Field>
               </div>
@@ -1068,7 +1130,7 @@ export function LoanApply() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
                   <span style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--slate-900)' }}>
-                    {preview.score}
+                    {preview.score != null ? Math.round(preview.score <= 1.0 ? preview.score * 100 : preview.score) : '—'}
                   </span>
                   <span className="muted small">/ 100 Safe Underwriting Score</span>
                 </div>
@@ -1842,7 +1904,9 @@ export function LoanDetail() {
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <span className="badge approved" style={{ fontSize: '0.7rem' }}>✓ DIGITALLY SEALED</span>
+                  <span className={`badge ${l.status === 'approved' || l.status === 'disbursed' ? 'approved' : 'pending'}`} style={{ fontSize: '0.7rem' }}>
+                    {l.status === 'approved' || l.status === 'disbursed' ? '✓ DIGITALLY SEALED & SANCTIONED' : 'PENDING UNDERWRITING REVIEW'}
+                  </span>
                   <div className="muted small" style={{ fontSize: '0.68rem', marginTop: '2px' }}>DPDP-2023 Verified</div>
                 </div>
               </div>

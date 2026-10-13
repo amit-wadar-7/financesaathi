@@ -267,18 +267,20 @@ def dashboard(user: models.User = Depends(get_current_user), db: Session = Depen
         }
 
     # Real health score calculation
-    score = 100.0
-    if user.monthly_income > 0:
-        foir = (user.existing_emi) / user.monthly_income
+    # Health score only calculated if user has declared income, otherwise None
+    if user.monthly_income and user.monthly_income > 0:
+        score = 100.0
+        foir = (user.existing_emi or 0) / user.monthly_income
         exp_ratio = user.monthly_expenses / user.monthly_income
         cov = (user.savings_balance / user.monthly_expenses) if user.monthly_expenses > 0 else 0
         score -= max(0, foir - 0.2) * 100
         score -= max(0, exp_ratio - 0.6) * 80
         score += min(cov, 6) * 3
-    overdue_count = sum(1 for ln in loans if ln.status == "approved" for i in ln.installments if i.status != "paid" and i.due_date < date.today())
-    score -= overdue_count * 8
-    health_score_raw = int(max(0, min(100, score)))
-    cibil_equivalent = int(300 + (health_score_raw / 100.0) * 600)
+        overdue_count = sum(1 for ln in loans if ln.status == "approved" for i in ln.installments if i.status != "paid" and i.due_date < date.today())
+        score -= overdue_count * 8
+        health_score_raw = int(max(0, min(100, score)))
+    else:
+        health_score_raw = None
 
     # Real transaction history from Transaction table
     txns = []
@@ -325,17 +327,6 @@ def dashboard(user: models.User = Depends(get_current_user), db: Session = Depen
                 "mode": "UPI Settlement",
                 "is_credit": False,
             })
-        if not txns and user.savings_balance > 0:
-            txns.append({
-                "id": "open-1",
-                "date": user.created_at.strftime("%d %b %Y"),
-                "category": "general",
-                "type": "Opening Verified Savings Deposit",
-                "title": "Opening Verified Savings Deposit",
-                "amount": user.savings_balance,
-                "mode": "Core Banking Ledger",
-                "is_credit": True,
-            })
 
     tot_saved = round(sum(g.saved_amount for g in goals), 2)
     tot_assets = round(user.savings_balance + tot_saved, 2)
@@ -374,9 +365,6 @@ def dashboard(user: models.User = Depends(get_current_user), db: Session = Depen
     for y, m, lbl in months_series:
         inc = monthly_credits.get((y, m), 0.0)
         exp = monthly_debits.get((y, m), 0.0)
-        if inc == 0.0 and exp == 0.0 and (y, m) == (curr_y, curr_m):
-            inc = user.monthly_income or 0.0
-            exp = user.monthly_expenses or 0.0
         cashflow_history.append({
             "month": lbl,
             "income": round(inc, 2),
@@ -388,11 +376,12 @@ def dashboard(user: models.User = Depends(get_current_user), db: Session = Depen
     prev_inc = cashflow_history[-2]["income"] if len(cashflow_history) >= 2 else 0.0
     prev_exp = cashflow_history[-2]["expenses"] if len(cashflow_history) >= 2 else 0.0
 
-    inc_delta = f"{((curr_inc - prev_inc) / prev_inc * 100):+.0f}%" if prev_inc > 0 else ("+100%" if curr_inc > 0 else "0%")
-    exp_delta = f"{((curr_exp - prev_exp) / prev_exp * 100):+.0f}%" if prev_exp > 0 else ("+100%" if curr_exp > 0 else "0%")
+    # Only show percentage delta when there is an actual prior baseline to compare against
+    inc_delta = f"{((curr_inc - prev_inc) / prev_inc * 100):+.0f}%" if prev_inc > 0 else ""
+    exp_delta = f"{((curr_exp - prev_exp) / prev_exp * 100):+.0f}%" if prev_exp > 0 else ""
     curr_sav = max(0.0, curr_inc - curr_exp)
     prev_sav = max(0.0, prev_inc - prev_exp)
-    sav_delta = f"{((curr_sav - prev_sav) / prev_sav * 100):+.0f}%" if prev_sav > 0 else ("+100%" if curr_sav > 0 else "0%")
+    sav_delta = f"{((curr_sav - prev_sav) / prev_sav * 100):+.0f}%" if prev_sav > 0 else ""
 
     kpi_metrics = {
         "income_this_month": round(curr_inc, 2),
@@ -403,12 +392,36 @@ def dashboard(user: models.User = Depends(get_current_user), db: Session = Depen
         "savings_delta": sav_delta,
     }
 
-    seasonal_tip = {
-        "title": "Sugarcane & Rabi Harvest Advisory",
-        "description": "Upcoming sugarcane harvest in Nov-Dec. Consider setting aside 20% extra into your emergency fund to build a 6-month buffer before planting season.",
-        "action_label": "Calculate Harvest Plan →",
-        "action_target": "/tools?calc=kisan",
-    }
+    # Month-dependent agro-financial advisory
+    month_num = today.month
+    if month_num in (11, 12, 1, 2):
+        seasonal_tip = {
+            "title": "Rabi Sowing & Harvest Advisory",
+            "description": "Rabi crop maintenance and harvest period. Build an emergency liquidity buffer from harvest proceeds before the upcoming Kharif sowing season.",
+            "action_label": "Calculate Harvest Plan →",
+            "action_target": "/tools?calc=kisan",
+        }
+    elif month_num in (3, 4, 5):
+        seasonal_tip = {
+            "title": "Pre-Monsoon & Summer Preparation",
+            "description": "Prepare farm inputs and soil testing ahead of monsoons. Review subsidized solar pump and micro-irrigation schemes under PM-KUSUM.",
+            "action_label": "Explore Solar Schemes →",
+            "action_target": "/schemes",
+        }
+    elif month_num in (6, 7, 8):
+        seasonal_tip = {
+            "title": "Kharif Monsoon Sowing Advisory",
+            "description": "Ensure enrollment in Pradhan Mantri Fasal Bima Yojana (PMFBY) before cutoff dates. Keep fertilizer receipts for government subsidy verification.",
+            "action_label": "View Crop Insurance →",
+            "action_target": "/schemes",
+        }
+    else:
+        seasonal_tip = {
+            "title": "Post-Monsoon & Mandi Sales Buffer",
+            "description": "Early harvest liquidation and festive seasonal planning. Allocate 20% of sale proceeds to your SHG thrift savings account.",
+            "action_label": "View SHG Passbook →",
+            "action_target": "/community",
+        }
 
     return {
         "role": user.role,
@@ -428,7 +441,6 @@ def dashboard(user: models.User = Depends(get_current_user), db: Session = Depen
         "top_goal": top_goal,
         "goals": [{"id": g.id, "title": g.title, "saved_amount": g.saved_amount, "target_amount": g.target_amount} for g in goals],
         "health_score": health_score_raw,
-        "cibil_score": cibil_equivalent,
         "transactions": txns,
         "cashflow_history": cashflow_history,
         "kpi_metrics": kpi_metrics,

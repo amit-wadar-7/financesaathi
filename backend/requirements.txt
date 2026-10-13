@@ -11,4 +11,4 @@ joblib
 pytest
 httpx
 python-multipart
-# For PostgreSQL later: psycopg2-binary
+psycopg2-binary

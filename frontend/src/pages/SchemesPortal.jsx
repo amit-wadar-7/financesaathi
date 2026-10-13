@@ -1,6 +1,7 @@
-import { useState } from 'react'
-import { money } from '../api'
-import { Badge, Card } from '../ui'
+import { useState, useMemo } from 'react'
+import { api, money } from '../api'
+import { useLang } from '../i18n'
+import { Badge, Card, Loading, useLoad } from '../ui'
 import {
   IconLandmark,
   IconTractor,
@@ -292,9 +293,45 @@ export const GOVERNMENT_SCHEMES = [
 ]
 
 export default function SchemesPortal() {
+  const { lang, t } = useLang()
   const [selectedCat, setSelectedCat] = useState('all')
   const [search, setSearch] = useState('')
   const [selectedScheme, setSelectedScheme] = useState(null)
+
+  // Load live localized schemes from backend
+  const { data: serverSchemes, loading: schemesLoading } = useLoad(
+    () => api(`/schemes?language=${lang}`),
+    [lang]
+  )
+
+  // Merge server schemes with frontend scheme metadata
+  const schemesList = useMemo(() => {
+    if (!serverSchemes || !Array.isArray(serverSchemes) || serverSchemes.length === 0) {
+      return GOVERNMENT_SCHEMES
+    }
+    const serverMap = {}
+    serverSchemes.forEach((ss) => {
+      const low = (ss.name || '').toLowerCase()
+      if (low.includes('kisan') || low.includes('किसान')) serverMap['pm_kisan'] = ss
+      else if (low.includes('mudra') || low.includes('मुद्रा')) serverMap['pm_mudra'] = ss
+      else if (low.includes('svanidhi') || low.includes('स्वनिधि')) serverMap['pm_svanidhi'] = ss
+      else if (low.includes('jandhan') || low.includes('pmjdy') || low.includes('जन धन')) serverMap['pmjdy'] = ss
+      else if (low.includes('nrlm') || low.includes('aajeevika') || low.includes('आजीविका')) serverMap['day_nrlm'] = ss
+      else if (low.includes('awas') || low.includes('आवास')) serverMap['pm_awas'] = ss
+    })
+
+    return GOVERNMENT_SCHEMES.map((gs) => {
+      const match = serverMap[gs.id]
+      if (match) {
+        return {
+          ...gs,
+          name: match.name || gs.name,
+          summary: match.description || gs.summary,
+        }
+      }
+      return gs
+    })
+  }, [serverSchemes])
 
   // Eligibility Finder State
   const [finderOccupation, setFinderOccupation] = useState('farmer')
@@ -315,10 +352,10 @@ export default function SchemesPortal() {
     return true
   }
 
-  const eligibleSchemes = GOVERNMENT_SCHEMES.filter(isEligible)
+  const eligibleSchemes = schemesList.filter(isEligible)
   const totalEligibleValue = eligibleSchemes.reduce((acc, s) => acc + s.valueNum, 0)
 
-  const displayedSchemes = GOVERNMENT_SCHEMES.filter((s) => {
+  const displayedSchemes = schemesList.filter((s) => {
     if (showOnlyEligible && !isEligible(s)) return false
     if (selectedCat !== 'all' && s.category !== selectedCat) return false
     if (!search.trim()) return true

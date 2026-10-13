@@ -8,7 +8,7 @@ export function PrivacyPolicy() {
         <IconShield size={26} className="text-emerald" />
         <h2 style={{ fontSize: '1.6rem', color: '#0f172a' }}>Privacy Policy</h2>
       </div>
-      <p className="muted small">Last Updated: October 12, 2024 • Version 1.2 (DPDP Act, 2023 Compliant)</p>
+      <p className="muted small">Last Updated: October 2026 • Version 2.0 (DPDP Act, 2023 Compliant)</p>
 
       <section style={{ marginTop: '1.5rem', lineHeight: '1.7', color: '#334155' }}>
         <h4 style={{ color: '#0f172a', marginBottom: '0.4rem' }}>1. Scope and Purpose</h4>
@@ -63,7 +63,7 @@ export function TermsOfService() {
         <IconFileText size={26} className="text-emerald" />
         <h2 style={{ fontSize: '1.6rem', color: '#0f172a' }}>Terms & Conditions</h2>
       </div>
-      <p className="muted small">Effective Date: October 12, 2024 • Governing Law: Republic of India</p>
+      <p className="muted small">Effective Date: October 2026 • Governing Law: Republic of India</p>
 
       <section style={{ marginTop: '1.5rem', lineHeight: '1.7', color: '#334155' }}>
         <h4 style={{ color: '#0f172a', marginBottom: '0.4rem' }}>1. Platform Character and Role</h4>

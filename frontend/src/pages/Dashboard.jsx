@@ -858,7 +858,14 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
   const monthlyExpenses = data?.monthly_expenses || user?.monthly_expenses || 0
 
   const cashflowHistory = data?.cashflow_history || []
-  const kpiData = data?.kpi_metrics || null
+  const kpiData = data?.kpi_metrics || {
+    income_this_month: 0,
+    income_delta: '',
+    expenses_this_month: 0,
+    expenses_delta: '',
+    savings_this_month: 0,
+    savings_delta: '',
+  }
   const seasonalTip = data?.seasonal_tip || null
 
   const todayDateStr = new Date().toLocaleDateString('en-IN', {
@@ -869,7 +876,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
   })
 
   // Max value for 6-month chart scaling
-  const maxCashflow = Math.max(...cashflowHistory.map((c) => Math.max(c.income, c.expenses)), 20000)
+  const maxCashflow = Math.max(...cashflowHistory.map((c) => Math.max(c.income || 0, c.expenses || 0)), 20000)
 
   // 1. Handlers for Live Financial Operations
   const handleAddIncome = async (e) => {
@@ -966,7 +973,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
       })
       await refresh()
       await reload()
-      toast.success(lang === 'mr' ? `₹${amt} ध्येयात जमा झाले!` : `₹${amt} deposited to ${topGoal.title}!`)
+      toast.success(lang === 'mr' ? `₹${amt} ध्येयात जमा झाले!` : `₹${amt} deposited to ${topGoal?.title || 'Savings Goal'}!`)
     } catch (err) {
       toast.error(err.message || 'Deposit failed')
     } finally {
@@ -988,7 +995,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
       await refresh()
       await reload()
       setShowDepositModal(false)
-      toast.success(lang === 'mr' ? `₹${amt} ध्येयात जमा झाले!` : `₹${amt} deposited to ${topGoal.title}!`)
+      toast.success(lang === 'mr' ? `₹${amt} ध्येयात जमा झाले!` : `₹${amt} deposited to ${topGoal?.title || 'Savings Goal'}!`)
     } catch (err) {
       toast.error(err.message || 'Deposit failed')
     } finally {
@@ -1249,57 +1256,79 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
         {/* Right: Stack of Savings Goal Card and Saathi AI */}
         <div className="side-cards-stack">
           {/* Savings Goal Card */}
-          <div className="savings-goal-banner">
-            <div className="goal-banner-header">
-              <div>
-                <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#047857', fontWeight: 700 }}>
-                  SAVINGS GOAL
+          {topGoal ? (
+            <div className="savings-goal-banner">
+              <div className="goal-banner-header">
+                <div>
+                  <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#047857', fontWeight: 700 }}>
+                    SAVINGS GOAL
+                  </span>
+                  <h4 style={{ margin: '2px 0 0 0', fontSize: '1.05rem', color: '#064e3b' }}>
+                    {topGoal.title}
+                  </h4>
+                </div>
+                <div className="goal-jar-badge" title="Target Savings Jar">
+                  🌱
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '0.84rem' }}>
+                <span>
+                  <b>₹{Number(topGoal.saved_amount || 0).toLocaleString('en-IN')}</b> of ₹{Number(topGoal.target_amount || 0).toLocaleString('en-IN')}
                 </span>
-                <h4 style={{ margin: '2px 0 0 0', fontSize: '1.05rem', color: '#064e3b' }}>
-                  {topGoal.title}
-                </h4>
+                <span style={{ fontWeight: 700, color: '#059669' }}>
+                  {Math.round(topGoal.progress_pct || ((topGoal.saved_amount || 0) / (topGoal.target_amount || 1) * 100))}%
+                </span>
               </div>
-              <div className="goal-jar-badge" title="Target Savings Jar">
-                🌱
+
+              <div className="goal-progress-bar-wrap">
+                <div
+                  className="goal-progress-fill"
+                  style={{ width: `${Math.min(100, topGoal.progress_pct || ((topGoal.saved_amount || 0) / (topGoal.target_amount || 1) * 100))}%` }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+                <button
+                  type="button"
+                  className="btn small"
+                  style={{ flex: 1, padding: '0.45rem', fontSize: '0.8rem' }}
+                  onClick={() => handleGoalDepositQuick(500)}
+                  disabled={busyAction}
+                >
+                  + Deposit ₹500
+                </button>
+                <button
+                  type="button"
+                  className="btn small ghost"
+                  style={{ flex: 1, padding: '0.45rem', fontSize: '0.8rem' }}
+                  onClick={() => setShowDepositModal(true)}
+                >
+                  Custom Deposit
+                </button>
               </div>
             </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '0.84rem' }}>
-              <span>
-                <b>₹{Number(topGoal.saved_amount).toLocaleString('en-IN')}</b> of ₹{Number(topGoal.target_amount).toLocaleString('en-IN')}
-              </span>
-              <span style={{ fontWeight: 700, color: '#059669' }}>
-                {Math.round(topGoal.progress_pct || (topGoal.saved_amount / topGoal.target_amount * 100))}%
-              </span>
+          ) : (
+            <div className="savings-goal-banner empty-goal-banner" style={{ background: 'var(--card-bg, #ffffff)', border: '1px dashed var(--border-color, #e2e8f0)', padding: '1.25rem', borderRadius: 'var(--radius-md, 10px)' }}>
+              <div className="goal-banner-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--slate-500)', fontWeight: 700 }}>
+                    SAVINGS GOAL
+                  </span>
+                  <h4 style={{ margin: '2px 0 0 0', fontSize: '1rem', color: 'var(--slate-800)' }}>
+                    Set your first savings goal
+                  </h4>
+                </div>
+                <div className="goal-jar-badge" style={{ fontSize: '1.4rem' }}>🎯</div>
+              </div>
+              <p className="muted small" style={{ margin: '0.5rem 0 0.85rem' }}>
+                Build an emergency buffer, crop input fund, or family savings with dedicated target jars.
+              </p>
+              <Link to="/savings" className="btn small btn-primary" style={{ display: 'inline-flex', width: '100%', justifyContent: 'center' }}>
+                + Set Your First Goal
+              </Link>
             </div>
-
-            <div className="goal-progress-bar-wrap">
-              <div
-                className="goal-progress-fill"
-                style={{ width: `${Math.min(100, topGoal.progress_pct || (topGoal.saved_amount / topGoal.target_amount * 100))}%` }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
-              <button
-                type="button"
-                className="btn small"
-                style={{ flex: 1, padding: '0.45rem', fontSize: '0.8rem' }}
-                onClick={() => handleGoalDepositQuick(500)}
-                disabled={busyAction}
-              >
-                + Deposit ₹500
-              </button>
-              <button
-                type="button"
-                className="btn small ghost"
-                style={{ flex: 1, padding: '0.45rem', fontSize: '0.8rem' }}
-                onClick={() => setShowDepositModal(true)}
-              >
-                Custom Deposit
-              </button>
-            </div>
-          </div>
+          )}
 
           {/* Saathi AI Companion Card */}
           <div className="saathi-card-box">

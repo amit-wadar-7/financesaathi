@@ -1,22 +1,32 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { api } from './api'
 import { useAuth } from './auth'
 import { useLang } from './i18n'
 import { Loading } from './ui'
+import ErrorBoundary from './ErrorBoundary'
 import { Login, Register } from './pages/Auth'
-import Dashboard from './pages/Dashboard'
-import SaathiAI from './pages/SaathiAI'
-import { LoanApply, LoanDetail, LoanList } from './pages/Loans'
-import SchemesPortal from './pages/SchemesPortal'
-import Transactions from './pages/Transactions'
-import Reports from './pages/Reports'
-import Tools from './pages/Tools'
-import { Savings, SHG } from './pages/Community'
-import { CourseView, Learn } from './pages/Learn'
-import { Admin, AtRisk, Notifications, Profile } from './pages/Account'
-import Grievances from './pages/Grievances'
-import { PrivacyPolicy, TermsOfService } from './pages/Legal'
+
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const SaathiAI = lazy(() => import('./pages/SaathiAI'))
+const LoanApply = lazy(() => import('./pages/Loans').then((m) => ({ default: m.LoanApply })))
+const LoanDetail = lazy(() => import('./pages/Loans').then((m) => ({ default: m.LoanDetail })))
+const LoanList = lazy(() => import('./pages/Loans').then((m) => ({ default: m.LoanList })))
+const SchemesPortal = lazy(() => import('./pages/SchemesPortal'))
+const Transactions = lazy(() => import('./pages/Transactions'))
+const Reports = lazy(() => import('./pages/Reports'))
+const Tools = lazy(() => import('./pages/Tools'))
+const Savings = lazy(() => import('./pages/Community').then((m) => ({ default: m.Savings })))
+const SHG = lazy(() => import('./pages/Community').then((m) => ({ default: m.SHG })))
+const Learn = lazy(() => import('./pages/Learn').then((m) => ({ default: m.Learn })))
+const CourseView = lazy(() => import('./pages/Learn').then((m) => ({ default: m.CourseView })))
+const Admin = lazy(() => import('./pages/Account').then((m) => ({ default: m.Admin })))
+const AtRisk = lazy(() => import('./pages/Account').then((m) => ({ default: m.AtRisk })))
+const Notifications = lazy(() => import('./pages/Account').then((m) => ({ default: m.Notifications })))
+const Profile = lazy(() => import('./pages/Account').then((m) => ({ default: m.Profile })))
+const Grievances = lazy(() => import('./pages/Grievances'))
+const PrivacyPolicy = lazy(() => import('./pages/Legal').then((m) => ({ default: m.PrivacyPolicy })))
+const TermsOfService = lazy(() => import('./pages/Legal').then((m) => ({ default: m.TermsOfService })))
 import {
   IconLogo,
   IconHome,
@@ -146,7 +156,8 @@ function DesktopLayout({ children }) {
     if (user?.role === 'admin') return 'Super Admin'
     if (user?.role === 'officer') return 'Credit Officer'
     if (user?.role === 'shg_leader') return 'SHG Leader'
-    return 'Verified Borrower'
+    if (user?.monthly_income > 0) return 'Active Borrower'
+    return 'Registered Member'
   }
 
   const getNavItems = () => {
@@ -451,7 +462,7 @@ function DesktopLayout({ children }) {
         {/* Global Footer */}
         <footer className="desktop-global-footer">
           <div className="footer-left">
-            <span>FinanceSaathi Platform © 2024 • Institutional SHG & Microfinance Network (RBI Fair Practices Compliant)</span>
+            <span>FinanceSaathi Platform © {new Date().getFullYear()} • Institutional SHG & Microfinance Network (RBI Fair Practices Compliant)</span>
           </div>
           <div className="legal-links">
             <Link to="/grievances">Grievance Cell</Link>
@@ -477,14 +488,20 @@ function DesktopLayout({ children }) {
           <span className="mob-icon"><IconCoins size={20} /></span>
           <span className="mob-label">Passbook</span>
         </NavLink>
-        <NavLink to="/community" className={({ isActive }) => `mob-tab ${isActive ? 'active' : ''}`}>
-          <span className="mob-icon"><IconUsers size={20} /></span>
-          <span className="mob-label">SHG</span>
-        </NavLink>
         <NavLink to="/saathi" className={({ isActive }) => `mob-tab ${isActive ? 'active' : ''}`}>
           <span className="mob-icon"><IconBot size={20} /></span>
           <span className="mob-label">Saathi</span>
         </NavLink>
+        <button
+          type="button"
+          className="mob-tab"
+          onClick={() => setMobileDrawerOpen(true)}
+          style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+          aria-label="Open More Menu"
+        >
+          <span className="mob-icon"><IconMenu size={20} /></span>
+          <span className="mob-label">More</span>
+        </button>
       </nav>
 
       {/* 4. Floating Saathi AI Assistant (Desktop/Tablet) */}
@@ -573,44 +590,48 @@ export default function App() {
   }
 
   return (
-    <DesktopLayout>
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/loans" element={<LoanList />} />
-        <Route path="/loans/new" element={<LoanApply />} />
-        <Route path="/loans/:id" element={<LoanDetail />} />
-        <Route path="/schemes" element={<SchemesPortal />} />
-        <Route path="/transactions" element={<Transactions />} />
-        <Route path="/reports" element={<Reports />} />
-        <Route path="/tools" element={<Tools />} />
-        <Route path="/savings" element={<Savings />} />
-        <Route path="/community" element={<SHG />} />
-        <Route path="/saathi" element={<SaathiAI />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/learn" element={<Learn />} />
-        <Route path="/learn/:id" element={<CourseView />} />
-        <Route
-          path="/at-risk"
-          element={
-            <ProtectedRoute allowedRoles={['admin', 'officer']}>
-              <AtRisk />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <Admin />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/grievances" element={<Grievances />} />
-        <Route path="/notifications" element={<Notifications />} />
-        <Route path="/privacy" element={<PrivacyPolicy />} />
-        <Route path="/terms" element={<TermsOfService />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </DesktopLayout>
+    <ErrorBoundary title="Application Interface Error">
+      <DesktopLayout>
+        <Suspense fallback={<div className="center-loader"><Loading /></div>}>
+          <Routes>
+            <Route path="/" element={<ErrorBoundary title="Dashboard Error"><Dashboard /></ErrorBoundary>} />
+            <Route path="/loans" element={<ErrorBoundary title="Loans Workspace Error"><LoanList /></ErrorBoundary>} />
+            <Route path="/loans/new" element={<ErrorBoundary title="Loan Application Error"><LoanApply /></ErrorBoundary>} />
+            <Route path="/loans/:id" element={<ErrorBoundary title="Loan Detail Error"><LoanDetail /></ErrorBoundary>} />
+            <Route path="/schemes" element={<ErrorBoundary title="Government Schemes Error"><SchemesPortal /></ErrorBoundary>} />
+            <Route path="/transactions" element={<ErrorBoundary title="Passbook & Ledger Error"><Transactions /></ErrorBoundary>} />
+            <Route path="/reports" element={<ErrorBoundary title="Reports Desk Error"><Reports /></ErrorBoundary>} />
+            <Route path="/tools" element={<ErrorBoundary title="Financial Calculators Error"><Tools /></ErrorBoundary>} />
+            <Route path="/savings" element={<ErrorBoundary title="Savings Goals Error"><Savings /></ErrorBoundary>} />
+            <Route path="/community" element={<ErrorBoundary title="SHG Community Hub Error"><SHG /></ErrorBoundary>} />
+            <Route path="/saathi" element={<ErrorBoundary title="Saathi AI Advisor Error"><SaathiAI /></ErrorBoundary>} />
+            <Route path="/profile" element={<ErrorBoundary title="Profile Error"><Profile /></ErrorBoundary>} />
+            <Route path="/learn" element={<ErrorBoundary title="Financial Academy Error"><Learn /></ErrorBoundary>} />
+            <Route path="/learn/:id" element={<ErrorBoundary title="Course Module Error"><CourseView /></ErrorBoundary>} />
+            <Route
+              path="/at-risk"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'officer']}>
+                  <ErrorBoundary title="Credit Risk Radar Error"><AtRisk /></ErrorBoundary>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <ErrorBoundary title="Admin Governance Error"><Admin /></ErrorBoundary>
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/grievances" element={<ErrorBoundary title="Grievance Cell Error"><Grievances /></ErrorBoundary>} />
+            <Route path="/notifications" element={<ErrorBoundary title="Notifications Error"><Notifications /></ErrorBoundary>} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </DesktopLayout>
+    </ErrorBoundary>
   )
 }

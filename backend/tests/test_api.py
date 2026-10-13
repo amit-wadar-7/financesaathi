@@ -848,6 +848,36 @@ def test_grievance_redressal_lifecycle(client, staff):
     assert "credited to your wallet" in updated_g["response"]
 
 
+def test_brand_new_user_empty_state_resilience(client):
+    # Brand new user with 0 income, 0 expenses, 0 loans, 0 goals, 0 shg
+    newbie = make_user(client, "brand_new_user@x.com", income=0, expenses=0)
+
+    # 1. Borrower dashboard returns honest empty state
+    summary = client.get("/dashboard", headers=newbie).json()
+    assert summary["top_goal"] is None
+    assert summary["goals"] == []
+    assert summary["health_score"] is None  # Not 100 or fabricated 80
+    assert "cibil_score" not in summary      # CIBIL removed entirely
+    assert summary["transactions"] == []    # Zero fake "Opening Verified Savings Deposit"
+    assert summary["active_loans"] == 0
+    assert summary["pending_loans"] == 0
+    assert summary["outstanding"] == 0.0
+
+    # 2. Check kpi metrics deltas are clean
+    kpis = summary["kpi_metrics"]
+    assert kpis["income_this_month"] == 0.0
+    assert kpis["income_delta"] == ""        # No fake "+100%"
+    assert kpis["expenses_delta"] == ""
+
+    # 3. All borrower endpoints succeed with empty collections
+    assert client.get("/loans", headers=newbie).json() == []
+    assert client.get("/savings/goals", headers=newbie).json() == []
+    assert client.get("/money/transactions", headers=newbie).json() == []
+    assert client.get("/notifications", headers=newbie).json() == []
+    assert client.get("/grievances", headers=newbie).json() == []
+
+
+
 
 
 

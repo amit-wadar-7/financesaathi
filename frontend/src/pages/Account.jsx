@@ -271,7 +271,7 @@ export function Notifications() {
       <div className="grid" style={{ marginBottom: '1.25rem' }}>
         <Stat label="Total Dispatches" value={notifications.length} sub="Lifetime notifications" />
         <Stat label="Pending Attention" value={unreadCount} sub={unreadCount === 0 ? 'All caught up' : 'Unread alerts'} />
-        <Stat label="Dispatched Channel" value="In-App & SMS" sub="Institutional direct alerts" />
+        <Stat label="Dispatched Channel" value="In-App Notification" sub="Institutional direct alerts" />
       </div>
 
       <div

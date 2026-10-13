@@ -46,12 +46,20 @@ export function Learn() {
             <span className="badge approved" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 8px' }}>
               <IconCheck size={14} /> {completedCount} of {totalCourses} Completed
             </span>
-            <span className="badge" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', padding: '4px 8px' }}>
-              +120 Saathi Pts
-            </span>
-            <span className="badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 8px' }}>
-              <IconFlame size={14} /> 5-Day Streak
-            </span>
+            {completedCount > 0 ? (
+              <>
+                <span className="badge" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', padding: '4px 8px' }}>
+                  +{completedCount * 50} Saathi Pts
+                </span>
+                <span className="badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 8px' }}>
+                  <IconFlame size={14} /> {Math.min(completedCount, 7)}-Day Streak
+                </span>
+              </>
+            ) : (
+              <span className="badge" style={{ padding: '4px 8px', color: 'var(--slate-500)' }}>
+                0 Pts • Start First Lesson
+              </span>
+            )}
           </div>
         </div>
       </div>

@@ -24,6 +24,10 @@ export default function Reports() {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeReportSlug, setActiveReportSlug] = useState(null)
 
+  const today = new Date()
+  const fyStart = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1
+  const fyStr = `FY${String(fyStart).slice(2)}-${String(fyStart + 1).slice(2)}`
+
   // Load Catalog
   const { data: catalogData, loading: catalogLoading } = useLoad(() => api('/reports/catalog'))
 
@@ -93,7 +97,7 @@ export default function Reports() {
             className="btn small"
             onClick={() => setActiveReportSlug('tax-certificate')}
           >
-            <IconDownload size={15} /> Tax Certificate (FY24-25)
+            <IconDownload size={15} /> Tax Certificate ({fyStr})
           </button>
         </div>
       </div>
@@ -124,7 +128,7 @@ export default function Reports() {
           <div style={{ minWidth: '240px', flex: '1', maxWidth: '340px' }}>
             <input
               type="text"
-              placeholder="Search reports (e.g. CIBIL, PAR, Tax, RBI)..."
+              placeholder="Search reports (e.g. Delinquency, PAR, Tax, RBI)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{

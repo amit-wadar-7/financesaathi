@@ -1,4 +1,19 @@
 services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=financesaathi
+      - POSTGRES_PASSWORD=financesaathi_secure_pg_pass_2026
+      - POSTGRES_DB=financesaathi
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U financesaathi -d financesaathi"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: ./backend
@@ -6,12 +21,16 @@ services:
     ports:
       - "8000:8000"
     environment:
+      - DATABASE_URL=postgresql://financesaathi:financesaathi_secure_pg_pass_2026@db:5432/financesaathi
+      - SECRET_KEY=financesaathi_prod_secret_key_change_in_production_2026_at_least_32_chars
       - CORS_ORIGINS=http://localhost:5173,http://localhost:3000,http://localhost:80
-      - JWT_SECRET=financesaathi_prod_secret_key_change_in_production_2024
       - LLM_PROVIDER=none
+      - APP_ENV=production
     volumes:
-      - ./backend/financesaathi.db:/app/financesaathi.db
-      - ./backend/uploads:/app/uploads
+      - backend_uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
 
   frontend:
@@ -23,3 +42,7 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+
+volumes:
+  postgres_data:
+  backend_uploads:

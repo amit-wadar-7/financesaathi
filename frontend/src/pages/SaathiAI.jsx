@@ -237,7 +237,6 @@ export default function SaathiAI({ isWidget = false, onClose }) {
             <div>
               <div className="saathi-title-row">
                 <h3>Saathi AI (साथी AI)</h3>
-                <span className="badge-verified">✓ Verified</span>
               </div>
               <p className="saathi-subtitle">Online • Multilingual Financial Companion</p>
             </div>
@@ -282,7 +281,7 @@ export default function SaathiAI({ isWidget = false, onClose }) {
               className={`lang-pill ${lang === 'mr' ? 'active' : ''}`}
               onClick={() => setLang('mr')}
             >
-              मराठी (Active)
+              मराठी
             </button>
           </div>
         </div>
