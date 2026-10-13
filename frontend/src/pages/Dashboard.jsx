@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { api, money } from '../api'
 import { useAuth } from '../auth'
 import { useLang } from '../i18n'
-import { Alert, Badge, Card, Loading, Progress, Stat, useLoad } from '../ui'
+import { Alert, Badge, Card, Loading, Progress, Stat, useLoad, useToast, CibilSpeedometer, CashflowBarChart } from '../ui'
 import {
   IconInfo,
   IconCalendar,
@@ -37,6 +37,7 @@ import {
    1. ADMIN DASHBOARD WORKSPACE
    ========================================================================= */
 function AdminDashboardView({ data, reload }) {
+  const toast = useToast()
   const users = useLoad(() => api('/admin/users'))
   const audit = useLoad(() => api('/admin/audit?limit=15'))
   const [msg, setMsg] = useState({ kind: 'error', text: '' })
@@ -47,11 +48,14 @@ function AdminDashboardView({ data, reload }) {
     setMsg({ kind: 'error', text: '' })
     try {
       await api(`/admin/users/${userId}/role`, { method: 'PATCH', body: { role: newRole } })
-      setMsg({ kind: 'success', text: `User #${userId} role successfully changed to ${newRole.toUpperCase()}.` })
+      const text = `User #${userId} role successfully changed to ${newRole.toUpperCase()}.`
+      setMsg({ kind: 'success', text })
+      toast.success(text)
       users.reload()
       audit.reload()
     } catch (err) {
       setMsg({ kind: 'error', text: err.message })
+      toast.error(err.message)
     }
   }
 
@@ -60,11 +64,14 @@ function AdminDashboardView({ data, reload }) {
     setMsg({ kind: 'error', text: '' })
     try {
       const res = await api('/admin/run-reminders', { method: 'POST' })
-      setMsg({ kind: 'success', text: `Automated engine dispatched ${res.created} upcoming installment notification(s).` })
+      const text = `Automated engine dispatched ${res.created} upcoming installment notification(s).`
+      setMsg({ kind: 'success', text })
+      toast.success(text)
       audit.reload()
       reload()
     } catch (err) {
       setMsg({ kind: 'error', text: err.message })
+      toast.error(err.message)
     } finally {
       setRunningReminders(false)
     }
@@ -463,6 +470,7 @@ function OfficerDashboardView({ data, reload }) {
    3. SHG LEADER DASHBOARD WORKSPACE
    ========================================================================= */
 function SHGLeaderDashboardView({ user, refresh }) {
+  const toast = useToast()
   const [shgSummaryData, setShgSummaryData] = useState(null)
   const [loadingShg, setLoadingShg] = useState(true)
   const [showCreateShg, setShowCreateShg] = useState(false)
@@ -504,10 +512,13 @@ function SHGLeaderDashboardView({ user, refresh }) {
       })
       await refresh()
       setShowCreateShg(false)
-      setMsg(`SHG "${created.name}" established successfully!`)
+      const successText = `SHG "${created.name}" established successfully!`
+      setMsg(successText)
+      toast.success(successText)
       loadShg()
     } catch (x) {
       setErr(x.message)
+      toast.error(x.message)
     }
   }
 
@@ -523,10 +534,13 @@ function SHGLeaderDashboardView({ user, refresh }) {
       })
       setMemberEmailInput('')
       setShowAddMember(false)
-      setMsg('Member enrolled into SHG group successfully!')
+      const successText = 'Member enrolled into SHG group successfully!'
+      setMsg(successText)
+      toast.success(successText)
       loadShg()
     } catch (x) {
       setErr(x.message)
+      toast.error(x.message)
     }
   }
 
@@ -765,6 +779,7 @@ function SHGLeaderDashboardView({ user, refresh }) {
    4. BORROWER / MEMBER DASHBOARD WORKSPACE
    ========================================================================= */
 function BorrowerDashboardView({ data, user, refresh, reload }) {
+  const toast = useToast()
   const navigate = useNavigate()
   const { t, lang } = useLang()
 
@@ -832,11 +847,11 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
         await reload()
         setShowUpiModal(false)
         setPaySuccess(false)
-        alert(lang === 'mr' ? `₹${payAmount} चे UPI पेमेंट यशस्वी झाले!` : `UPI payment of ₹${payAmount} settled successfully!`)
+        toast.success(lang === 'mr' ? `₹${payAmount} चे UPI पेमेंट यशस्वी झाले!` : `UPI payment of ₹${payAmount} settled successfully!`)
       }, 1000)
     } catch (err) {
       setPaySuccess(false)
-      alert(err.message || 'Payment processing error')
+      toast.error(err.message || 'Payment processing error')
     }
   }
 
@@ -855,9 +870,9 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
       await refresh()
       await reload()
       setShowDepositModal(false)
-      alert(lang === 'mr' ? `₹${amt} बचत खात्यामध्ये जमा झाले!` : `₹${amt} deposited successfully to savings!`)
+      toast.success(lang === 'mr' ? `₹${amt} बचत खात्यामध्ये जमा झाले!` : `₹${amt} deposited successfully to savings!`)
     } catch (err) {
-      alert(err.message || 'Deposit failed')
+      toast.error(err.message || 'Deposit failed')
     } finally {
       setBusyAction(false)
     }
@@ -1106,25 +1121,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
 
             {monthlyIncome > 0 ? (
               <div>
-                <div className="row between small" style={{ marginBottom: '0.35rem' }}>
-                  <span className="muted">Total Monthly Outflow (Expenses + EMIs):</span>
-                  <b>₹{totalOutflow.toLocaleString('en-IN')} of ₹{monthlyIncome.toLocaleString('en-IN')}</b>
-                </div>
-
-                <div style={{ height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden', marginBottom: '0.75rem' }}>
-                  <div
-                    style={{
-                      width: `${spentPct}%`,
-                      background: spentPct > 80 ? '#ef4444' : 'var(--emerald-600)',
-                      height: '100%',
-                    }}
-                  />
-                </div>
-
-                <div className="row between small" style={{ padding: '0.6rem', background: 'var(--slate-50)', borderRadius: '6px' }}>
-                  <span>Safe Surplus Cashflow:</span>
-                  <b className="text-emerald">₹{budgetHeadroom.toLocaleString('en-IN')} / mo</b>
-                </div>
+                <CashflowBarChart income={monthlyIncome} expenses={monthlyExpenses} emi={existingEmi} />
               </div>
             ) : (
               <div style={{ textAlign: 'center', padding: '0.75rem 0' }}>
@@ -1370,12 +1367,10 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
               <h3>Financial Health & CIBIL Composite Score</h3>
               <button className="icon-btn" onClick={() => setShowHealthModal(false)}>✕</button>
             </div>
-            <div style={{ textAlign: 'center', padding: '1rem 0', borderBottom: '1px solid var(--border-color)' }}>
-              <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--slate-900)' }}>
-                {cibilScore} <small style={{ fontSize: '1rem', color: '#64748b' }}>/ 900</small>
-              </div>
-              <Badge tone={healthScore >= 70 ? 'approved' : 'pending'}>
-                {healthScore >= 70 ? 'High Credit Quality' : 'Moderate Standing'}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1rem 0', borderBottom: '1px solid var(--border-color)' }}>
+              <CibilSpeedometer score={cibilScore} width={240} height={135} />
+              <Badge tone={healthScore >= 70 ? 'approved' : 'pending'} style={{ marginTop: '0.75rem' }}>
+                {healthScore >= 70 ? 'Prime Credit Quality' : 'Moderate Standing'}
               </Badge>
             </div>
 

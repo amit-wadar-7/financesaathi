@@ -151,3 +151,35 @@ def test_reports_catalog_and_data(client, staff):
     r4 = client.get("/reports/data/rbi-compliance", headers=staff["admin"]).json()
     assert r4["psl_achieved_pct"] >= 75.0
 
+
+def test_harvest_bullet_loan_lifecycle(client, staff):
+    farmer = make_user(client, "farmer@x.com", income=25000, expenses=12000)
+    r = client.post("/loans", headers=farmer, json={
+        "amount": 40000,
+        "annual_rate": 7.0,
+        "tenure_months": 12,
+        "purpose": "Kharif Seeds and Fertilizer",
+        "product_type": "kisan_agri",
+        "schedule_type": "harvest_bullet",
+        "documents": ["aadhaar", "land_record"]
+    })
+    assert r.status_code == 201
+    loan = r.json()
+    assert loan["product_type"] == "kisan_agri"
+    assert loan["schedule_type"] == "harvest_bullet"
+
+    # Officer approves loan
+    d = client.post(f"/loans/{loan['id']}/decision", headers=staff["officer"], json={"approve": True, "note": "Kisan subvention approved"})
+    assert d.status_code == 200
+    assert d.json()["status"] == "approved"
+
+    # Verify amortization has gestation interest and harvest bullet principal
+    sched = client.get(f"/loans/{loan['id']}/schedule", headers=farmer).json()
+    assert len(sched) == 12
+    harvest_installments = [i for i in sched if i["is_harvest"]]
+    assert len(harvest_installments) >= 1
+    # Check that total principal repaid equals loan amount
+    total_principal = sum(i["principal_part"] for i in sched)
+    assert abs(total_principal - 40000) < 0.1
+
+

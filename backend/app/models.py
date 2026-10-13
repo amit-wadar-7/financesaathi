@@ -45,6 +45,7 @@ class Loan(Base):
     tenure_months: Mapped[int] = mapped_column(Integer)
     purpose: Mapped[str] = mapped_column(String(200), default="")
     product_type: Mapped[str] = mapped_column(String(50), default="standard")  # standard|kisan_agri|shg_enterprise|pm_svanidhi|emergency_health|solar_green
+    schedule_type: Mapped[str] = mapped_column(String(30), default="monthly")  # monthly|harvest_bullet
     status: Mapped[str] = mapped_column(String(20), default="pending")  # pending|approved|rejected|closed
     emi: Mapped[float] = mapped_column(Float, default=0)
     ai_score: Mapped[float] = mapped_column(Float, default=0)
@@ -84,6 +85,8 @@ class Installment(Base):
     paid_amount: Mapped[float] = mapped_column(Float, default=0)
     paid_on: Mapped[date | None] = mapped_column(Date, nullable=True)
     status: Mapped[str] = mapped_column(String(10), default="pending")  # pending|partial|paid
+    phase: Mapped[str] = mapped_column(String(50), default="Regular EMI")
+    is_harvest: Mapped[bool] = mapped_column(Boolean, default=False)
     reminded: Mapped[bool] = mapped_column(Boolean, default=False)
 
     loan: Mapped[Loan] = relationship(back_populates="installments")

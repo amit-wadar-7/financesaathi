@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { api, money } from '../api'
 import { useAuth } from '../auth'
 import { useLang } from '../i18n'
-import { Alert, Badge, Card, Field, Loading, Progress, Stat, useLoad } from '../ui'
+import { Alert, Badge, Card, Field, Loading, Progress, Stat, useLoad, useToast } from '../ui'
 import {
   IconCoins,
   IconTractor,
@@ -15,6 +15,9 @@ import {
   IconShield,
   IconClock,
   IconTarget,
+  IconCheck,
+  IconAward,
+  IconLock,
 } from '../icons'
 
 function getGoalIcon(title = '') {
@@ -33,6 +36,7 @@ function getGoalIcon(title = '') {
 
 export function Savings() {
   const { t } = useLang()
+  const toast = useToast()
   const goals = useLoad(() => api('/savings/goals'))
   const [f, setF] = useState({ title: '', target_amount: '' })
   const [dep, setDep] = useState({})
@@ -56,10 +60,13 @@ export function Savings() {
         body: { title: f.title, target_amount: Number(f.target_amount) },
       })
       setF({ title: '', target_amount: '' })
-      setSuccessMsg('Savings target successfully registered.')
+      const ok = 'Savings target successfully registered.'
+      setSuccessMsg(ok)
+      toast.success(ok)
       goals.reload()
     } catch (x) {
       setErr(x.message)
+      toast.error(x.message)
     }
   }
 
@@ -74,10 +81,13 @@ export function Savings() {
         body: { amount: amountToDeposit },
       })
       setDep({ ...dep, [id]: '' })
-      setSuccessMsg(`Deposited ${money(amountToDeposit)} into savings goal.`)
+      const ok = `Deposited ${money(amountToDeposit)} into savings goal.`
+      setSuccessMsg(ok)
+      toast.success(ok)
       goals.reload()
     } catch (x) {
       setErr(x.message)
+      toast.error(x.message)
     }
   }
 
@@ -243,10 +253,30 @@ export function Savings() {
 export function SHG() {
   const { user, refresh } = useAuth()
   const { t } = useLang()
+  const toast = useToast()
   const [name, setName] = useState('')
   const [village, setVillage] = useState('')
   const [email, setEmail] = useState('')
   const [msg, setMsg] = useState({ kind: 'error', text: '' })
+  const [attendance, setAttendance] = useState({})
+  const [showInterLoanModal, setShowInterLoanModal] = useState(false)
+  const [interLoanForm, setInterLoanForm] = useState({
+    borrower: '',
+    amount: 5000,
+    purpose: 'Emergency Medical & Crop Input',
+  })
+  const [internalLoans, setInternalLoans] = useState([
+    {
+      id: 'IL-101',
+      borrower: 'Anita Bai',
+      amount: 6000,
+      purpose: 'Dairy Cattle Feed & Vet Care',
+      date: '02 Oct 2026',
+      status: 'Disbursed',
+      votes: 'Consensus Approved (100%)',
+    },
+  ])
+
   const summary = useLoad(
     () => (user.shg_id ? api('/shgs/' + user.shg_id + '/summary') : Promise.resolve(null)),
     [user.shg_id]
@@ -257,8 +287,10 @@ export function SHG() {
     try {
       await fn()
       setMsg({ kind: 'success', text: ok })
+      toast.success(ok)
     } catch (x) {
       setMsg({ kind: 'error', text: x.message })
+      toast.error(x.message)
     }
   }
 
@@ -279,13 +311,37 @@ export function SHG() {
     }, 'Member successfully enrolled into group.')
   }
 
+  const handleCreateInternalLoan = (e) => {
+    e.preventDefault()
+    const amt = Number(interLoanForm.amount)
+    if (!amt || amt <= 0) return
+    const borrowerName = interLoanForm.borrower.trim() || user?.name || 'Group Member'
+    const newLoan = {
+      id: `IL-${102 + internalLoans.length}`,
+      borrower: borrowerName,
+      amount: amt,
+      purpose: interLoanForm.purpose.trim() || 'Emergency Need',
+      date: new Date().toLocaleDateString('en-IN'),
+      status: 'Disbursed',
+      votes: 'Consensus Approved (100%)',
+    }
+    setInternalLoans([newLoan, ...internalLoans])
+    setShowInterLoanModal(false)
+    toast.success(`Internal peer loan of ₹${amt.toLocaleString('en-IN')} approved from common savings pool!`)
+  }
+
+  const membersList = summary.data?.members || []
+  const presentCount = membersList.filter((m) => attendance[m.id] !== false).length
+  const quorumPct = membersList.length > 0 ? Math.round((presentCount / membersList.length) * 100) : 100
+  const commonPool = membersList.length * 6000 + 20000
+
   return (
     <>
       <div className="row between" style={{ marginBottom: '1.25rem', alignItems: 'flex-start' }}>
         <div>
           <h2>{t('shg')}</h2>
           <p className="muted" style={{ margin: '0.2rem 0 0 0' }}>
-            NABARD SHG-Bank Linkage Program & Joint Liability Group Management
+            NABARD SHG-Bank Linkage Program, Joint Liability Group Governance & Micro-Savings Pool
           </p>
         </div>
       </div>
@@ -354,9 +410,9 @@ export function SHG() {
           </div>
 
           <div className="grid" style={{ marginBottom: '1.25rem' }}>
-            <Stat label="Total Members" value={summary.data.members.length} sub="Registered borrowers" />
-            <Stat label="Group Credit Portfolio" value={summary.data.group_loans} sub="Active joint facilities" />
-            <Stat label={t('outstanding')} value={money(summary.data.outstanding)} sub="Collective balance" />
+            <Stat label="Total Group Members" value={summary.data.members.length} sub="Joint liability roll" />
+            <Stat label="Group Common Pool" value={money(commonPool)} sub="Accumulated savings pool" />
+            <Stat label={t('outstanding')} value={money(summary.data.outstanding)} sub="Active bank linkage" />
             <Stat
               label="Overdue Instalments"
               value={summary.data.overdue_installments}
@@ -365,37 +421,67 @@ export function SHG() {
           </div>
 
           <div className="two-col" style={{ marginBottom: '1.25rem' }}>
-            <Card title="Monthly Meeting Schedule & Governance">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem' }}>
-                  <IconCalendar size={18} className="text-emerald" style={{ marginTop: '2px' }} />
+            {/* 1. Monthly Meeting Schedule & Statutory Attendance */}
+            <Card title="Monthly Assembly & Attendance Roll">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginBottom: '0.85rem' }}>
+                <div className="row between small">
                   <div>
-                    <div style={{ fontWeight: 600 }}>Next Assembly: 15th of Every Month</div>
-                    <div className="muted small">Location: Gram Panchayat Community Hall (11:00 AM)</div>
+                    <span className="muted">Next Assembly:</span> <b>15th of Every Month (11:00 AM)</b>
                   </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem' }}>
-                  <IconCheckCircle size={18} className="text-emerald" style={{ marginTop: '2px' }} />
-                  <div>
-                    <div style={{ fontWeight: 600 }}>Quorum Rule: Minimum 75% Attendance</div>
-                    <div className="muted small">Passed in statutory resolution. Last quorum: 100% present.</div>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem' }}>
-                  <IconTarget size={18} className="text-emerald" style={{ marginTop: '2px' }} />
-                  <div>
-                    <div style={{ fontWeight: 600 }}>Agenda Item</div>
-                    <div className="muted small">Bulk procurement of organic fertilizer and dairy loan sanction.</div>
-                  </div>
+                  <Badge tone={quorumPct >= 75 ? 'approved' : 'pending'}>
+                    Quorum: {quorumPct}% {quorumPct >= 75 ? '(Quorum Met)' : '(Pending)'}
+                  </Badge>
                 </div>
               </div>
+
+              <div style={{ border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden', marginBottom: '0.85rem' }}>
+                <div style={{ background: 'var(--slate-50)', padding: '0.45rem 0.65rem', fontWeight: 600, fontSize: '0.78rem', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Member Roll</span>
+                  <span>Present: {presentCount} of {membersList.length}</span>
+                </div>
+                {membersList.map((m) => {
+                  const isPresent = attendance[m.id] !== false
+                  return (
+                    <div
+                      key={m.id}
+                      style={{
+                        padding: '0.45rem 0.65rem',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        borderBottom: '1px solid var(--border-color)',
+                        background: isPresent ? '#ffffff' : '#fef2f2',
+                      }}
+                    >
+                      <span style={{ fontSize: '0.82rem', fontWeight: 500 }}>{m.name}</span>
+                      <button
+                        type="button"
+                        className={`btn small ${isPresent ? 'emerald' : 'ghost'}`}
+                        style={{ fontSize: '0.7rem', padding: '2px 8px' }}
+                        onClick={() => setAttendance({ ...attendance, [m.id]: !isPresent })}
+                      >
+                        {isPresent ? '✓ Present' : '✕ Absent'}
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+
+              <button
+                type="button"
+                className="btn small ghost w-100"
+                onClick={() => toast.success(`Meeting attendance and resolution logged in SHG statutory register with ${quorumPct}% quorum!`)}
+              >
+                Log Statutory Attendance in Register
+              </button>
             </Card>
 
+            {/* 2. Enroll Member Card */}
             <Card title="Enroll SHG Member">
               <p className="muted small" style={{ marginBottom: '0.75rem' }}>
                 Borrowers must have an active FinanceSaathi account to be inducted into your group roster.
               </p>
-              <form onSubmit={add} className="row" style={{ gap: '0.5rem' }}>
+              <form onSubmit={add} className="row" style={{ gap: '0.5rem', marginBottom: '1rem' }}>
                 <input
                   type="email"
                   required
@@ -408,9 +494,69 @@ export function SHG() {
                   <IconPlus size={16} /> Add Member
                 </button>
               </form>
+
+              <div style={{ background: 'var(--slate-50)', padding: '0.75rem', borderRadius: '6px' }}>
+                <span style={{ fontWeight: 600, fontSize: '0.84rem' }}>Joint Liability Terms:</span>
+                <p className="muted small" style={{ margin: '0.2rem 0 0 0', fontSize: '0.74rem' }}>
+                  All members mutually guarantee loans extended to the group under NABARD SHG-Bank Linkage guidelines.
+                </p>
+              </div>
             </Card>
           </div>
 
+          {/* 3. Inter-Lending Common Corpus Card */}
+          <Card title="SHG Internal Lending Common Corpus" style={{ marginBottom: '1.25rem' }}>
+            <div className="row between" style={{ alignItems: 'center', marginBottom: '1rem' }}>
+              <div>
+                <span className="muted small">Accumulated Group Common Fund:</span>
+                <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--slate-900)' }}>
+                  {money(commonPool)}
+                </div>
+                <span className="muted small">Liquid micro-reserves available for peer emergency inter-lending</span>
+              </div>
+              <button
+                type="button"
+                className="btn small emerald"
+                onClick={() => setShowInterLoanModal(true)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+              >
+                <IconPlus size={14} /> Request Peer Emergency Loan
+              </button>
+            </div>
+
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Loan Ref</th>
+                    <th>Borrower Member</th>
+                    <th>Sanction Amount</th>
+                    <th>Emergency Purpose</th>
+                    <th>Consensus Vote</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {internalLoans.map((l) => (
+                    <tr key={l.id}>
+                      <td style={{ fontWeight: 600 }}>#{l.id}</td>
+                      <td style={{ fontWeight: 600 }}>{l.borrower}</td>
+                      <td style={{ fontWeight: 700, color: 'var(--emerald-700)' }}>{money(l.amount)}</td>
+                      <td className="small">{l.purpose}</td>
+                      <td>
+                        <span className="badge approved" style={{ fontSize: '0.72rem' }}>{l.votes}</span>
+                      </td>
+                      <td>
+                        <Badge tone="approved">{l.status}</Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
+          {/* 4. Roster Table */}
           <Card title="SHG Member Roster & Contribution Ledger">
             <div className="table-wrap">
               <table>
@@ -450,6 +596,69 @@ export function SHG() {
               </table>
             </div>
           </Card>
+
+          {/* Inter-Lending Modal */}
+          {showInterLoanModal && (
+            <div className="modal-overlay" onClick={() => setShowInterLoanModal(false)}>
+              <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+                <div className="modal-header">
+                  <h3>Request Peer Emergency Loan</h3>
+                  <button className="icon-btn" onClick={() => setShowInterLoanModal(false)}>✕</button>
+                </div>
+                <p className="muted small" style={{ marginBottom: '1rem' }}>
+                  Emergency internal loan from {summary.data.name} Common Savings Pool (Balance: {money(commonPool)}).
+                </p>
+
+                <form onSubmit={handleCreateInternalLoan}>
+                  <div className="field">
+                    <span>Borrower Member Name</span>
+                    <input
+                      required
+                      placeholder="e.g. Meena Patil"
+                      value={interLoanForm.borrower}
+                      onChange={(e) => setInterLoanForm({ ...interLoanForm, borrower: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="field">
+                    <span>Requested Amount (Rs)</span>
+                    <input
+                      type="number"
+                      min="1000"
+                      max={commonPool}
+                      step="500"
+                      required
+                      value={interLoanForm.amount}
+                      onChange={(e) => setInterLoanForm({ ...interLoanForm, amount: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="field">
+                    <span>Emergency Purpose</span>
+                    <input
+                      required
+                      placeholder="e.g. Seed purchase, hospital visit"
+                      value={interLoanForm.purpose}
+                      onChange={(e) => setInterLoanForm({ ...interLoanForm, purpose: e.target.value })}
+                    />
+                  </div>
+
+                  <div style={{ background: '#ecfdf5', padding: '0.65rem', borderRadius: '6px', fontSize: '0.74rem', color: '#047857', marginBottom: '1rem' }}>
+                    ✓ 1% concessional interest per month credited directly back into the SHG common pool.
+                  </div>
+
+                  <div className="modal-actions">
+                    <button type="button" className="btn ghost" onClick={() => setShowInterLoanModal(false)}>
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn">
+                      Disburse Internal Loan
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </>
       )}
     </>

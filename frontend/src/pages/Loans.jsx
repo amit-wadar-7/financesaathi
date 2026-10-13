@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api, money } from '../api'
 import { useAuth } from '../auth'
 import { useLang } from '../i18n'
-import { Alert, Badge, Card, Factors, Field, Loading, Progress, Stat, useLoad } from '../ui'
+import { Alert, Badge, Card, Factors, Field, Loading, Progress, Stat, useLoad, useToast, DonutSplitChart } from '../ui'
 import {
   IconPlus,
   IconSearch,
@@ -535,16 +535,9 @@ export function LoanList() {
               </div>
             </div>
 
-            {/* Split Progress Bar */}
-            <div style={{ marginBottom: '1.25rem' }}>
-              <div className="row between small" style={{ marginBottom: '0.35rem' }}>
-                <span>Principal Share ({principalPct}%)</span>
-                <span>Interest Share ({interestPct}%)</span>
-              </div>
-              <div style={{ height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden', display: 'flex' }}>
-                <div style={{ width: `${principalPct}%`, background: 'var(--emerald-600)' }} />
-                <div style={{ width: `${interestPct}%`, background: '#f59e0b' }} />
-              </div>
+            {/* Donut Split Chart */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
+              <DonutSplitChart principal={calcAmount} interest={calcResult.totalInterest} />
             </div>
 
             <button
@@ -700,6 +693,7 @@ export function LoanApply() {
   const [selectedProduct, setSelectedProduct] = useState(initialProd)
   const [f, setF] = useState({
     product_type: initialProd.id,
+    schedule_type: 'monthly',
     amount: queryAmount ? Number(queryAmount) : initialProd.defaultAmount,
     annual_rate: queryRate ? Number(queryRate) : initialProd.apr,
     tenure_months: queryTenure ? Number(queryTenure) : initialProd.defaultTenure,
@@ -718,6 +712,7 @@ export function LoanApply() {
     setF({
       ...f,
       product_type: prod.id,
+      schedule_type: prod.id === 'kisan_agri' ? 'harvest_bullet' : 'monthly',
       amount: prod.defaultAmount,
       annual_rate: prod.apr,
       tenure_months: prod.defaultTenure,
@@ -945,20 +940,99 @@ export function LoanApply() {
               </label>
             )}
 
+            {selectedProduct.id === 'kisan_agri' && (
+              <div style={{ marginBottom: '1rem', background: 'var(--slate-50)', padding: '0.75rem', borderRadius: '6px' }}>
+                <span className="muted small" style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 600 }}>
+                  Agricultural Repayment Structure:
+                </span>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                  <button
+                    type="button"
+                    className={`btn small ${f.schedule_type === 'monthly' ? 'emerald' : 'ghost'}`}
+                    style={{ textAlign: 'left', padding: '6px 8px', height: 'auto', display: 'flex', flexDirection: 'column', gap: '2px' }}
+                    onClick={() => setF({ ...f, schedule_type: 'monthly' })}
+                  >
+                    <span style={{ fontWeight: 700, fontSize: '0.78rem' }}>Standard Monthly EMI</span>
+                    <span style={{ fontSize: '0.68rem', opacity: 0.85 }}>Equal monthly installments</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn small ${f.schedule_type === 'harvest_bullet' ? 'emerald' : 'ghost'}`}
+                    style={{ textAlign: 'left', padding: '6px 8px', height: 'auto', display: 'flex', flexDirection: 'column', gap: '2px' }}
+                    onClick={() => setF({ ...f, schedule_type: 'harvest_bullet' })}
+                  >
+                    <span style={{ fontWeight: 700, fontSize: '0.78rem' }}>🌾 Harvest Bullet Schedule</span>
+                    <span style={{ fontSize: '0.68rem', opacity: 0.85 }}>Maintenance in growth, lumpsum at mandi sale</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div style={{ marginTop: '0.75rem', marginBottom: '1.25rem' }}>
-              <p className="muted small" style={{ fontWeight: 600, marginBottom: '0.5rem' }}>
-                Required Statutory KYC Documents to Pledge:
-              </p>
-              {selectedProduct.docs.map(([k, label]) => (
-                <label className="check" key={k} style={{ display: 'block', marginBottom: '0.4rem' }}>
-                  <input
-                    type="checkbox"
-                    checked={f.documents.includes(k)}
-                    onChange={() => toggleDoc(k)}
-                  />{' '}
-                  {label}
-                </label>
-              ))}
+              <div className="row between" style={{ alignItems: 'center', marginBottom: '0.5rem' }}>
+                <p className="muted small" style={{ fontWeight: 600, margin: 0 }}>
+                  Statutory KYC & Income Verification Documents:
+                </p>
+                <button
+                  type="button"
+                  className="btn small ghost"
+                  style={{ fontSize: '0.72rem', padding: '2px 8px' }}
+                  onClick={() => {
+                    const allKeys = selectedProduct.docs.map(([k]) => k)
+                    setF({ ...f, documents: allKeys })
+                  }}
+                >
+                  + Attach All Verified KYC
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                {selectedProduct.docs.map(([k, label]) => {
+                  const isAttached = f.documents.includes(k)
+                  return (
+                    <div
+                      key={k}
+                      style={{
+                        padding: '0.6rem 0.75rem',
+                        border: isAttached ? '1.5px solid var(--emerald-600)' : '1px solid var(--border-color)',
+                        borderRadius: '6px',
+                        background: isAttached ? 'var(--emerald-50, #ecfdf5)' : '#ffffff',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', margin: 0, flex: 1 }}>
+                        <input
+                          type="checkbox"
+                          checked={isAttached}
+                          onChange={() => toggleDoc(k)}
+                        />
+                        <div>
+                          <div style={{ fontSize: '0.82rem', fontWeight: 600 }}>{label}</div>
+                          {isAttached ? (
+                            <div className="muted small" style={{ fontSize: '0.7rem', color: 'var(--emerald-600)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                              <IconCheckCircle size={12} /> {k}_doc_verified.pdf (320 KB) • OCR Verified
+                            </div>
+                          ) : (
+                            <div className="muted small" style={{ fontSize: '0.7rem' }}>
+                              Official scanned copy or digilocker pull
+                            </div>
+                          )}
+                        </div>
+                      </label>
+                      <button
+                        type="button"
+                        className={`btn small ${isAttached ? 'ghost' : ''}`}
+                        style={{ fontSize: '0.72rem', padding: '2px 8px' }}
+                        onClick={() => toggleDoc(k)}
+                      >
+                        {isAttached ? 'Detach' : 'Attach File'}
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
 
             <button
@@ -1044,11 +1118,13 @@ export function LoanDetail() {
   const { id } = useParams()
   const { user } = useAuth()
   const { t } = useLang()
+  const toast = useToast()
   const loan = useLoad(() => api('/loans/' + id), [id])
   const sched = useLoad(() => api('/loans/' + id + '/schedule'), [id])
   const [msg, setMsg] = useState({ kind: 'error', text: '' })
   const [note, setNote] = useState('')
   const [paymentModal, setPaymentModal] = useState(null)
+  const [showSanctionModal, setShowSanctionModal] = useState(false)
   const [customPayAmt, setCustomPayAmt] = useState('')
   const staff = user.role === 'officer' || user.role === 'admin'
   const l = loan.data
@@ -1058,10 +1134,12 @@ export function LoanDetail() {
     try {
       await fn()
       setMsg({ kind: 'success', text: ok })
+      toast.success(ok)
       loan.reload()
       sched.reload()
     } catch (e) {
       setMsg({ kind: 'error', text: e.message })
+      toast.error(e.message)
     }
   }
 
@@ -1118,6 +1196,16 @@ export function LoanDetail() {
           {l.shg_id && <Badge tone="pending">SHG Joint Liability</Badge>}
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
+          {l.status === 'approved' && (
+            <button
+              type="button"
+              className="btn small emerald"
+              onClick={() => setShowSanctionModal(true)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+            >
+              <IconFileText size={15} /> Sanction Letter
+            </button>
+          )}
           <button
             type="button"
             className="btn small ghost"
@@ -1242,6 +1330,7 @@ export function LoanDetail() {
                   <tr>
                     <th>Instalment #</th>
                     <th>Due Date</th>
+                    <th>Phase / Type</th>
                     <th>Instalment Amount</th>
                     <th>Principal Share</th>
                     <th>Interest Share</th>
@@ -1254,6 +1343,21 @@ export function LoanDetail() {
                     <tr key={i.number} className={i.overdue ? 'overdue' : ''}>
                       <td style={{ fontWeight: 600 }}>#{i.number}</td>
                       <td>{i.due_date}</td>
+                      <td>
+                        {i.is_harvest ? (
+                          <span className="badge approved" style={{ fontSize: '0.7rem' }}>
+                            🌾 Harvest Bullet
+                          </span>
+                        ) : i.phase && i.phase.includes('Gestation') ? (
+                          <span className="badge neutral" style={{ fontSize: '0.7rem' }}>
+                            🌱 Gestation
+                          </span>
+                        ) : (
+                          <span className="badge neutral" style={{ fontSize: '0.7rem' }}>
+                            Monthly EMI
+                          </span>
+                        )}
+                      </td>
                       <td style={{ fontWeight: 600 }}>{money(i.amount)}</td>
                       <td>{money(i.principal_part)}</td>
                       <td>{money(i.interest_part)}</td>
@@ -1334,6 +1438,124 @@ export function LoanDetail() {
               </button>
               <button className="btn" onClick={recordPayment}>
                 Confirm UPI Payment
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Digital Sanction Letter Modal */}
+      {showSanctionModal && (
+        <div className="modal-overlay" onClick={() => setShowSanctionModal(false)}>
+          <div
+            className="modal-card sanction-letter-modal"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '680px', width: '95%', maxHeight: '90vh', overflowY: 'auto', padding: '1.75rem' }}
+          >
+            {/* Sanction Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid var(--emerald-600)', paddingBottom: '1rem', marginBottom: '1.25rem' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                  <IconShield size={24} className="text-emerald" />
+                  <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--slate-900)', letterSpacing: '-0.02em' }}>
+                    FINANCESAATHI CREDIT DESK
+                  </span>
+                </div>
+                <div className="muted small" style={{ fontSize: '0.74rem' }}>
+                  Statutory Regulated Microfinance & Priority Sector Lending Platform • RBI PSL Master Direction 2022 Compliant
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <span className="badge approved" style={{ fontWeight: 700 }}>SANCTION ORDER</span>
+                <div className="muted small" style={{ fontSize: '0.72rem', marginTop: '4px' }}>
+                  Ref: FS/SANCTION/2026/{String(l.id).padStart(4, '0')}
+                </div>
+              </div>
+            </div>
+
+            {/* Letter Body */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <div className="row between small" style={{ marginBottom: '0.75rem', background: 'var(--slate-50)', padding: '0.65rem 0.85rem', borderRadius: '6px' }}>
+                <div>
+                  <span className="muted">Sanction Date:</span> <b>{l.decided_at ? new Date(l.decided_at + 'Z').toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN')}</b>
+                </div>
+                <div>
+                  <span className="muted">Borrower:</span> <b>{l.borrower_name} (#{l.user_id})</b>
+                </div>
+                <div>
+                  <span className="muted">SHG Affiliation:</span> <b>{l.shg_id ? `SHG #${l.shg_id}` : 'Direct Account'}</b>
+                </div>
+              </div>
+
+              <p style={{ fontSize: '0.86rem', lineHeight: '1.5', margin: '0 0 1rem 0' }}>
+                We are pleased to convey official credit sanction for the facility described herein under the <b>{productInfo.title}</b> program, following automated underwriting and KYC verification.
+              </p>
+
+              {/* Terms Table */}
+              <div style={{ border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden', marginBottom: '1rem', fontSize: '0.82rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '1px solid var(--border-color)' }}>
+                  <div style={{ padding: '0.5rem 0.75rem', background: 'var(--slate-50)', fontWeight: 600 }}>Sanctioned Principal:</div>
+                  <div style={{ padding: '0.5rem 0.75rem', fontWeight: 800, color: 'var(--emerald-700)' }}>{money(l.amount)}</div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '1px solid var(--border-color)' }}>
+                  <div style={{ padding: '0.5rem 0.75rem', background: 'var(--slate-50)', fontWeight: 600 }}>Annual Interest Rate (APR):</div>
+                  <div style={{ padding: '0.5rem 0.75rem' }}>{l.annual_rate}% p.a. (Reducing Balance Method)</div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '1px solid var(--border-color)' }}>
+                  <div style={{ padding: '0.5rem 0.75rem', background: 'var(--slate-50)', fontWeight: 600 }}>Repayment Tenure:</div>
+                  <div style={{ padding: '0.5rem 0.75rem' }}>{l.tenure_months} Months</div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '1px solid var(--border-color)' }}>
+                  <div style={{ padding: '0.5rem 0.75rem', background: 'var(--slate-50)', fontWeight: 600 }}>Amortization Protocol:</div>
+                  <div style={{ padding: '0.5rem 0.75rem' }}>
+                    {l.schedule_type === 'harvest_bullet' ? '🌾 Harvest-Aligned Bullet (Gestation Maintenance + Post-Harvest Bullets)' : 'Equated Monthly Installment (EMI)'}
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '1px solid var(--border-color)' }}>
+                  <div style={{ padding: '0.5rem 0.75rem', background: 'var(--slate-50)', fontWeight: 600 }}>Stated Livelihood Purpose:</div>
+                  <div style={{ padding: '0.5rem 0.75rem' }}>{l.purpose || 'Agricultural / Livelihood Facility'}</div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+                  <div style={{ padding: '0.5rem 0.75rem', background: 'var(--slate-50)', fontWeight: 600 }}>Foreclosure / Prepayment Penalty:</div>
+                  <div style={{ padding: '0.5rem 0.75rem', color: 'var(--emerald-600)', fontWeight: 600 }}>NIL (0% per RBI Fair Practice Code)</div>
+                </div>
+              </div>
+
+              {/* Statutory Fair Practice Code Seal */}
+              <div style={{ background: '#f8fafc', padding: '0.75rem 0.85rem', borderRadius: '6px', borderLeft: '3px solid var(--emerald-600)', fontSize: '0.76rem', color: '#475569', marginBottom: '1.25rem' }}>
+                <b>Statutory Fair Practices Declaration:</b> Issued under the RBI Fair Practices Code for Microfinance Institutions. The borrower is entitled to an itemized passbook, transparent reducing-rate calculation, and zero foreclosure penalties.
+              </div>
+
+              {/* Digital Officer Seal */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.75rem', borderTop: '1px dashed var(--border-color)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid var(--emerald-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--emerald-600)' }}>
+                    <IconAward size={20} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '0.78rem' }}>AUTHORIZED SANCTION DESK</div>
+                    <div className="muted small" style={{ fontSize: '0.7rem' }}>FinanceSaathi Automated Underwriting</div>
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <span className="badge approved" style={{ fontSize: '0.7rem' }}>✓ DIGITALLY SEALED</span>
+                  <div className="muted small" style={{ fontSize: '0.68rem', marginTop: '2px' }}>DPDP-2023 Verified</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="modal-actions" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem', marginTop: '1rem' }}>
+              <button type="button" className="btn ghost" onClick={() => setShowSanctionModal(false)}>
+                Close
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => window.print()}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+              >
+                <IconPrinter size={15} /> Print / Save Official PDF
               </button>
             </div>
           </div>

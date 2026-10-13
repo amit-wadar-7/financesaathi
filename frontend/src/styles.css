@@ -1365,3 +1365,116 @@ tr:hover td { background: #fafafa; }
   box-shadow: var(--shadow-hover);
 }
 
+/* Animations for Skeletons and Toasts */
+@keyframes skeletonShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes slideInToast {
+  from {
+    transform: translateY(20px) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Dark Theme Variables & Adjustments */
+[data-theme="dark"] {
+  --canvas-bg: #090d16;
+  --card-bg: #111827;
+  --border-color: #1f2937;
+  --text-primary: #f8fafc;
+  --text-muted: #94a3b8;
+  --slate-50: #111827;
+  --slate-100: #1e293b;
+  --slate-200: #334155;
+  --slate-700: #cbd5e1;
+  --slate-800: #f1f5f9;
+  --slate-900: #0f172a;
+}
+
+[data-theme="dark"] body {
+  background: var(--canvas-bg);
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .card {
+  background: #111827;
+  border-color: #1f2937;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .desktop-sidebar {
+  background: #0f172a;
+  border-right-color: #1f2937;
+}
+
+[data-theme="dark"] .desktop-top-bar {
+  background: #111827;
+  border-bottom-color: #1f2937;
+}
+
+[data-theme="dark"] .table {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .table th {
+  background: #1e293b;
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .table td {
+  border-bottom-color: #1f2937;
+}
+
+[data-theme="dark"] .sidebar-footer {
+  background: #111827;
+  border-top-color: #1f2937;
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background: #1e293b;
+  color: #f8fafc;
+  border-color: #334155;
+}
+
+[data-theme="dark"] .user-capsule-name {
+  color: #f8fafc;
+}
+
+/* Print Optimization for Sanction Letters and Account Statements */
+@media print {
+  .desktop-sidebar,
+  .desktop-top-bar,
+  .btn,
+  .icon-btn,
+  .modal-actions,
+  .eye-toggle-btn,
+  .saathi-prompts-bar,
+  .saathi-input-wrap {
+    display: none !important;
+  }
+  .desktop-page-content,
+  .page-container,
+  .modal-card {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+}
+
+

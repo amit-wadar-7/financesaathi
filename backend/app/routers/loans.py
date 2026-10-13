@@ -52,7 +52,7 @@ def apply_for_loan(body: schemas.LoanIn, user: models.User = Depends(get_current
                        body.amount, body.annual_rate, body.tenure_months)
     loan = models.Loan(user_id=user.id, shg_id=user.shg_id if body.group_loan else None, amount=body.amount,
                        annual_rate=body.annual_rate, tenure_months=body.tenure_months, purpose=body.purpose,
-                       product_type=body.product_type,
+                       product_type=body.product_type, schedule_type=body.schedule_type,
                        emi=result["emi"], ai_score=result["score"], ai_band=result["band"],
                        ai_factors=result["factors"])
     for d in body.documents:
@@ -96,10 +96,15 @@ def decide(loan_id: int, body: schemas.DecisionIn, officer: models.User = Depend
     loan.officer_id, loan.officer_note, loan.decided_at = officer.id, body.note, models.now()
     if body.approve:
         loan.status = "approved"
-        for row in finance.amortization(loan.amount, loan.annual_rate, loan.tenure_months, date.today()):
+        if loan.schedule_type == "harvest_bullet" or (loan.product_type == "kisan_agri" and loan.schedule_type == "harvest_bullet"):
+            schedule_rows = finance.kisan_harvest_amortization(loan.amount, loan.annual_rate, loan.tenure_months, date.today())
+        else:
+            schedule_rows = finance.amortization(loan.amount, loan.annual_rate, loan.tenure_months, date.today())
+        for row in schedule_rows:
             loan.installments.append(models.Installment(
                 number=row["number"], due_date=row["due_date"], amount=row["amount"],
-                principal_part=row["principal_part"], interest_part=row["interest_part"]))
+                principal_part=row["principal_part"], interest_part=row["interest_part"],
+                phase=row.get("phase", "Regular EMI"), is_harvest=row.get("is_harvest", False)))
         notify(db, loan.user_id, f"Your loan #{loan.id} of Rs {loan.amount:,.0f} was approved.")
     else:
         loan.status = "rejected"

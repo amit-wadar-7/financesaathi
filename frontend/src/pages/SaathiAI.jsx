@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { useAuth } from '../auth'
 import { useLang } from '../i18n'
+import { useToast } from '../ui'
 import {
   IconBot,
   IconCalendar,
@@ -27,6 +28,7 @@ import {
 export default function SaathiAI({ isWidget = false, onClose }) {
   const { user } = useAuth()
   const { lang, setLang } = useLang()
+  const toast = useToast()
   const navigate = useNavigate()
   const chatEndRef = useRef(null)
 
@@ -154,7 +156,7 @@ export default function SaathiAI({ isWidget = false, onClose }) {
   // Voice speech synthesis (TTS)
   const handleListen = (msgId, textToSpeak) => {
     if (!('speechSynthesis' in window)) {
-      alert('Speech synthesis is not supported in this browser.')
+      toast.error('Speech synthesis is not supported in this browser.')
       return
     }
     if (speakingId === msgId) {
@@ -175,16 +177,22 @@ export default function SaathiAI({ isWidget = false, onClose }) {
   const handleVoiceInput = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SpeechRecognition) {
-      alert('Voice typing requires Google Chrome or a compatible browser.')
+      toast.error('Voice typing requires Google Chrome or Chromium microphone permission.')
       return
     }
     const recognition = new SpeechRecognition()
     recognition.lang = lang === 'mr' ? 'mr-IN' : lang === 'hi' ? 'hi-IN' : 'en-IN'
     recognition.interimResults = false
 
-    recognition.onstart = () => setIsListening(true)
+    recognition.onstart = () => {
+      setIsListening(true)
+      toast.info(lang === 'mr' ? 'मायक्रोफोन सुरू आहे... कृपया बोला' : 'Microphone listening... Speak now')
+    }
     recognition.onend = () => setIsListening(false)
-    recognition.onerror = () => setIsListening(false)
+    recognition.onerror = () => {
+      setIsListening(false)
+      toast.error('Voice input ended or microphone permission denied.')
+    }
     recognition.onresult = (e) => {
       const transcript = e.results[0][0].transcript
       setInput(transcript)
@@ -551,6 +559,12 @@ export default function SaathiAI({ isWidget = false, onClose }) {
 
       {/* Chat Input Bar */}
       <div className="saathi-input-wrap">
+        {isListening && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.45rem', background: '#fee2e2', borderRadius: '6px', color: '#b91c1c', fontSize: '0.78rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', animation: 'skeletonShimmer 1s infinite' }} />
+            {lang === 'mr' ? 'ऐकत आहे... कृपया आपला प्रश्न बोला' : lang === 'hi' ? 'सुन रहा हूँ... कृपया बोलिए' : 'Listening... Speak your question now'}
+          </div>
+        )}
         <form
           className="saathi-input-form"
           onSubmit={(e) => {
@@ -582,7 +596,7 @@ export default function SaathiAI({ isWidget = false, onClose }) {
           <button
             type="button"
             className="attach-btn"
-            onClick={() => alert(lang === 'mr' ? 'दस्तऐवज / पासबुक संलग्नक लवकरच उपलब्ध!' : 'Document attachment available soon!')}
+            onClick={() => toast.info(lang === 'mr' ? 'दस्तऐवज / पासबुक संलग्नक लवकरच उपलब्ध!' : 'Passbook & document OCR scanning available in next release!')}
             title="Attach Document"
           >
             <IconPaperclip size={18} />

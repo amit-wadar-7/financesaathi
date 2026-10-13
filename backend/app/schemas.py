@@ -63,6 +63,7 @@ class LoanIn(BaseModel):
     tenure_months: int = Field(ge=1, le=120)
     purpose: str = Field(default="", max_length=200)
     product_type: str = Field(default="standard", max_length=50)
+    schedule_type: str = Field(default="monthly", max_length=30)
     group_loan: bool = False
     documents: list[str] = Field(default_factory=list, description="e.g. ['aadhaar', 'income_proof']")
 
@@ -87,6 +88,8 @@ class InstallmentOut(ORM):
     paid_amount: float
     paid_on: date | None
     status: str
+    phase: str = "Regular EMI"
+    is_harvest: bool = False
     overdue: bool = False
 
 
@@ -100,6 +103,7 @@ class LoanOut(ORM):
     tenure_months: int
     purpose: str
     product_type: str = "standard"
+    schedule_type: str = "monthly"
     status: str
     emi: float
     ai_score: float

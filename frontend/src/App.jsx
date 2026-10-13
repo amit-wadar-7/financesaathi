@@ -178,6 +178,18 @@ function DesktopLayout({ children }) {
   const { t, lang, setLang } = useLang()
   const location = useLocation()
   const [floatingChatOpen, setFloatingChatOpen] = useState(false)
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light')
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+  }, [theme])
+
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark'
+    setTheme(next)
+    localStorage.setItem('theme', next)
+    document.documentElement.setAttribute('data-theme', next)
+  }
 
   const getContextTitle = () => {
     const p = location.pathname
@@ -399,6 +411,26 @@ function DesktopLayout({ children }) {
                 मरा
               </button>
             </div>
+
+            {/* Theme Toggle (Light / Dark) */}
+            <button
+              className="theme-btn"
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              style={{
+                background: 'transparent',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-sm)',
+                width: '32px',
+                height: '32px',
+                display: 'grid',
+                placeItems: 'center',
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+              }}
+            >
+              {theme === 'dark' ? '☀️' : '🌙'}
+            </button>
 
             {/* Notification Bell with Badge & Dropdown */}
             <BellDropdown />
