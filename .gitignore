@@ -17,8 +17,11 @@ htmlcov/
 *.db
 *.sqlite
 *.sqlite3
+*.db-journal
 backend/syra.db
 syra.db
+backend/backups/
+backend/uploads/
 
 # Node.js & Vite build output
 node_modules/

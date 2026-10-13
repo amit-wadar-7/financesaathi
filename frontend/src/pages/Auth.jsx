@@ -39,7 +39,7 @@ function Shell({ title, children }) {
 export function Login() {
   const { login } = useAuth()
   const { t } = useLang()
-  const [f, setF] = useState({ email: 'admin@syra-demo.com', password: 'admin123' })
+  const [f, setF] = useState({ email: '', password: '' })
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -56,10 +56,6 @@ export function Login() {
     }
   }
 
-  const fillDemo = (email, password) => {
-    setF({ email, password })
-  }
-
   return (
     <Shell title={t('login')}>
       <form onSubmit={submit}>
@@ -70,6 +66,7 @@ export function Login() {
             required
             value={f.email}
             onChange={(e) => setF({ ...f, email: e.target.value })}
+            placeholder="name@example.com"
           />
         </Field>
         <Field label={t('password')}>
@@ -78,23 +75,13 @@ export function Login() {
             required
             value={f.password}
             onChange={(e) => setF({ ...f, password: e.target.value })}
+            placeholder="••••••••"
           />
         </Field>
         <button className="btn" style={{ width: '100%' }} disabled={busy}>
           {busy ? 'Signing In…' : t('login')}
         </button>
       </form>
-
-      {/* 1-Click Demo Accounts Selector */}
-      <div style={{ marginTop: '1.2rem', padding: '0.8rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-        <p className="small muted" style={{ margin: '0 0 0.5rem', fontWeight: 600 }}>Quick 1-Click Demo Logins:</p>
-        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-          <button type="button" className="quick-pill" onClick={() => fillDemo('borrower@syra-demo.com', 'borrower123')}>Borrower</button>
-          <button type="button" className="quick-pill" onClick={() => fillDemo('officer@syra-demo.com', 'officer123')}>Loan Officer</button>
-          <button type="button" className="quick-pill" onClick={() => fillDemo('leader@syra-demo.com', 'leader123')}>SHG Leader</button>
-          <button type="button" className="quick-pill" onClick={() => fillDemo('admin@syra-demo.com', 'admin123')}>Admin</button>
-        </div>
-      </div>
 
       <p style={{ marginTop: '1rem', textAlign: 'center' }}>
         {t('noAccount')} <Link to="/register">{t('register')}</Link>
@@ -106,7 +93,7 @@ export function Login() {
 export function Register() {
   const { register } = useAuth()
   const { t, lang } = useLang()
-  const [f, setF] = useState({ name: '', email: '', phone: '', password: '' })
+  const [f, setF] = useState({ name: '', email: '', phone: '', password: '', consent: false })
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -115,9 +102,20 @@ export function Register() {
   const submit = async (e) => {
     e.preventDefault()
     setErr('')
+    if (!f.consent) {
+      setErr('You must consent to digital processing under DPDP Act 2023 to proceed.')
+      return
+    }
     setBusy(true)
     try {
-      await register({ ...f, language: lang })
+      await register({
+        name: f.name,
+        email: f.email,
+        phone: f.phone,
+        password: f.password,
+        consent: f.consent,
+        language: lang,
+      })
     } catch (x) {
       setErr(x.message)
     } finally {
@@ -138,9 +136,23 @@ export function Register() {
         <Field label={t('phone')}>
           <input value={f.phone} onChange={set('phone')} placeholder="+91 98XXXXXXXX" />
         </Field>
-        <Field label={t('password') + ' (min 6)'}>
-          <input type="password" required minLength={6} value={f.password} onChange={set('password')} placeholder="Choose a secure password" />
+        <Field label={t('password') + ' (min 8 characters)'}>
+          <input type="password" required minLength={8} value={f.password} onChange={set('password')} placeholder="Choose a secure password (min 8 chars)" />
         </Field>
+        <div style={{ marginTop: '0.8rem', marginBottom: '1rem' }}>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.85rem', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              required
+              checked={f.consent}
+              onChange={(e) => setF({ ...f, consent: e.target.checked })}
+              style={{ marginTop: '0.2rem' }}
+            />
+            <span>
+              I consent to the collection and processing of my financial data in accordance with the <strong>Digital Personal Data Protection (DPDP) Act, 2023</strong> and the platform <Link to="/privacy">Privacy Policy</Link>.
+            </span>
+          </label>
+        </div>
         <button className="btn" style={{ width: '100%' }} disabled={busy}>
           {busy ? 'Creating Account…' : t('register')}
         </button>

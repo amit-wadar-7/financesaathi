@@ -38,7 +38,11 @@ export default function Reports() {
   ]
 
   const filteredReports = reports.filter((r) => {
-    const matchesCategory = selectedCategory === 'all' || r.category === selectedCategory
+    const matchesCategory =
+      selectedCategory === 'all' ||
+      r.category === selectedCategory ||
+      (selectedCategory === 'lending' && ['lending', 'risk', 'performance', 'collections'].includes(r.category)) ||
+      (selectedCategory === 'shg' && ['shg', 'community'].includes(r.category))
     const matchesSearch =
       r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       r.description.toLowerCase().includes(searchQuery.toLowerCase())
@@ -48,10 +52,14 @@ export default function Reports() {
   const getCategoryBadgeClass = (cat) => {
     switch (cat) {
       case 'lending':
+      case 'risk':
+      case 'performance':
+      case 'collections':
         return 'badge-primary'
       case 'borrower':
         return 'badge-success'
       case 'shg':
+      case 'community':
         return 'badge-warning'
       case 'compliance':
         return 'badge-neutral'

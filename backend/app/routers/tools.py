@@ -3,11 +3,14 @@ from datetime import date
 import re
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import finance, ml, models, schemas
 from ..database import get_db
 from ..deps import get_current_user, get_current_user_optional
+from ..finance_health import compute_financial_health_score
+from ..saathi import get_saathi_answer
 
 
 router = APIRouter(tags=["tools"])
@@ -204,27 +207,28 @@ def health_score(user: models.User = Depends(get_current_user), db: Session = De
     """Financial Health Score (0-100) + suggested next course. Feeds the learning loop."""
     if user.monthly_income <= 0:
         raise HTTPException(400, "Fill in your income and expenses in your profile first")
-    disposable = user.monthly_income - user.monthly_expenses - user.existing_emi
-    f = ml.make_features(user.monthly_income, user.monthly_expenses, user.existing_emi, user.savings_balance, 0)
-    score = 100.0
-    score -= max(0, f["foir"] - 0.2) * 100          # debt burden
-    score -= max(0, f["expense_ratio"] - 0.6) * 80  # spending
-    score += min(f["savings_cover"], 6) * 3          # buffer
-    overdue = 0
-    loans = db.query(models.Loan).filter_by(user_id=user.id, status="approved").all()
-    for ln in loans:
-        overdue += sum(1 for i in ln.installments if i.status != "paid" and i.due_date < date.today())
-    score -= overdue * 8
-    score = int(max(0, min(100, score)))
 
-    if overdue or f["foir"] > 0.4:
-        course = "emi-and-loans"
-    elif f["savings_cover"] < 3:
-        course = "saving-habits"
-    else:
-        course = "avoid-fraud"
-    return {"score": score, "disposable_income": round(disposable, 2), "overdue_installments": overdue,
-            "recommended_course": course}
+    loans = db.scalars(select(models.Loan).where(models.Loan.user_id == user.id, models.Loan.status.in_(["approved", "disbursed"]))).all()
+    today = date.today()
+    overdue = sum(1 for ln in loans for i in ln.installments if i.status != "paid" and i.due_date < today)
+
+    declared_sav = user.declared_savings if user.declared_savings > 0 else user.savings_balance
+    res = compute_financial_health_score(
+        income=user.monthly_income,
+        expenses=user.monthly_expenses,
+        existing_emi=user.existing_emi,
+        savings=declared_sav,
+        overdue_count=overdue,
+    )
+    return {
+        "score": res["score"],
+        "band": res["band"],
+        "disposable_income": res["disposable_income"],
+        "overdue_installments": res["overdue_installments"],
+        "recommended_course": res["recommended_course"],
+        "factors": res["factors"],
+        "disclaimer": res["disclaimer"],
+    }
 
 
 def _extract_amount(text: str, default: float = 20000.0) -> float:
@@ -232,7 +236,35 @@ def _extract_amount(text: str, default: float = 20000.0) -> float:
     t = text
     for i, d in enumerate(devanagari):
         t = t.replace(d, str(i))
-    m = re.search(r"(?:₹|rs\.?|inr)?\s*([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{4,7})", t, re.IGNORECASE)
+
+    # Match lakh / लाख
+    m_lakh = re.search(r"(\d+(?:\.\d+)?)\s*(?:lakh|लाख)", t, re.IGNORECASE)
+    if m_lakh:
+        try:
+            return float(m_lakh.group(1)) * 100000.0
+        except ValueError:
+            pass
+
+    # Match hazar / हजार / हज़ार
+    m_hazar = re.search(r"(\d+(?:\.\d+)?)\s*(?:hazar|हजार|हज़ार)", t, re.IGNORECASE)
+    if m_hazar:
+        try:
+            return float(m_hazar.group(1)) * 1000.0
+        except ValueError:
+            pass
+
+    # Hindi / Marathi word numbers
+    words_map = {
+        "एक": 1, "दोन": 2, "दो": 2, "तीन": 3, "चार": 4, "पाच": 5, "पांच": 5,
+        "दहा": 10, "दस": 10, "वीस": 20, "बीस": 20, "तीस": 30, "चाळीस": 40, "चालीस": 40,
+        "पन्नास": 50, "पचास": 50, "शंभर": 100, "सौ": 100,
+    }
+    for w, val in words_map.items():
+        if re.search(rf"{w}\s*(?:हजार|हज़ार|hazar)", t, re.IGNORECASE):
+            return float(val * 1000)
+
+    # General digit numbers (e.g. 5000, 20,000, 100000)
+    m = re.search(r"(?:₹|rs\.?|inr)?\s*([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{2,8})", t, re.IGNORECASE)
     if m:
         try:
             return float(m.group(1).replace(",", ""))
@@ -242,191 +274,61 @@ def _extract_amount(text: str, default: float = 20000.0) -> float:
 
 
 @router.post("/ai/saathi-chat")
-def saathi_chat(body: schemas.SaathiChatIn, user: models.User | None = Depends(get_current_user_optional),
-                db: Session = Depends(get_db)):
-    msg = body.message.lower().strip()
-    lang = body.language
-    user_name = user.name if user else ("सुनीता ताई" if lang == "mr" else "सुनीता जी" if lang == "hi" else "Sunita")
+@router.post("/saathi/chat")
+def saathi_chat(
+    body: schemas.SaathiChatIn,
+    user: models.User | None = Depends(get_current_user_optional),
+    db: Session = Depends(get_db),
+):
+    """Offline RAG-Lite Saathi AI Assistant."""
+    answer = get_saathi_answer(body.message, language=body.language, user=user, db=db)
 
-    is_loan_q = any(w in msg for w in ["कर्ज", "हप्ता", "loan", "emi", "व्याज", "interest", "व्याजा", "हप्ते", "किस्त"])
-    is_cyber_q = any(w in msg for w in ["सायबर", "फसवणूक", "सुरक्षित", "cyber", "fraud", "scam", "otp", "pin", "सुरक्षा", "हैक", "धोका"])
-    is_emergency_q = any(w in msg for w in ["emergency", "आपत्कालीन", "आपातकालीन", "फंड", "बफर", "buffer", "संकट"])
-    is_scheme_q = any(w in msg for w in ["योजना", "scheme", "awas", "आवास", "svanidhi", "स्वनिधी", "lakhpati", "लाखपती", "mudra", "मुद्रा"])
+    # Persist message history if user is logged in
+    if user:
+        u_msg = models.ChatMessage(
+            user_id=user.id,
+            role="user",
+            content=body.message,
+            language=body.language,
+        )
+        a_msg = models.ChatMessage(
+            user_id=user.id,
+            role="assistant",
+            content=answer.get("content", ""),
+            card_data=answer.get("card_data"),
+            language=body.language,
+        )
+        db.add(u_msg)
+        db.add(a_msg)
+        db.commit()
 
-    if is_loan_q or any(w in msg for w in ["२०,०००", "20,000", "20000", "५०,०००"]):
-        amt = _extract_amount(body.message, default=20000.0)
-        rate = 12.0
-        tenure = 12
-        emi_val = finance.emi(amt, rate, tenure)
-        total_repay = round(emi_val * tenure, 2)
-        total_interest = round(total_repay - amt, 2)
+    return answer
 
-        if lang == "mr":
-            greeting = f"नमस्ते {user_name}! तुमच्या बचत गटाच्या नेहमीच्या नियमांनुसार ({int(rate)}% वार्षिक व्याजदर, {tenure} महिने):"
-            tip = "टीप: हे केवळ शैक्षणिक अंदाज आहे. प्रत्यक्ष हप्ता तुमच्या गटाच्या ठरावानुसार व कमी होणाऱ्या व्याजावर (reducing balance) निश्चित होईल."
-            lbl_emi = "अंदाजे मासिक हप्ता (EMI)"
-            lbl_int = "एकूण व्याज (Total Interest)"
-            lbl_tot = "एकूण परतफेड (Repayment)"
-            btn1 = "Open EMI Calculator"
-            btn2 = "Read SHG Loan Rules"
-            suggestions = ["Emergency Fund Calculator", "PM Awas Scheme eligibility", "बचत गट नियम", "सायबर सुरक्षा"]
-        elif lang == "hi":
-            greeting = f"नमस्ते {user_name}! आपके स्वयं सहायता समूह (SHG) के सामान्य नियमों के अनुसार ({int(rate)}% वार्षिक ब्याज, {tenure} महीने):"
-            tip = "सुझाव: यह केवल शैक्षणिक अनुमान है। वास्तविक किस्त समूह के निर्णय व घटते ब्याज (reducing balance) पर तय होगी।"
-            lbl_emi = "अनुमानित मासिक किस्त (EMI)"
-            lbl_int = "कुल ब्याज (Total Interest)"
-            lbl_tot = "कुल पुनर्भुगतान (Repayment)"
-            btn1 = "Open EMI Calculator"
-            btn2 = "Read SHG Loan Rules"
-            suggestions = ["Emergency Fund Calculator", "PM Awas Scheme eligibility", "SHG ऋण नियम", "साइबर सुरक्षा"]
-        else:
-            greeting = f"Namaste {user_name}! Based on standard Self-Help Group terms ({int(rate)}% annual interest, {tenure} months):"
-            tip = "Note: This is an educational estimate. Your actual EMI depends on SHG group resolution and reducing balance calculation."
-            lbl_emi = "Estimated Monthly EMI"
-            lbl_int = "Total Interest"
-            lbl_tot = "Total Repayment"
-            btn1 = "Open EMI Calculator"
-            btn2 = "Read SHG Loan Rules"
-            suggestions = ["Emergency Fund Calculator", "PM Awas Scheme eligibility", "SHG Loan Rules", "Cyber Safety Quiz"]
 
-        return {
-            "card_type": "emi_breakdown",
-            "greeting": greeting,
-            "tip": tip,
-            "data": {
-                "amount": amt,
-                "annual_rate": rate,
-                "tenure_months": tenure,
-                "emi": emi_val,
-                "total_interest": total_interest,
-                "total_repayment": total_repay,
-                "labels": {"emi": lbl_emi, "interest": lbl_int, "repayment": lbl_tot},
-            },
-            "actions": [
-                {"id": "open_emi_calc", "label": btn1, "type": "route", "target": "/tools?calc=emi"},
-                {"id": "open_shg_rules", "label": btn2, "type": "route", "target": "/learn/1"},
-            ],
-            "suggestions": suggestions,
-        }
+@router.get("/saathi/history")
+def get_chat_history(user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Fetches persistent Saathi AI conversation history."""
+    msgs = db.scalars(
+        select(models.ChatMessage)
+        .where(models.ChatMessage.user_id == user.id)
+        .order_by(models.ChatMessage.created_at.asc())
+        .limit(50)
+    ).all()
+    return [{
+        "id": m.id,
+        "role": m.role,
+        "content": m.content,
+        "card_data": m.card_data,
+        "language": m.language,
+        "created_at": m.created_at.isoformat(),
+    } for m in msgs]
 
-    if is_cyber_q:
-        if lang == "mr":
-            title = "सायबर सुरक्षेचे ३ सोपे सुवर्णनियम"
-            steps = [
-                {"num": 1, "title": "कधीही PIN किंवा OTP कोणालाही सांगू नका", "desc": "बँक कर्मचारी, गटप्रमुख किंवा पोलिस कधीही फोनवर तुमचा UPI PIN किंवा SMS OTP मागत नाहीत.", "tone": "danger"},
-                {"num": 2, "title": "QR कोड स्कॅन करताना सावध राहा", "desc": "पैसे मिळवण्यासाठी कधीही QR स्कॅन किंवा PIN टाकावा लागत नाही. PIN फक्त पैसे पाठवताना लागतो.", "tone": "warn"},
-                {"num": 3, "title": "तात्काळ तक्रार: राष्ट्रीय हेल्पलाइन १९३०", "desc": "कोणतीही संशयास्पद देवाणघेवाण झाल्यास त्वरित 1930 वर कॉल करा किंवा cybercrime.gov.in वर तक्रार नोंदवा.", "tone": "success"},
-            ]
-            btn1 = "Call 1930 Helpline"
-            btn2 = "Take Cyber Quiz"
-            suggestions = ["Emergency Fund Calculator", "PM Awas Scheme eligibility", "UPI सुरक्षा नियम"]
-        elif lang == "hi":
-            title = "साइबर सुरक्षा के 3 आसान स्वर्णिम नियम"
-            steps = [
-                {"num": 1, "title": "कभी भी PIN या OTP किसी को न बताएं", "desc": "बैंक अधिकारी, समूह प्रमुख या पुलिस कभी भी फोन पर आपका UPI PIN या SMS OTP नहीं मांगते।", "tone": "danger"},
-                {"num": 2, "title": "QR कोड स्कैन करते समय सावधान रहें", "desc": "पैसे प्राप्त करने के लिए कभी भी QR कोड स्कैन या PIN डालने की आवश्यकता नहीं होती। PIN केवल पैसे भेजने पर लगता है।", "tone": "warn"},
-                {"num": 3, "title": "तुरंत शिकायत: राष्ट्रीय हेल्पलाइन 1930", "desc": "किसी भी संदिग्ध धोखाधड़ी पर तुरंत 1930 डायल करें या cybercrime.gov.in पर शिकायत दर्ज करें।", "tone": "success"},
-            ]
-            btn1 = "Call 1930 Helpline"
-            btn2 = "Take Cyber Quiz"
-            suggestions = ["Emergency Fund Calculator", "PM Awas Scheme eligibility", "UPI सुरक्षा नियम"]
-        else:
-            title = "3 Golden Rules of Cyber & UPI Safety"
-            steps = [
-                {"num": 1, "title": "Never share your UPI PIN or SMS OTP", "desc": "Bank staff, SHG leaders, or police will NEVER ask for your UPI PIN or OTP over the phone.", "tone": "danger"},
-                {"num": 2, "title": "Beware when scanning QR codes", "desc": "You NEVER scan a QR code or enter your PIN to RECEIVE money. A PIN is only needed to SEND money.", "tone": "warn"},
-                {"num": 3, "title": "Report immediately: National Helpline 1930", "desc": "If fraud happens, immediately dial 1930 or file a report on cybercrime.gov.in.", "tone": "success"},
-            ]
-            btn1 = "Call 1930 Helpline"
-            btn2 = "Take Cyber Quiz"
-            suggestions = ["Emergency Fund Calculator", "PM Awas Scheme eligibility", "Cyber Safety Quiz"]
 
-        return {
-            "card_type": "cyber_security",
-            "title": title,
-            "steps": steps,
-            "actions": [
-                {"id": "call_1930", "label": btn1, "type": "tel", "target": "1930"},
-                {"id": "open_cyber_quiz", "label": btn2, "type": "route", "target": "/learn/3"},
-            ],
-            "suggestions": suggestions,
-        }
+@router.delete("/saathi/history")
+def clear_chat_history(user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Deletes conversation history for user privacy."""
+    db.query(models.ChatMessage).filter(models.ChatMessage.user_id == user.id).delete()
+    db.commit()
+    return {"ok": True, "message": "Conversation history cleared."}
 
-    if is_emergency_q:
-        exp = user.monthly_expenses if user and user.monthly_expenses > 0 else 12000.0
-        rec_buf = exp * 3
-        if lang == "mr":
-            greeting = f"नमस्ते {user_name}! अचानक उद्भवणाऱ्या वैद्यकीय किंवा कौटुंबिक संकटांसाठी आपत्कालीन निधी (Emergency Fund) अत्यंत महत्त्वाचा आहे."
-            desc = f"तुमच्या मासिक खर्चानुसार (₹{exp:,.0f}/महिना) किमान ३ महिन्यांचा खर्च (₹{rec_buf:,.0f}) वेगळा ठेवण्याचा सल्ला दिला जातो."
-            btn1 = "Open Emergency Calculator"
-            btn2 = "Set Savings Goal"
-            suggestions = ["माझ्या बचत गटातून कर्ज", "PM Awas Scheme eligibility", "बचत कशी वाढवावी?"]
-        elif lang == "hi":
-            greeting = f"नमस्ते {user_name}! अप्रत्याशित चिकित्सीय या पारिवारिक आपातकाल के लिए इमरजेंसी फंड बेहद ज़रूरी है।"
-            desc = f"आपके मासिक खर्च (₹{exp:,.0f}/माह) के अनुसार कम से कम 3 महीने का खर्च (₹{rec_buf:,.0f}) अलग रखना चाहिए।"
-            btn1 = "Open Emergency Calculator"
-            btn2 = "Set Savings Goal"
-            suggestions = ["SHG से ₹20,000 ऋण", "PM Awas Scheme eligibility", "बचत कैसे बढ़ाएं?"]
-        else:
-            greeting = f"Hello {user_name}! An emergency buffer is essential for sudden family or medical emergencies."
-            desc = f"Based on monthly expenses (₹{exp:,.0f}/mo), maintaining at least a 3-month buffer of ₹{rec_buf:,.0f} in an SHG or bank is recommended."
-            btn1 = "Open Emergency Calculator"
-            btn2 = "Set Savings Goal"
-            suggestions = ["SHG ₹20,000 Loan EMI", "PM Awas Scheme eligibility", "How to save more?"]
-
-        return {
-            "card_type": "emergency_fund",
-            "greeting": greeting,
-            "description": desc,
-            "data": {"monthly_expense": exp, "recommended_fund": rec_buf, "months": 3},
-            "actions": [
-                {"id": "open_emergency_calc", "label": btn1, "type": "route", "target": "/tools?calc=emergency"},
-                {"id": "open_savings_goal", "label": btn2, "type": "route", "target": "/savings"},
-            ],
-            "suggestions": suggestions,
-        }
-
-    if is_scheme_q:
-        schemes = db.scalars(select(models.Scheme).where(models.Scheme.language == lang)).all()
-        if not schemes:
-            schemes = db.scalars(select(models.Scheme).where(models.Scheme.language == "en")).all()
-        top_schemes = [{"name": s.name, "description": s.description, "url": s.url} for s in schemes[:2]]
-        if lang == "mr":
-            greeting = "तुमच्यासाठी केंद्र व राज्य शासनाच्या प्रमुख कल्याणकारी व सूक्ष्मवित्त योजना:"
-            btn1 = "View All Schemes"
-        elif lang == "hi":
-            greeting = "आपके लिए केंद्र व राज्य सरकार की प्रमुख सूक्ष्मवित्त एवं कल्याणकारी योजनाएँ:"
-            btn1 = "View All Schemes"
-        else:
-            greeting = "Key government microfinance and welfare schemes available for you:"
-            btn1 = "View All Schemes"
-
-        return {
-            "card_type": "scheme_info",
-            "greeting": greeting,
-            "schemes": top_schemes,
-            "actions": [{"id": "open_schemes", "label": btn1, "type": "route", "target": "/schemes"}],
-            "suggestions": ["Emergency Fund Calculator", "माझ्या बचत गटातून कर्ज", "सायबर फसवणूक सुरक्षा"],
-        }
-
-    # General fallback response
-    if lang == "mr":
-        greeting = f"नमस्ते {user_name}! मी तुमची **साथी AI (Saathi AI)** वित्तीय सहकारी आहे. मी तुम्हाला बचत गट (SHG) कर्ज, हप्ता गणित, शासकीय योजना, कौटुंबिक बजेट आणि सायबर सुरक्षेबाबत संपूर्ण मार्गदर्शन करू शकते."
-        suggestions = ["माझ्या बचत गटातून ₹२०,००० कर्ज", "मला सायबर फसवणुकीपासून कसे सुरक्षित ठेवायचे?", "Emergency Fund Calculator", "PM Awas Scheme eligibility"]
-    elif lang == "hi":
-        greeting = f"नमस्ते {user_name}! मैं आपकी **साथी AI (Saathi AI)** वित्तीय मार्गदर्शक हूँ। मैं आपको SHG ऋण, EMI गणना, सरकारी योजनाओं, पारिवारिक बजट और साइबर सुरक्षा के बारे में पूरी सहायता दे सकती हूँ।"
-        suggestions = ["SHG से ₹20,000 ऋण का हफ्ता", "साइबर फ्रॉड से खुद को कैसे सुरक्षित रखें?", "Emergency Fund Calculator", "PM Awas Scheme eligibility"]
-    else:
-        greeting = f"Hello {user_name}! I am your **Saathi AI** financial companion. I can help calculate SHG loan EMIs, plan family budgets, check government schemes, and protect against cyber scams."
-        suggestions = ["SHG ₹20,000 Loan EMI calculation", "How to stay safe from cyber fraud?", "Emergency Fund Calculator", "PM Awas Scheme eligibility"]
-
-    return {
-        "card_type": "general",
-        "greeting": greeting,
-        "actions": [
-            {"id": "open_calc", "label": "Open Financial Calculators 🧮", "type": "route", "target": "/tools"},
-            {"id": "open_learn", "label": "Explore Academy 🎓", "type": "route", "target": "/learn"},
-        ],
-        "suggestions": suggestions,
-    }
 

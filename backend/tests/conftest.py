@@ -4,6 +4,7 @@ import tempfile
 _tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
 os.environ["DATABASE_URL"] = f"sqlite:///{_tmp.name}"
 os.environ["SECRET_KEY"] = "test-secret-at-least-32-bytes-long-for-jwt"
+os.environ["SEED_DEMO"] = "true"
 
 import pytest
 from fastapi.testclient import TestClient
@@ -25,9 +26,11 @@ def login(client, email, password):
 
 @pytest.fixture(scope="session")
 def staff(client):
-    return {"officer": login(client, "officer@syra-demo.com", "officer123"),
-            "admin": login(client, "admin@syra-demo.com", "admin123"),
-            "leader": login(client, "leader@syra-demo.com", "leader123")}
+    return {
+        "officer": login(client, "officer@financesaathi.org", "OfficerSecure#2026"),
+        "admin": login(client, "admin@financesaathi.org", "AdminSecure#2026"),
+        "leader": login(client, "leader@financesaathi.org", "LeaderSecure#2026"),
+    }
 
 
 def make_user(client, email, income=25000, expenses=12000):

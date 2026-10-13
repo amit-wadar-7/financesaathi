@@ -32,108 +32,26 @@ export default function SaathiAI({ isWidget = false, onClose }) {
   const navigate = useNavigate()
   const chatEndRef = useRef(null)
 
-  const userName = user?.name || (lang === 'mr' ? 'सुनीता ताई' : lang === 'hi' ? 'सुनीता जी' : 'Sunita Devi')
+  const userName = user?.name || (lang === 'mr' ? 'मित्रा' : lang === 'hi' ? 'दोस्त' : 'Friend')
 
-  // Initial messages seeded exactly like the user's screenshots
+  // Real initial welcome message with dynamic current time
   const [messages, setMessages] = useState([
     {
-      id: 'm1',
-      sender: 'user',
-      time: '10:42 AM',
-      text: lang === 'mr'
-        ? 'माझ्या बचत गटातून ₹२०,००० कर्ज घेतल्यास मला महिन्याला किती हप्ता भरावा लागेल?'
-        : lang === 'hi'
-        ? 'मेरे स्वयं सहायता समूह से ₹20,000 ऋण लेने पर मुझे हर महीने कितनी किस्त देनी होगी?'
-        : 'If I take a ₹20,000 loan from my SHG, how much monthly EMI will I have to pay?',
-    },
-    {
-      id: 'm2',
+      id: 'welcome',
       sender: 'bot',
-      time: '10:43 AM',
-      card_type: 'emi_breakdown',
+      time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+      card_type: 'general',
       greeting: lang === 'mr'
-        ? `नमस्ते ${userName}! तुमच्या बचत गटाच्या नेहमीच्या नियमांनुसार (12% वार्षिक व्याजदर, 12 महिने):`
+        ? `नमस्ते ${userName}! मी तुमची साथी AI वित्तीय सहकारी आहे. मी तुम्हाला बचत गट (SHG) कर्ज, हप्ता गणित, शासकीय योजना, कौटुंबिक बजेट आणि सायबर सुरक्षेबाबत संपूर्ण मार्गदर्शन करू शकते.`
         : lang === 'hi'
-        ? `नमस्ते ${userName}! आपके बचत समूह के सामान्य नियमों के अनुसार (12% वार्षिक ब्याज दर, 12 महीने):`
-        : `Namaste ${userName}! Based on standard SHG terms (12% annual interest, 12 months):`,
-      tip: lang === 'mr'
-        ? 'टीप: हे केवळ शैक्षणिक अंदाज आहे. प्रत्यक्ष हप्ता तुमच्या गटाच्या ठरावानुसार व कमी होणाऱ्या व्याजावर (reducing balance) निश्चित होईल.'
-        : lang === 'hi'
-        ? 'सुझाव: यह केवल शैक्षणिक अनुमान है। वास्तविक किस्त समूह के निर्णय व घटते ब्याज पर तय होगी।'
-        : 'Note: This is an educational estimate. Actual repayment depends on SHG group resolution and reducing balance calculation.',
-      data: {
-        emi: 1766,
-        total_interest: 1324,
-        total_repayment: 21324,
-        labels: {
-          emi: lang === 'mr' ? 'अंदाजे मासिक हप्ता (EMI)' : lang === 'hi' ? 'अनुमानित मासिक किस्त (EMI)' : 'Estimated Monthly EMI',
-          interest: lang === 'mr' ? 'एकूण व्याज (Total Interest)' : lang === 'hi' ? 'कुल ब्याज (Total Interest)' : 'Total Interest',
-          repayment: lang === 'mr' ? 'एकूण परतफेड (Repayment)' : lang === 'hi' ? 'कुल पुनर्भुगतान (Repayment)' : 'Total Repayment',
-        },
-      },
-      actions: [
-        { id: 'a1', label: 'Open EMI Calculator', target: '/tools?calc=emi' },
-        { id: 'a2', label: 'Read SHG Loan Rules', target: '/learn/1' },
+        ? `नमस्ते ${userName}! मैं आपकी साथी AI वित्तीय मार्गदर्शक हूँ। मैं आपको SHG ऋण, EMI गणना, सरकारी योजनाओं, पारिवारिक बजट और साइबर सुरक्षा के बारे में पूरी सहायता दे सकती हूँ।`
+        : `Hello ${userName}! I am your Saathi AI financial companion. I can help calculate SHG loan EMIs, plan family budgets, check government schemes, and protect against cyber scams.`,
+      suggestions: [
+        lang === 'mr' ? 'माझ्या बचत गटातून ₹२०,००० कर्ज' : lang === 'hi' ? 'SHG से ₹20,000 ऋण का हफ्ता' : 'Calculate EMI for ₹20,000 loan',
+        lang === 'mr' ? 'सायबर फसवणूक सुरक्षा' : lang === 'hi' ? 'साइबर धोखाधड़ी से सुरक्षा' : 'How to stay safe from cyber fraud?',
+        'Emergency Fund Calculator',
+        'PM Awas Scheme eligibility',
       ],
-      liked: null,
-    },
-    {
-      id: 'm3',
-      sender: 'user',
-      time: '10:44 AM',
-      text: lang === 'mr'
-        ? 'मला सायबर फसवणुकीपासून स्वतःला कसे सुरक्षित ठेवायचे?'
-        : lang === 'hi'
-        ? 'मुझे साइबर धोखाधड़ी से खुद को कैसे सुरक्षित रखना चाहिए?'
-        : 'How do I protect myself from cyber fraud and online scams?',
-    },
-    {
-      id: 'm4',
-      sender: 'bot',
-      time: '10:45 AM',
-      card_type: 'cyber_security',
-      title: lang === 'mr'
-        ? 'सायबर सुरक्षेचे ३ सोपे सुवर्णनियम'
-        : lang === 'hi'
-        ? 'साइबर सुरक्षा के 3 आसान स्वर्णिम नियम'
-        : '3 Golden Rules of Cyber Security',
-      steps: [
-        {
-          num: 1,
-          title: lang === 'mr' ? 'कधीही PIN किंवा OTP कोणालाही सांगू नका' : lang === 'hi' ? 'कभी भी PIN या OTP किसी को न बताएं' : 'Never share your PIN or OTP',
-          desc: lang === 'mr'
-            ? 'बँक कर्मचारी, गटप्रमुख किंवा पोलिस कधीही फोनवर तुमचा UPI PIN किंवा SMS OTP मागत नाहीत.'
-            : lang === 'hi'
-            ? 'बैंक कर्मचारी, समूह प्रमुख या पुलिस कभी भी फोन पर आपका UPI PIN या SMS OTP नहीं मांगते।'
-            : 'Bank officials, SHG leaders, or police will NEVER ask for your UPI PIN or SMS OTP.',
-          tone: 'danger',
-        },
-        {
-          num: 2,
-          title: lang === 'mr' ? 'QR कोड स्कॅन करताना सावध राहा' : lang === 'hi' ? 'QR कोड स्कैन करते समय सावधान रहें' : 'Be cautious when scanning QR codes',
-          desc: lang === 'mr'
-            ? 'पैसे मिळवण्यासाठी कधीही QR स्कॅन किंवा PIN टाकावा लागत नाही. PIN फक्त पैसे पाठवताना लागतो.'
-            : lang === 'hi'
-            ? 'पैसे प्राप्त करने के लिए कभी भी QR स्कैन या PIN डालने की आवश्यकता नहीं होती। PIN केवल पैसे भेजते समय लगता है।'
-            : 'You NEVER need to scan a QR code or enter a PIN to RECEIVE money. PIN is only for sending.',
-          tone: 'warn',
-        },
-        {
-          num: 3,
-          title: lang === 'mr' ? 'तात्काळ तक्रार: राष्ट्रीय हेल्पलाइन १९३०' : lang === 'hi' ? 'तुरंत शिकायत: राष्ट्रीय हेल्पलाइन 1930' : 'Immediate Help: National Helpline 1930',
-          desc: lang === 'mr'
-            ? 'कोणतीही संशयास्पद देवाणघेवाण झाल्यास त्वरित 1930 वर कॉल करा किंवा cybercrime.gov.in वर तक्रार नोंदवा.'
-            : lang === 'hi'
-            ? 'किसी भी संदिग्ध लेनदेन पर तुरंत 1930 पर कॉल करें या cybercrime.gov.in पर रिपोर्ट दर्ज करें।'
-            : 'For any suspicious transaction, immediately call 1930 or report on cybercrime.gov.in.',
-          tone: 'success',
-        },
-      ],
-      actions: [
-        { id: 'b1', label: 'Call 1930 Helpline', action: 'tel:1930' },
-        { id: 'b2', label: 'Take Cyber Quiz', target: '/learn/3' },
-      ],
-      liked: null,
     },
   ])
 
@@ -152,6 +70,39 @@ export default function SaathiAI({ isWidget = false, onClose }) {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
+
+  // Load persistent chat history from backend if authenticated
+  useEffect(() => {
+    if (user) {
+      api('/saathi/history')
+        .then((hist) => {
+          if (Array.isArray(hist) && hist.length > 0) {
+            const loaded = hist.map((h) => ({
+              id: 'h-' + h.id,
+              sender: h.role === 'user' ? 'user' : 'bot',
+              time: new Date(h.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              text: h.role === 'user' ? h.content : undefined,
+              greeting: h.role === 'assistant' ? h.content : undefined,
+              card_type: h.card_data ? 'knowledge_card' : 'general',
+              data: h.card_data,
+            }))
+            setMessages((prev) => [prev[0], ...loaded])
+          }
+        })
+        .catch(() => {})
+    }
+  }, [user])
+
+  const handleClearHistory = async () => {
+    if (!window.confirm(lang === 'mr' ? 'संभाषण इतिहास हटवायचा आहे का?' : 'Clear conversation history?')) return
+    try {
+      await api('/saathi/history', { method: 'DELETE' })
+      setMessages([messages[0]])
+      toast.success(lang === 'mr' ? 'इतिहास साफ केला' : 'History cleared')
+    } catch {
+      setMessages([messages[0]])
+    }
+  }
 
   // Voice speech synthesis (TTS)
   const handleListen = (msgId, textToSpeak) => {
@@ -229,10 +180,10 @@ export default function SaathiAI({ isWidget = false, onClose }) {
         sender: 'bot',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         card_type: res.card_type,
-        greeting: res.greeting,
+        greeting: res.content || res.greeting,
         title: res.title,
         tip: res.tip,
-        data: res.data,
+        data: res.data || res.card_data,
         steps: res.steps,
         schemes: res.schemes,
         actions: res.actions,
@@ -291,9 +242,22 @@ export default function SaathiAI({ isWidget = false, onClose }) {
               <p className="saathi-subtitle">Online • Multilingual Financial Companion</p>
             </div>
           </div>
-          {isWidget && onClose && (
-            <button className="icon-btn close-btn" onClick={onClose} title="Close">✕</button>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            {messages.length > 1 && (
+              <button
+                type="button"
+                className="btn small ghost"
+                style={{ fontSize: '0.72rem', padding: '2px 8px' }}
+                onClick={handleClearHistory}
+                title="Clear history"
+              >
+                {lang === 'mr' ? 'इतिहास साफ करा' : 'Clear Chat'}
+              </button>
+            )}
+            {isWidget && onClose && (
+              <button className="icon-btn close-btn" onClick={onClose} title="Close">✕</button>
+            )}
+          </div>
         </div>
 
         {/* Language Selection Row */}

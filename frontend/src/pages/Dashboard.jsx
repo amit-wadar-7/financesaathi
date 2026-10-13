@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import QRCode from 'qrcode'
 import { api, money } from '../api'
 import { useAuth } from '../auth'
 import { useLang } from '../i18n'
@@ -477,8 +478,8 @@ function SHGLeaderDashboardView({ user, refresh }) {
   const [loadingShg, setLoadingShg] = useState(true)
   const [showCreateShg, setShowCreateShg] = useState(false)
   const [showAddMember, setShowAddMember] = useState(false)
-  const [shgNameInput, setShgNameInput] = useState('Pragati Mahila Bachat Gat')
-  const [shgVillageInput, setShgVillageInput] = useState('Ward 4, Solan')
+  const [shgNameInput, setShgNameInput] = useState('')
+  const [shgVillageInput, setShgVillageInput] = useState('')
   const [memberEmailInput, setMemberEmailInput] = useState('')
   const [err, setErr] = useState('')
   const [msg, setMsg] = useState('')
@@ -714,7 +715,7 @@ function SHGLeaderDashboardView({ user, refresh }) {
                   required
                   value={shgNameInput}
                   onChange={(e) => setShgNameInput(e.target.value)}
-                  placeholder="e.g. Pragati Mahila Bachat Gat"
+                  placeholder="e.g. Mahila Bachat Gat"
                 />
               </div>
               <div className="field">
@@ -758,7 +759,7 @@ function SHGLeaderDashboardView({ user, refresh }) {
                   required
                   value={memberEmailInput}
                   onChange={(e) => setMemberEmailInput(e.target.value)}
-                  placeholder="e.g. pooja.patil.test@example.com"
+                  placeholder="e.g. member@example.com"
                 />
               </div>
               <div className="modal-actions">
@@ -817,57 +818,48 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
   // Repayment UPI State
   const [selectedRepayment, setSelectedRepayment] = useState(null)
   const [payAmount, setPayAmount] = useState('')
-  const [selectedUpiApp, setSelectedUpiApp] = useState('gpay')
+  const [payMode, setPayMode] = useState('upi_qr') // 'upi_qr' | 'wallet'
+  const [utrNumber, setUtrNumber] = useState('')
+  const [qrDataUrl, setQrDataUrl] = useState('')
   const [paySuccess, setPaySuccess] = useState(false)
+
+  useEffect(() => {
+    if (!selectedRepayment || !payAmount) {
+      setQrDataUrl('')
+      return
+    }
+    const note = selectedRepayment.loan_id
+      ? `Loan #${selectedRepayment.loan_id} Inst #${selectedRepayment.number}`
+      : selectedRepayment.title || 'SHG Repayment'
+    const upiUri = `upi://pay?pa=financesaathi@bank&pn=FinanceSaathi&am=${encodeURIComponent(payAmount)}&cu=INR&tn=${encodeURIComponent(note)}`
+    QRCode.toDataURL(upiUri, { width: 180, margin: 1 })
+      .then((url) => setQrDataUrl(url))
+      .catch(() => setQrDataUrl(''))
+  }, [selectedRepayment, payAmount])
 
   // Hovered state for 6-month chart bar
   const [hoveredMonth, setHoveredMonth] = useState(null)
 
   // User-specific data mapping
   const userName = user?.name || data?.name || 'Member'
-  const shgName = data?.shg?.name || (user?.shg_id ? `SHG Group #${user.shg_id}` : 'Pragati Mahila & Kisan Bachat Gat')
+  const shgName = data?.shg?.name || (user?.shg_id ? `SHG Group #${user.shg_id}` : '')
   const availableBalance = data?.savings_balance ?? (user?.savings_balance || 0)
 
-  const topGoal = data?.top_goal || (data?.goals && data.goals[0]) || {
-    id: 1,
-    title: 'Emergency fund',
-    saved_amount: 6800,
-    target_amount: 10000,
-    progress_pct: 68,
-  }
-  const goalsList = (data?.goals && data.goals.length > 0) ? data.goals : [topGoal]
+  const topGoal = data?.top_goal || (data?.goals && data.goals[0]) || null
+  const goalsList = data?.goals || (topGoal ? [topGoal] : [])
 
-  const cibilScore = data?.cibil_score || 740
-  const healthScore = data?.health_score || 78
+  const healthScore = data?.health_score ?? (data?.ai_health_score ?? null)
   const transactions = data?.transactions || []
+  const recentNet = transactions.slice(0, 5).reduce((acc, tx) => {
+    return acc + (tx.is_credit ? Number(tx.amount || 0) : -Number(tx.amount || 0))
+  }, 0)
   const upcomingRepayments = data?.upcoming_repayments || []
-  const monthlyIncome = data?.monthly_income || user?.monthly_income || 18000
-  const monthlyExpenses = data?.monthly_expenses || user?.monthly_expenses || 9300
+  const monthlyIncome = data?.monthly_income || user?.monthly_income || 0
+  const monthlyExpenses = data?.monthly_expenses || user?.monthly_expenses || 0
 
-  const cashflowHistory = data?.cashflow_history || [
-    { month: 'Apr', income: 14000, expenses: 8000 },
-    { month: 'May', income: 15000, expenses: 8500 },
-    { month: 'Jun', income: 16000, expenses: 9000 },
-    { month: 'Jul', income: 17000, expenses: 8800 },
-    { month: 'Aug', income: 17500, expenses: 9100 },
-    { month: 'Sep', income: 18000, expenses: 9300 },
-  ]
-
-  const kpiData = data?.kpi_metrics || {
-    income_this_month: monthlyIncome,
-    income_delta: '+12%',
-    expenses_this_month: monthlyExpenses,
-    expenses_delta: '-8%',
-    savings_this_month: Math.max(0, monthlyIncome - monthlyExpenses),
-    savings_delta: '+20%',
-  }
-
-  const seasonalTip = data?.seasonal_tip || {
-    title: 'Sugarcane & Rabi Harvest Advisory',
-    description: 'Upcoming sugarcane harvest in Nov-Dec. Consider setting aside 20% extra into your emergency fund to build a 6-month buffer before planting season.',
-    action_label: 'Calculate Harvest Plan →',
-    action_target: '/tools?calc=kisan',
-  }
+  const cashflowHistory = data?.cashflow_history || []
+  const kpiData = data?.kpi_metrics || null
+  const seasonalTip = data?.seasonal_tip || null
 
   const todayDateStr = new Date().toLocaleDateString('en-IN', {
     weekday: 'long',
@@ -1007,6 +999,8 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
   const openRepayModal = (rep) => {
     setSelectedRepayment(rep)
     setPayAmount(String(rep.amount))
+    setPayMode('upi_qr')
+    setUtrNumber('')
     setShowUpiModal(true)
   }
 
@@ -1018,7 +1012,11 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
       if (selectedRepayment.loan_id) {
         await api(`/loans/${selectedRepayment.loan_id}/installments/${selectedRepayment.number}/pay`, {
           method: 'POST',
-          body: { amount: Number(payAmount) },
+          body: {
+            amount: Number(payAmount),
+            source: payMode === 'wallet' ? 'wallet' : 'external_upi',
+            reference_id: payMode === 'wallet' ? undefined : (utrNumber.trim() || `UPI-MANUAL-${Date.now()}`),
+          },
         })
       } else {
         // SHG thrift deposit
@@ -1027,19 +1025,22 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
           body: {
             amount: Number(payAmount),
             title: selectedRepayment.title,
-            category: 'savings_deposit',
-            mode: 'UPI Settlement',
+            category: 'shg_thrift',
+            mode: payMode === 'wallet' ? 'Wallet Balance' : `UPI UTR (${utrNumber.trim() || 'Manual'})`,
           },
         })
       }
-      setTimeout(async () => {
-        await refresh()
-        await reload()
-        setShowUpiModal(false)
-        setPaySuccess(false)
-        setSelectedRepayment(null)
-        toast.success(lang === 'mr' ? `₹${payAmount} चे UPI पेमेंट यशस्वी झाले!` : `UPI payment of ₹${payAmount} settled successfully!`)
-      }, 1000)
+      await refresh()
+      await reload()
+      setShowUpiModal(false)
+      setPaySuccess(false)
+      setSelectedRepayment(null)
+      setUtrNumber('')
+      toast.success(
+        lang === 'mr'
+          ? `₹${payAmount} चे पेमेंट यशस्वी झाले!`
+          : `Repayment of ₹${payAmount} settled successfully!`
+      )
     } catch (err) {
       setPaySuccess(false)
       toast.error(err.message || 'Payment processing error')
@@ -1057,10 +1058,14 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <span className="badge approved" style={{ fontWeight: 600 }}>Aadhaar Verified</span>
-          <span className="badge neutral" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0' }}>
-            {shgName}
+          <span className={`badge ${user?.kyc_status === 'verified' ? 'approved' : 'pending'}`} style={{ fontWeight: 600 }}>
+            {user?.kyc_status === 'verified' ? 'KYC Verified' : 'KYC Pending'}
           </span>
+          {shgName && (
+            <span className="badge neutral" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0' }}>
+              {shgName}
+            </span>
+          )}
         </div>
       </div>
 
@@ -1080,7 +1085,13 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
           </div>
           <div className="balance-trend-tag">
             <IconTrendingUp size={14} />
-            <span>+₹2,300 this week</span>
+            <span>
+              {recentNet > 0
+                ? `+₹${recentNet.toLocaleString('en-IN')} net activity`
+                : recentNet < 0
+                ? `-₹${Math.abs(recentNet).toLocaleString('en-IN')} net outflow`
+                : 'Ledger Reconciled'}
+            </span>
           </div>
         </div>
 
@@ -1704,21 +1715,21 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
         </div>
       )}
 
-      {/* 5. UPI Repayment Modal */}
+      {/* 5. Real UPI Repayment & Ledger Settlement Modal */}
       {showUpiModal && selectedRepayment && (
         <div className="modal-overlay" onClick={() => setShowUpiModal(false)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
             <div className="modal-header">
-              <h3>Instant Repayment via UPI</h3>
+              <h3>{selectedRepayment.loan_id ? 'Loan EMI Settlement' : 'SHG Contribution Settlement'}</h3>
               <button className="icon-btn" onClick={() => setShowUpiModal(false)}>✕</button>
             </div>
-            <p className="muted small">
-              Paying for: <b>{selectedRepayment.title}</b>
+            <p className="muted small" style={{ marginBottom: '0.75rem' }}>
+              Facility: <b>{selectedRepayment.title}</b>
             </p>
 
             <form onSubmit={handleExecuteUpiPay}>
               <div className="field">
-                <span>Amount to Settle (Rs)</span>
+                <span>Amount to Settle (₹)</span>
                 <input
                   type="number"
                   min="1"
@@ -1728,33 +1739,99 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
                 />
               </div>
 
-              <div className="field">
-                <span>Select UPI PSP Handle</span>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                  {[
-                    { id: 'gpay', label: 'Google Pay' },
-                    { id: 'phonepe', label: 'PhonePe' },
-                    { id: 'paytm', label: 'Paytm UPI' },
-                    { id: 'bhim', label: 'BHIM UPI' },
-                  ].map((app) => (
-                    <button
-                      key={app.id}
-                      type="button"
-                      className={`btn small ${selectedUpiApp === app.id ? '' : 'ghost'}`}
-                      onClick={() => setSelectedUpiApp(app.id)}
-                    >
-                      {app.label}
-                    </button>
-                  ))}
-                </div>
+              {/* Payment Mode Selector */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1rem' }}>
+                <button
+                  type="button"
+                  className={`btn small ${payMode === 'upi_qr' ? '' : 'ghost'}`}
+                  onClick={() => setPayMode('upi_qr')}
+                >
+                  📱 UPI QR / App
+                </button>
+                <button
+                  type="button"
+                  className={`btn small ${payMode === 'wallet' ? '' : 'ghost'}`}
+                  onClick={() => setPayMode('wallet')}
+                >
+                  💼 Syra Wallet
+                </button>
               </div>
+
+              {payMode === 'upi_qr' ? (
+                <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+                  {qrDataUrl ? (
+                    <img
+                      src={qrDataUrl}
+                      alt="UPI Payment QR"
+                      style={{ width: '160px', height: '160px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'block', margin: '0 auto 0.5rem' }}
+                    />
+                  ) : (
+                    <div style={{ width: '160px', height: '160px', background: '#f1f5f9', display: 'grid', placeItems: 'center', margin: '0 auto 0.5rem', borderRadius: '8px' }}>
+                      <Loading small />
+                    </div>
+                  )}
+
+                  <p className="muted small" style={{ marginBottom: '0.5rem' }}>
+                    Scan using BHIM, GPay, PhonePe, or Paytm
+                  </p>
+
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                    <a
+                      href={`upi://pay?pa=financesaathi@bank&pn=FinanceSaathi&am=${encodeURIComponent(payAmount)}&cu=INR&tn=${encodeURIComponent(selectedRepayment.loan_id ? `Loan #${selectedRepayment.loan_id} Inst #${selectedRepayment.number}` : selectedRepayment.title || 'Settlement')}`}
+                      className="btn small secondary"
+                      style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                    >
+                      ⚡ Open UPI App
+                    </a>
+                  </div>
+
+                  <div style={{ fontSize: '0.8rem', color: '#475569', background: '#f8fafc', padding: '0.35rem 0.6rem', borderRadius: '4px', border: '1px dashed #cbd5e1', marginBottom: '1rem' }}>
+                    Institutional UPI VPA: <b>financesaathi@bank</b>
+                  </div>
+
+                  <div className="field" style={{ textAlign: 'left' }}>
+                    <span>Bank / UPI Reference No. (UTR)</span>
+                    <input
+                      type="text"
+                      placeholder="e.g. 428901234567"
+                      value={utrNumber}
+                      onChange={(e) => setUtrNumber(e.target.value)}
+                    />
+                    <small className="muted">Enter UTR number from your payment confirmation to record on statement.</small>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ padding: '0.75rem', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '6px', marginBottom: '1rem', fontSize: '0.85rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                    <span>Available Wallet Balance:</span>
+                    <b>₹{Number(availableBalance).toLocaleString('en-IN')}</b>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                    <span>Amount to Debit:</span>
+                    <b>₹{Number(payAmount || 0).toLocaleString('en-IN')}</b>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #86efac', paddingTop: '0.3rem' }}>
+                    <span>Remaining Balance:</span>
+                    <b>₹{Math.max(0, availableBalance - Number(payAmount || 0)).toLocaleString('en-IN')}</b>
+                  </div>
+                  {availableBalance < Number(payAmount || 0) && (
+                    <p style={{ color: '#dc2626', marginTop: '0.5rem', fontWeight: 600 }}>
+                      ⚠️ Insufficient wallet balance. Please switch to UPI QR above.
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div className="modal-actions">
                 <button type="button" className="btn ghost" onClick={() => setShowUpiModal(false)}>
                   Cancel
                 </button>
-                <button type="submit" className="btn" disabled={paySuccess}>
-                  {paySuccess ? 'Verifying UPI PSP…' : `Pay ₹${Number(payAmount || 0).toLocaleString('en-IN')} via UPI`}
+                <button
+                  type="submit"
+                  className="btn"
+                  disabled={paySuccess || (payMode === 'wallet' && availableBalance < Number(payAmount || 0))}
+                >
+                  {paySuccess ? 'Settling Ledger…' : `Confirm Settlement (₹${Number(payAmount || 0).toLocaleString('en-IN')})`}
                 </button>
               </div>
             </form>

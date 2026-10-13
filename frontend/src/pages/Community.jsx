@@ -256,29 +256,55 @@ export function SHG() {
   const toast = useToast()
   const [name, setName] = useState('')
   const [village, setVillage] = useState('')
+  const [thriftAmt, setThriftAmt] = useState(500)
   const [email, setEmail] = useState('')
   const [msg, setMsg] = useState({ kind: 'error', text: '' })
+
+  // Meeting form
+  const [meetingDate, setMeetingDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [meetingAgenda, setMeetingAgenda] = useState('Monthly Thrift Collection & Inter-Lending Assembly')
+  const [meetingMinutes, setMeetingMinutes] = useState('Quorum verified; savings collected; peer loans reviewed.')
   const [attendance, setAttendance] = useState({})
+
+  // Thrift deposit form
+  const [payMonth, setPayMonth] = useState(() => new Date().toISOString().slice(0, 7))
+  const [payAmount, setPayAmount] = useState(500)
+  const [paySource, setPaySource] = useState('wallet')
+
+  // Internal loan modal
   const [showInterLoanModal, setShowInterLoanModal] = useState(false)
   const [interLoanForm, setInterLoanForm] = useState({
-    borrower: '',
     amount: 5000,
+    tenure_months: 6,
     purpose: 'Emergency Medical & Crop Input',
   })
-  const [internalLoans, setInternalLoans] = useState([
-    {
-      id: 'IL-101',
-      borrower: 'Anita Bai',
-      amount: 6000,
-      purpose: 'Dairy Cattle Feed & Vet Care',
-      date: '02 Oct 2026',
-      status: 'Disbursed',
-      votes: 'Consensus Approved (100%)',
-    },
-  ])
+
+  // Repay modal
+  const [repayModalLoan, setRepayModalLoan] = useState(null)
+  const [repayAmount, setRepayAmount] = useState('')
 
   const summary = useLoad(
     () => (user.shg_id ? api('/shgs/' + user.shg_id + '/summary') : Promise.resolve(null)),
+    [user.shg_id]
+  )
+
+  const meetings = useLoad(
+    () => (user.shg_id ? api('/shgs/' + user.shg_id + '/meetings') : Promise.resolve([])),
+    [user.shg_id]
+  )
+
+  const thrift = useLoad(
+    () => (user.shg_id ? api('/shgs/' + user.shg_id + '/thrift') : Promise.resolve([])),
+    [user.shg_id]
+  )
+
+  const internalLoans = useLoad(
+    () => (user.shg_id ? api('/shgs/' + user.shg_id + '/internal-loans') : Promise.resolve([])),
+    [user.shg_id]
+  )
+
+  const invites = useLoad(
+    () => (!user.shg_id ? api('/shgs/invites/my') : Promise.resolve([])),
     [user.shg_id]
   )
 
@@ -297,12 +323,25 @@ export function SHG() {
   const create = (e) => {
     e.preventDefault()
     run(async () => {
-      await api('/shgs', { method: 'POST', body: { name, village } })
+      await api('/shgs', {
+        method: 'POST',
+        body: { name, village, monthly_thrift_amount: Number(thriftAmt) || 500 },
+      })
       await refresh()
     }, 'Self-Help Group successfully registered.')
   }
 
-  const add = (e) => {
+  const respondInvite = async (invId, accept) => {
+    run(async () => {
+      await api('/shgs/invites/' + invId + '/respond', {
+        method: 'POST',
+        body: { accept },
+      })
+      await refresh()
+    }, accept ? 'SHG membership invitation accepted!' : 'Invitation declined.')
+  }
+
+  const addMember = (e) => {
     e.preventDefault()
     run(async () => {
       await api('/shgs/' + user.shg_id + '/members', { method: 'POST', body: { email } })
@@ -311,29 +350,106 @@ export function SHG() {
     }, 'Member successfully enrolled into group.')
   }
 
-  const handleCreateInternalLoan = (e) => {
+  const handleRecordMeeting = async (e) => {
+    e.preventDefault()
+    const membersList = summary.data?.members || []
+    const attendeeIds = membersList.filter((m) => attendance[m.id] !== false).map((m) => m.id)
+    run(async () => {
+      await api('/shgs/' + user.shg_id + '/meetings', {
+        method: 'POST',
+        body: {
+          meeting_date: meetingDate,
+          agenda: meetingAgenda,
+          minutes: meetingMinutes,
+          attendee_ids: attendeeIds,
+        },
+      })
+      meetings.reload()
+    }, 'Assembly attendance and resolutions recorded in register.')
+  }
+
+  const handlePayThrift = async (e) => {
+    e.preventDefault()
+    const amt = Number(payAmount)
+    if (!amt || amt <= 0) return
+    run(async () => {
+      await api('/shgs/' + user.shg_id + '/thrift', {
+        method: 'POST',
+        body: {
+          month_year: payMonth,
+          amount: amt,
+          source: paySource,
+        },
+      })
+      thrift.reload()
+      summary.reload()
+      await refresh()
+    }, `Monthly thrift contribution of ${money(amt)} recorded.`)
+  }
+
+  const handleRequestInternalLoan = async (e) => {
     e.preventDefault()
     const amt = Number(interLoanForm.amount)
     if (!amt || amt <= 0) return
-    const borrowerName = interLoanForm.borrower.trim() || user?.name || 'Group Member'
-    const newLoan = {
-      id: `IL-${102 + internalLoans.length}`,
-      borrower: borrowerName,
-      amount: amt,
-      purpose: interLoanForm.purpose.trim() || 'Emergency Need',
-      date: new Date().toLocaleDateString('en-IN'),
-      status: 'Disbursed',
-      votes: 'Consensus Approved (100%)',
-    }
-    setInternalLoans([newLoan, ...internalLoans])
-    setShowInterLoanModal(false)
-    toast.success(`Internal peer loan of ₹${amt.toLocaleString('en-IN')} approved from common savings pool!`)
+    run(async () => {
+      await api('/shgs/' + user.shg_id + '/internal-loans', {
+        method: 'POST',
+        body: {
+          amount: amt,
+          tenure_months: Number(interLoanForm.tenure_months) || 6,
+          purpose: interLoanForm.purpose,
+        },
+      })
+      setShowInterLoanModal(false)
+      internalLoans.reload()
+      summary.reload()
+    }, `Internal loan request for ${money(amt)} submitted to group.`)
+  }
+
+  const handleDecideInternalLoan = async (loanId, approve) => {
+    const note = approve ? 'Approved by SHG consensus' : window.prompt('Enter rejection reason:') || 'Declined'
+    run(async () => {
+      await api('/shgs/' + user.shg_id + '/internal-loans/' + loanId + '/decide', {
+        method: 'POST',
+        body: { approve, note },
+      })
+      internalLoans.reload()
+      summary.reload()
+      await refresh()
+    }, approve ? 'Internal loan sanctioned and disbursed from corpus.' : 'Loan request rejected.')
+  }
+
+  const handleRepayInternalLoan = async (e) => {
+    e.preventDefault()
+    if (!repayModalLoan) return
+    const amt = Number(repayAmount)
+    if (!amt || amt <= 0) return
+    run(async () => {
+      await api('/shgs/' + user.shg_id + '/internal-loans/' + repayModalLoan.id + '/repay', {
+        method: 'POST',
+        body: { amount: amt },
+      })
+      setRepayModalLoan(null)
+      setRepayAmount('')
+      internalLoans.reload()
+      summary.reload()
+      await refresh()
+    }, `Repayment of ${money(amt)} credited back to SHG corpus.`)
+  }
+
+  const handleLeaveSHG = async () => {
+    if (!window.confirm('Are you sure you want to depart from this Self-Help Group?')) return
+    run(async () => {
+      await api('/shgs/' + user.shg_id + '/leave', { method: 'POST' })
+      await refresh()
+    }, 'Successfully departed the SHG.')
   }
 
   const membersList = summary.data?.members || []
   const presentCount = membersList.filter((m) => attendance[m.id] !== false).length
   const quorumPct = membersList.length > 0 ? Math.round((presentCount / membersList.length) * 100) : 100
-  const commonPool = membersList.length * 6000 + 20000
+  const corpus = summary.data?.corpus_balance || 0
+  const isLeader = user.role === 'shg_leader' || user.role === 'admin' || (summary.data?.leader_id === user.id)
 
   return (
     <>
@@ -344,37 +460,90 @@ export function SHG() {
             NABARD SHG-Bank Linkage Program, Joint Liability Group Governance & Micro-Savings Pool
           </p>
         </div>
+        {user.shg_id && (
+          <button type="button" className="btn small ghost danger" onClick={handleLeaveSHG}>
+            Leave SHG
+          </button>
+        )}
       </div>
 
       <Alert kind={msg.kind}>{msg.text}</Alert>
 
       {!user.shg_id ? (
-        <Card title="Establish a Self-Help Group (SHG)">
-          <p className="muted small" style={{ marginBottom: '1rem' }}>
-            Self-Help Groups aggregate savings, provide peer financial discipline, and qualify for subsidized group microcredit under NRLM (National Rural Livelihoods Mission).
-          </p>
-          <form onSubmit={create}>
-            <Field label="SHG Name">
-              <input
-                required
-                minLength={2}
-                placeholder="e.g. Jai Kisan Mahila Bachat Gat"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </Field>
-            <Field label="Village / Gram Panchayat">
-              <input
-                value={village}
-                placeholder="e.g. Shindewadi, Satara District"
-                onChange={(e) => setVillage(e.target.value)}
-              />
-            </Field>
-            <button className="btn" style={{ marginTop: '0.5rem' }}>
-              <IconUsers size={16} /> Register SHG
-            </button>
-          </form>
-        </Card>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {invites.data && invites.data.length > 0 && (
+            <Card title="Pending Membership Invitations">
+              <p className="muted small" style={{ marginBottom: '0.75rem' }}>
+                You have received invitations to join the following Self-Help Groups:
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                {invites.data.map((inv) => (
+                  <div
+                    key={inv.id}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '0.75rem',
+                      borderRadius: '6px',
+                      border: '1px solid var(--border-color)',
+                      background: 'var(--slate-50, #f8fafc)',
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 600 }}>{inv.shg_name}</div>
+                      <div className="muted small">{inv.village ? `Village: ${inv.village}` : 'Village community'}</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button className="btn small emerald" onClick={() => respondInvite(inv.id, true)}>
+                        Accept
+                      </button>
+                      <button className="btn small ghost danger" onClick={() => respondInvite(inv.id, false)}>
+                        Decline
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          <Card title="Establish a Self-Help Group (SHG)">
+            <p className="muted small" style={{ marginBottom: '1rem' }}>
+              Self-Help Groups aggregate savings, provide peer financial discipline, and qualify for subsidized group microcredit under NRLM (National Rural Livelihoods Mission).
+            </p>
+            <form onSubmit={create}>
+              <Field label="SHG Name">
+                <input
+                  required
+                  minLength={2}
+                  placeholder="e.g. Jai Kisan Mahila Bachat Gat"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </Field>
+              <Field label="Village / Gram Panchayat">
+                <input
+                  value={village}
+                  placeholder="e.g. Shindewadi, Satara District"
+                  onChange={(e) => setVillage(e.target.value)}
+                />
+              </Field>
+              <Field label="Standard Monthly Thrift per Member (Rs)">
+                <input
+                  type="number"
+                  min="100"
+                  step="50"
+                  value={thriftAmt}
+                  onChange={(e) => setThriftAmt(e.target.value)}
+                />
+              </Field>
+              <button className="btn" style={{ marginTop: '0.5rem' }}>
+                <IconUsers size={16} /> Register SHG
+              </button>
+            </form>
+          </Card>
+        </div>
       ) : summary.loading ? (
         <Loading />
       ) : summary.data && (
@@ -404,14 +573,16 @@ export function SHG() {
               </p>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <span className="muted small">Monthly Savings Protocol</span>
-              <div style={{ fontWeight: 700, color: 'var(--emerald-action)' }}>100% On-Time Ledger</div>
+              <span className="muted small">Monthly Thrift Rate</span>
+              <div style={{ fontWeight: 700, color: 'var(--emerald-action)' }}>
+                {money(summary.data.monthly_thrift_amount || 500)} / member
+              </div>
             </div>
           </div>
 
           <div className="grid" style={{ marginBottom: '1.25rem' }}>
             <Stat label="Total Group Members" value={summary.data.members.length} sub="Joint liability roll" />
-            <Stat label="Group Common Pool" value={money(commonPool)} sub="Accumulated savings pool" />
+            <Stat label="Group Common Pool" value={money(corpus)} sub="Accumulated savings corpus" />
             <Stat label={t('outstanding')} value={money(summary.data.outstanding)} sub="Active bank linkage" />
             <Stat
               label="Overdue Instalments"
@@ -421,15 +592,16 @@ export function SHG() {
           </div>
 
           <div className="two-col" style={{ marginBottom: '1.25rem' }}>
-            {/* 1. Monthly Meeting Schedule & Statutory Attendance */}
+            {/* 1. Monthly Assembly & Statutory Attendance */}
             <Card title="Monthly Assembly & Attendance Roll">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginBottom: '0.85rem' }}>
                 <div className="row between small">
                   <div>
-                    <span className="muted">Next Assembly:</span> <b>15th of Every Month (11:00 AM)</b>
+                    <span className="muted">Quorum Status:</span>{' '}
+                    <b>{quorumPct}% ({presentCount}/{membersList.length})</b>
                   </div>
-                  <Badge tone={quorumPct >= 75 ? 'approved' : 'pending'}>
-                    Quorum: {quorumPct}% {quorumPct >= 75 ? '(Quorum Met)' : '(Pending)'}
+                  <Badge tone={quorumPct >= 50 ? 'approved' : 'pending'}>
+                    {quorumPct >= 50 ? 'Quorum Met (≥50%)' : 'Quorum Not Met (<50%)'}
                   </Badge>
                 </div>
               </div>
@@ -467,41 +639,151 @@ export function SHG() {
                 })}
               </div>
 
-              <button
-                type="button"
-                className="btn small ghost w-100"
-                onClick={() => toast.success(`Meeting attendance and resolution logged in SHG statutory register with ${quorumPct}% quorum!`)}
-              >
-                Log Statutory Attendance in Register
-              </button>
-            </Card>
-
-            {/* 2. Enroll Member Card */}
-            <Card title="Enroll SHG Member">
-              <p className="muted small" style={{ marginBottom: '0.75rem' }}>
-                Borrowers must have an active FinanceSaathi account to be inducted into your group roster.
-              </p>
-              <form onSubmit={add} className="row" style={{ gap: '0.5rem', marginBottom: '1rem' }}>
-                <input
-                  type="email"
-                  required
-                  placeholder="Member's registered email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  style={{ flex: 1 }}
-                />
-                <button className="btn" type="submit">
-                  <IconPlus size={16} /> Add Member
+              <form onSubmit={handleRecordMeeting} style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                <div className="row" style={{ gap: '0.5rem' }}>
+                  <div style={{ flex: 1 }}>
+                    <span className="small muted">Meeting Date</span>
+                    <input
+                      type="date"
+                      value={meetingDate}
+                      onChange={(e) => setMeetingDate(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div style={{ flex: 2 }}>
+                    <span className="small muted">Agenda</span>
+                    <input
+                      value={meetingAgenda}
+                      onChange={(e) => setMeetingAgenda(e.target.value)}
+                      placeholder="Meeting agenda"
+                      required
+                    />
+                  </div>
+                </div>
+                <div>
+                  <span className="small muted">Meeting Minutes / Decisions</span>
+                  <input
+                    value={meetingMinutes}
+                    onChange={(e) => setMeetingMinutes(e.target.value)}
+                    placeholder="Brief notes of resolutions"
+                  />
+                </div>
+                <button type="submit" className="btn small ghost w-100" style={{ marginTop: '0.3rem' }}>
+                  Log Statutory Assembly in Register
                 </button>
               </form>
 
-              <div style={{ background: 'var(--slate-50)', padding: '0.75rem', borderRadius: '6px' }}>
-                <span style={{ fontWeight: 600, fontSize: '0.84rem' }}>Joint Liability Terms:</span>
-                <p className="muted small" style={{ margin: '0.2rem 0 0 0', fontSize: '0.74rem' }}>
-                  All members mutually guarantee loans extended to the group under NABARD SHG-Bank Linkage guidelines.
-                </p>
-              </div>
+              {meetings.data && meetings.data.length > 0 && (
+                <div style={{ marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.82rem', marginBottom: '0.4rem' }}>Recent Assemblies Log</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', maxHeight: '160px', overflowY: 'auto' }}>
+                    {meetings.data.slice(0, 5).map((mt) => (
+                      <div key={mt.id} className="small" style={{ padding: '0.4rem 0.6rem', background: '#f9fafb', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
+                        <div className="row between">
+                          <b>{mt.meeting_date}</b>
+                          <Badge tone={mt.quorum_met ? 'approved' : 'pending'}>{mt.quorum_pct}% Quorum</Badge>
+                        </div>
+                        <div className="muted" style={{ marginTop: '0.2rem' }}>{mt.agenda}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </Card>
+
+            {/* 2. Monthly Thrift Contribution & Member Enrollment */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <Card title="Monthly Thrift Deposit">
+                <p className="muted small" style={{ marginBottom: '0.75rem' }}>
+                  Members contribute regular thrift savings into the SHG common corpus to build group creditworthiness and fund peer emergency loans.
+                </p>
+                <form onSubmit={handlePayThrift} style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                  <div className="row" style={{ gap: '0.5rem' }}>
+                    <div style={{ flex: 1 }}>
+                      <span className="small muted">Month (YYYY-MM)</span>
+                      <input
+                        type="month"
+                        value={payMonth}
+                        onChange={(e) => setPayMonth(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <span className="small muted">Thrift Amount (Rs)</span>
+                      <input
+                        type="number"
+                        min="100"
+                        step="50"
+                        value={payAmount}
+                        onChange={(e) => setPayAmount(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="row between" style={{ alignItems: 'center' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.8rem', cursor: 'pointer' }}>
+                      <input
+                        type="radio"
+                        checked={paySource === 'wallet'}
+                        onChange={() => setPaySource('wallet')}
+                      />
+                      Deduct from Wallet ({money(user.savings_balance)})
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.8rem', cursor: 'pointer' }}>
+                      <input
+                        type="radio"
+                        checked={paySource === 'external_upi'}
+                        onChange={() => setPaySource('external_upi')}
+                      />
+                      Direct UPI / Cash
+                    </label>
+                  </div>
+                  <button type="submit" className="btn small emerald" style={{ marginTop: '0.3rem' }}>
+                    Deposit {money(payAmount)} to Common Corpus
+                  </button>
+                </form>
+
+                {thrift.data && thrift.data.length > 0 && (
+                  <div style={{ marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.82rem', marginBottom: '0.4rem' }}>Recent Thrift Contributions</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', maxHeight: '130px', overflowY: 'auto' }}>
+                      {thrift.data.slice(0, 5).map((tItem) => (
+                        <div key={tItem.id} className="small row between" style={{ padding: '0.3rem 0.5rem', background: '#f9fafb', borderRadius: '4px' }}>
+                          <span><b>{tItem.member_name}</b> ({tItem.month_year})</span>
+                          <span style={{ fontWeight: 600, color: '#059669' }}>+{money(tItem.amount)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </Card>
+
+              <Card title="Enroll SHG Member">
+                <p className="muted small" style={{ marginBottom: '0.75rem' }}>
+                  Borrowers must have an active FinanceSaathi account to be inducted into your group roster.
+                </p>
+                <form onSubmit={addMember} className="row" style={{ gap: '0.5rem', marginBottom: '1rem' }}>
+                  <input
+                    type="email"
+                    required
+                    placeholder="Member's registered email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    style={{ flex: 1 }}
+                  />
+                  <button className="btn" type="submit">
+                    <IconPlus size={16} /> Add Member
+                  </button>
+                </form>
+
+                <div style={{ background: 'var(--slate-50)', padding: '0.75rem', borderRadius: '6px' }}>
+                  <span style={{ fontWeight: 600, fontSize: '0.84rem' }}>Joint Liability Terms:</span>
+                  <p className="muted small" style={{ margin: '0.2rem 0 0 0', fontSize: '0.74rem' }}>
+                    All members mutually guarantee loans extended to the group under NABARD SHG-Bank Linkage guidelines.
+                  </p>
+                </div>
+              </Card>
+            </div>
           </div>
 
           {/* 3. Inter-Lending Common Corpus Card */}
@@ -510,7 +792,7 @@ export function SHG() {
               <div>
                 <span className="muted small">Accumulated Group Common Fund:</span>
                 <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--slate-900)' }}>
-                  {money(commonPool)}
+                  {money(corpus)}
                 </div>
                 <span className="muted small">Liquid micro-reserves available for peer emergency inter-lending</span>
               </div>
@@ -531,26 +813,72 @@ export function SHG() {
                     <th>Loan Ref</th>
                     <th>Borrower Member</th>
                     <th>Sanction Amount</th>
+                    <th>Tenure</th>
                     <th>Emergency Purpose</th>
-                    <th>Consensus Vote</th>
+                    <th>Repaid</th>
                     <th>Status</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {internalLoans.map((l) => (
+                  {(internalLoans.data || []).map((l) => (
                     <tr key={l.id}>
                       <td style={{ fontWeight: 600 }}>#{l.id}</td>
-                      <td style={{ fontWeight: 600 }}>{l.borrower}</td>
+                      <td style={{ fontWeight: 600 }}>{l.borrower_name}</td>
                       <td style={{ fontWeight: 700, color: 'var(--emerald-700)' }}>{money(l.amount)}</td>
+                      <td>{l.tenure_months} mo</td>
                       <td className="small">{l.purpose}</td>
+                      <td>{money(l.repaid_amount || 0)}</td>
                       <td>
-                        <span className="badge approved" style={{ fontSize: '0.72rem' }}>{l.votes}</span>
+                        <Badge tone={l.status === 'active' ? 'approved' : l.status === 'closed' ? 'approved' : l.status === 'rejected' ? 'danger' : 'pending'}>
+                          {l.status}
+                        </Badge>
                       </td>
                       <td>
-                        <Badge tone="approved">{l.status}</Badge>
+                        {l.status === 'requested' && isLeader && l.borrower_id !== user.id && (
+                          <div style={{ display: 'flex', gap: '0.3rem' }}>
+                            <button
+                              type="button"
+                              className="btn small emerald"
+                              style={{ padding: '2px 8px', fontSize: '0.72rem' }}
+                              onClick={() => handleDecideInternalLoan(l.id, true)}
+                            >
+                              Sanction
+                            </button>
+                            <button
+                              type="button"
+                              className="btn small ghost danger"
+                              style={{ padding: '2px 8px', fontSize: '0.72rem' }}
+                              onClick={() => handleDecideInternalLoan(l.id, false)}
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        )}
+                        {l.status === 'active' && (user.id === l.borrower_id || isLeader) && (
+                          <button
+                            type="button"
+                            className="btn small ghost"
+                            style={{ padding: '2px 8px', fontSize: '0.72rem' }}
+                            onClick={() => {
+                              setRepayModalLoan(l)
+                              setRepayAmount(Math.max(0, l.amount - (l.repaid_amount || 0)))
+                            }}
+                          >
+                            Repay
+                          </button>
+                        )}
+                        {l.status === 'closed' && <span className="small muted">Fully Settled</span>}
                       </td>
                     </tr>
                   ))}
+                  {(internalLoans.data || []).length === 0 && (
+                    <tr>
+                      <td colSpan="8" className="muted" style={{ textAlign: 'center', padding: '1rem' }}>
+                        No internal peer loans requested yet. Members can tap into the common corpus for urgent needs.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -565,7 +893,7 @@ export function SHG() {
                     <th>Member ID</th>
                     <th>Full Name</th>
                     <th>Designation</th>
-                    <th>Monthly Contribution</th>
+                    <th>Individual Savings Balance</th>
                     <th>Status</th>
                   </tr>
                 </thead>
@@ -579,7 +907,7 @@ export function SHG() {
                           {idx === 0 ? 'Group Leader' : 'Active Member'}
                         </Badge>
                       </td>
-                      <td>₹500 / month</td>
+                      <td>{money(m.savings || 0)}</td>
                       <td>
                         <Badge tone="approved">In Good Standing</Badge>
                       </td>
@@ -606,31 +934,38 @@ export function SHG() {
                   <button className="icon-btn" onClick={() => setShowInterLoanModal(false)}>✕</button>
                 </div>
                 <p className="muted small" style={{ marginBottom: '1rem' }}>
-                  Emergency internal loan from {summary.data.name} Common Savings Pool (Balance: {money(commonPool)}).
+                  Emergency internal loan from {summary.data.name} Common Savings Pool (Balance: {money(corpus)}).
                 </p>
 
-                <form onSubmit={handleCreateInternalLoan}>
+                <form onSubmit={handleRequestInternalLoan}>
                   <div className="field">
-                    <span>Borrower Member Name</span>
-                    <input
-                      required
-                      placeholder="e.g. Meena Patil"
-                      value={interLoanForm.borrower}
-                      onChange={(e) => setInterLoanForm({ ...interLoanForm, borrower: e.target.value })}
-                    />
+                    <span>Borrower</span>
+                    <input disabled value={user.name} />
                   </div>
 
                   <div className="field">
                     <span>Requested Amount (Rs)</span>
                     <input
                       type="number"
-                      min="1000"
-                      max={commonPool}
-                      step="500"
+                      min="500"
+                      max={corpus > 0 ? corpus : 500}
+                      step="100"
                       required
                       value={interLoanForm.amount}
                       onChange={(e) => setInterLoanForm({ ...interLoanForm, amount: e.target.value })}
                     />
+                  </div>
+
+                  <div className="field">
+                    <span>Tenure (Months)</span>
+                    <select
+                      value={interLoanForm.tenure_months}
+                      onChange={(e) => setInterLoanForm({ ...interLoanForm, tenure_months: Number(e.target.value) })}
+                    >
+                      <option value="3">3 Months</option>
+                      <option value="6">6 Months</option>
+                      <option value="12">12 Months</option>
+                    </select>
                   </div>
 
                   <div className="field">
@@ -644,7 +979,7 @@ export function SHG() {
                   </div>
 
                   <div style={{ background: '#ecfdf5', padding: '0.65rem', borderRadius: '6px', fontSize: '0.74rem', color: '#047857', marginBottom: '1rem' }}>
-                    ✓ 1% concessional interest per month credited directly back into the SHG common pool.
+                    ✓ 1% concessional interest per month credited directly back into the SHG common pool upon repayment.
                   </div>
 
                   <div className="modal-actions">
@@ -652,7 +987,43 @@ export function SHG() {
                       Cancel
                     </button>
                     <button type="submit" className="btn">
-                      Disburse Internal Loan
+                      Submit Loan Request
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Repay Modal */}
+          {repayModalLoan && (
+            <div className="modal-overlay" onClick={() => setRepayModalLoan(null)}>
+              <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+                <div className="modal-header">
+                  <h3>Repay Internal Loan #{repayModalLoan.id}</h3>
+                  <button className="icon-btn" onClick={() => setRepayModalLoan(null)}>✕</button>
+                </div>
+                <form onSubmit={handleRepayInternalLoan}>
+                  <div className="field">
+                    <span>Repayment Amount (Rs)</span>
+                    <input
+                      type="number"
+                      min="100"
+                      max={Math.max(0, repayModalLoan.amount - (repayModalLoan.repaid_amount || 0))}
+                      value={repayAmount}
+                      onChange={(e) => setRepayAmount(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <p className="muted small" style={{ marginBottom: '1rem' }}>
+                    Deducts from your wallet and credits the collective SHG savings corpus.
+                  </p>
+                  <div className="modal-actions">
+                    <button type="button" className="btn ghost" onClick={() => setRepayModalLoan(null)}>
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn emerald">
+                      Confirm Repayment
                     </button>
                   </div>
                 </form>
@@ -664,3 +1035,4 @@ export function SHG() {
     </>
   )
 }
+

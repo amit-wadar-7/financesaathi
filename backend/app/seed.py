@@ -1,31 +1,230 @@
 from datetime import date, timedelta
+import os
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from . import models
+from . import finance, models
+from .config import ADMIN_EMAIL, ADMIN_PASSWORD, SEED_DEMO
 from .security import hash_password
 from .seed_data import COURSES, SCHEMES
 
+LOAN_PRODUCTS_DATA = [
+    {
+        "code": "kisan_agri",
+        "name": "Kisan Agri & Harvest Facility",
+        "name_hi": "किसान कृषि एवं फसल ऋण सुविधा",
+        "name_mr": "किसान कृषी आणि पीक कर्ज सुविधा",
+        "annual_rate": 7.0,
+        "min_amount": 5000.0,
+        "max_amount": 150000.0,
+        "min_tenure": 6,
+        "max_tenure": 24,
+        "allowed_schedule_types": ["monthly", "harvest_bullet"],
+        "required_documents": ["aadhaar", "land_record", "income_proof"],
+        "eligibility_notes": "Smallholder farmers, tenant cultivators, and Kisan Credit Card holders.",
+    },
+    {
+        "code": "pm_mudra",
+        "name": "PM MUDRA MSME Business Credit",
+        "name_hi": "पीएम मुद्रा एमएसएमई व्यापार ऋण",
+        "name_mr": "पीएम मुद्रा एमएसएमई व्यवसाय कर्ज",
+        "annual_rate": 8.5,
+        "min_amount": 10000.0,
+        "max_amount": 200000.0,
+        "min_tenure": 6,
+        "max_tenure": 36,
+        "allowed_schedule_types": ["monthly"],
+        "required_documents": ["aadhaar", "pan", "business_proof"],
+        "eligibility_notes": "Micro-enterprises, rural retail shops, and non-farm service units.",
+    },
+    {
+        "code": "mahila_shakti",
+        "name": "Mahila Shakti SHG Livelihood Advance",
+        "name_hi": "महिला शक्ति एसएचजी आजीविका अग्रिम",
+        "name_mr": "महिला शक्ती बचत गट उपजीविका कर्ज",
+        "annual_rate": 8.5,
+        "min_amount": 5000.0,
+        "max_amount": 150000.0,
+        "min_tenure": 6,
+        "max_tenure": 24,
+        "allowed_schedule_types": ["monthly"],
+        "required_documents": ["aadhaar", "shg_resolution"],
+        "eligibility_notes": "Active women Self-Help Group members with at least 6 months regular thrift savings.",
+    },
+    {
+        "code": "pm_svanidhi",
+        "name": "PM SVANidhi Street Vendor Credit",
+        "name_hi": "पीएम स्वनिधि स्ट्रीट वेंडर ऋण",
+        "name_mr": "पीएम स्वनिधी पथविक्रेता कर्ज",
+        "annual_rate": 7.0,
+        "min_amount": 2000.0,
+        "max_amount": 50000.0,
+        "min_tenure": 6,
+        "max_tenure": 12,
+        "allowed_schedule_types": ["monthly"],
+        "required_documents": ["aadhaar", "vendor_certificate"],
+        "eligibility_notes": "Urban and rural street vendors and small weekly haat traders.",
+    },
+    {
+        "code": "emergency_health",
+        "name": "Emergency Livelihood & Medical Care Advance",
+        "name_hi": "आपातकालीन आजीविका एवं स्वास्थ्य अग्रिम",
+        "name_mr": "आणीबाणी उपजीविका आणि आरोग्य कर्ज",
+        "annual_rate": 6.0,
+        "min_amount": 2000.0,
+        "max_amount": 40000.0,
+        "min_tenure": 3,
+        "max_tenure": 12,
+        "allowed_schedule_types": ["monthly"],
+        "required_documents": ["aadhaar"],
+        "eligibility_notes": "Urgent medical relief or sudden livelihood disruption.",
+    },
+    {
+        "code": "solar_green",
+        "name": "Clean Energy Solar Pump Financing",
+        "name_hi": "स्वच्छ ऊर्जा सौर कृषि पंप वित्तपोषण",
+        "name_mr": "स्वच्छ ऊर्जा सौर कृषी पंप वित्तपुरवठा",
+        "annual_rate": 6.5,
+        "min_amount": 15000.0,
+        "max_amount": 300000.0,
+        "min_tenure": 12,
+        "max_tenure": 60,
+        "allowed_schedule_types": ["monthly", "harvest_bullet"],
+        "required_documents": ["aadhaar", "quotation_invoice", "land_record"],
+        "eligibility_notes": "Farmers installing PM-KUSUM approved solar agri water pumps.",
+    },
+    {
+        "code": "artisan_micro",
+        "name": "Rural Artisan & Handloom Microcredit",
+        "name_hi": "ग्रामीण कारीगर एवं हथकरघा सूक्ष्म ऋण",
+        "name_mr": "ग्रामीण कारागीर आणि हातमाग सूक्ष्म कर्ज",
+        "annual_rate": 8.0,
+        "min_amount": 5000.0,
+        "max_amount": 80000.0,
+        "min_tenure": 6,
+        "max_tenure": 24,
+        "allowed_schedule_types": ["monthly"],
+        "required_documents": ["aadhaar", "artisan_card"],
+        "eligibility_notes": "Registered traditional craftspersons, weavers, and rural artisans.",
+    },
+    {
+        "code": "standard",
+        "name": "Standard Microfinance Term Loan",
+        "name_hi": "मानक सूक्ष्म वित्त मियादी ऋण",
+        "name_mr": "प्रमाणित सूक्ष्म वित्त मुदत कर्ज",
+        "annual_rate": 12.0,
+        "min_amount": 2000.0,
+        "max_amount": 100000.0,
+        "min_tenure": 3,
+        "max_tenure": 24,
+        "allowed_schedule_types": ["monthly"],
+        "required_documents": ["aadhaar", "income_proof"],
+        "eligibility_notes": "General purpose microcredit for verified borrowers.",
+    },
+]
 
-def seed(db: Session):
-    # 1. Ensure SHG exists
-    shg = db.scalar(select(models.SHG).where(models.SHG.name == "Pragati Mahila & Kisan Bachat Gat"))
+
+def seed_content(db: Session):
+    """Safe, idempotent initialization of product catalog, courses, and schemes."""
+    # 1. Seed Loan Products
+    for lp in LOAN_PRODUCTS_DATA:
+        existing = db.scalar(select(models.LoanProduct).where(models.LoanProduct.code == lp["code"]))
+        if not existing:
+            db.add(models.LoanProduct(
+                code=lp["code"],
+                name=lp["name"],
+                name_hi=lp["name_hi"],
+                name_mr=lp["name_mr"],
+                annual_rate=lp["annual_rate"],
+                min_amount=lp["min_amount"],
+                max_amount=lp["max_amount"],
+                min_tenure=lp["min_tenure"],
+                max_tenure=lp["max_tenure"],
+                allowed_schedule_types=lp["allowed_schedule_types"],
+                required_documents=lp["required_documents"],
+                eligibility_notes=lp["eligibility_notes"],
+                active=True,
+            ))
+
+    # 2. Seed Courses & Quiz Questions
+    for slug, lang_dict in COURSES.items():
+        for lang, (title, summary, content, q_list) in lang_dict.items():
+            c = db.scalar(select(models.Course).where(models.Course.slug == slug, models.Course.language == lang))
+            if not c:
+                c = models.Course(slug=slug, language=lang, title=title, summary=summary, content=content)
+                db.add(c)
+                db.flush()
+                for q_text, opts, ans, expl in q_list:
+                    db.add(models.QuizQuestion(
+                        course_id=c.id,
+                        question=q_text,
+                        options=opts,
+                        answer_index=ans,
+                        explanation=expl,
+                    ))
+
+    # 3. Seed Schemes
+    scheme_codes = ["pmjdy", "nrlm", "mudra", "pm_kisan", "pm_awas"]
+    scheme_meta = [
+        ("pmjdy", "PMJDY (Jan Dhan)", "banking", 0.0, "Basic bank account with zero balance and accident insurance.", "All unbanked citizens", "https://pmjdy.gov.in"),
+        ("nrlm", "DAY-NRLM (Ajeevika)", "livelihood", 150000.0, "Women SHG promotion and low-cost interest subvention credit.", "Rural women in SHGs", "https://aajeevika.gov.in"),
+        ("mudra", "PMMY (MUDRA)", "business", 200000.0, "Collateral-free micro loans for non-farm small businesses.", "Micro entrepreneurs", "https://www.mudra.org.in"),
+        ("pm_kisan", "PM-KISAN Samman Nidhi", "agriculture", 6000.0, "Direct annual income support of Rs 6,000 in 3 equal installments.", "Smallholder farmers", "https://pmkisan.gov.in"),
+        ("pm_awas", "PMAY-G (Pradhan Mantri Awas Yojana)", "housing", 120000.0, "Pucca house construction financial subsidy with toilet assistance.", "Rural homeless / kutcha house households", "https://pmayg.nic.in"),
+    ]
+
+    for code, name, category, val, desc, elig, url in scheme_meta:
+        for lang in ("en", "hi", "mr"):
+            existing = db.scalar(select(models.Scheme).where(models.Scheme.code == code, models.Scheme.language == lang))
+            if not existing:
+                db.add(models.Scheme(
+                    code=code,
+                    name=name,
+                    language=lang,
+                    category=category,
+                    benefit_summary=f"Direct financial assistance up to Rs {val:,.0f}" if val > 0 else "Banking & Insurance",
+                    benefit_value=val,
+                    description=desc,
+                    eligibility=elig,
+                    url=url,
+                    last_verified="2026-10-01",
+                ))
+
+    # 4. Bootstrap Production Admin if configured
+    if ADMIN_EMAIL and ADMIN_PASSWORD:
+        admin_user = db.scalar(select(models.User).where(models.User.email == ADMIN_EMAIL.lower()))
+        if not admin_user:
+            db.add(models.User(
+                name="System Administrator",
+                email=ADMIN_EMAIL.lower(),
+                password_hash=hash_password(ADMIN_PASSWORD),
+                role="admin",
+                is_active=True,
+            ))
+
+    db.commit()
+
+
+def seed_demo(db: Session):
+    """Only executed when SEED_DEMO=true. Creates mathematically correct, neutral demo personas."""
+    # Ensure neutral SHG exists
+    shg = db.scalar(select(models.SHG).where(models.SHG.name == "Kalyani Mahila Bachat Gat"))
     if not shg:
-        shg = models.SHG(name="Pragati Mahila & Kisan Bachat Gat", village="Sangli, Maharashtra")
+        shg = models.SHG(name="Kalyani Mahila Bachat Gat", village="Sangli, Maharashtra", monthly_thrift_amount=500.0, corpus_balance=45000.0)
         db.add(shg)
         db.flush()
 
-    # 2. Seed / enrich users
-    users_meta = [
-        ("Rajesh Sharma", "admin@syra-demo.com", "admin123", "admin", "+91 98200 11001", 45000.0, 22000.0, 52000.0),
-        ("Ramesh Deshmukh", "officer@syra-demo.com", "officer123", "officer", "+91 98200 22002", 38000.0, 19000.0, 41000.0),
-        ("Sunita Kamble", "leader@syra-demo.com", "leader123", "shg_leader", "+91 97654 32100", 22000.0, 11000.0, 34800.0),
-        ("Amit Wadar", "amit@syra-demo.com", "amit123", "user", "+91 98220 14829", 18000.0, 9300.0, 24500.0),
-        ("Pooja Patil", "borrower@syra-demo.com", "borrower123", "user", "+91 94231 88201", 15000.0, 8200.0, 12400.0),
+    # Neutral fictional personas
+    demo_users = [
+        ("Rajesh Sharma", "admin@financesaathi.org", "AdminSecure#2026", "admin", "+91 98200 11001", 45000.0, 22000.0, 52000.0),
+        ("Ramesh Deshmukh", "officer@financesaathi.org", "OfficerSecure#2026", "officer", "+91 98200 22002", 38000.0, 19000.0, 41000.0),
+        ("Kavita Rao", "leader@financesaathi.org", "LeaderSecure#2026", "shg_leader", "+91 97654 32100", 22000.0, 11000.0, 34800.0),
+        ("Vikas Sharma", "farmer@financesaathi.org", "FarmerSecure#2026", "user", "+91 98220 14829", 18000.0, 9300.0, 24500.0),
+        ("Asha Verma", "borrower@financesaathi.org", "BorrowerSecure#2026", "user", "+91 94231 88201", 15000.0, 8200.0, 12400.0),
     ]
 
     user_objs = {}
-    for name, email, pw, role, phone, inc, exp, sav in users_meta:
+    for name, email, pw, role, phone, inc, exp, sav in demo_users:
         u = db.scalar(select(models.User).where(models.User.email == email))
         if not u:
             u = models.User(
@@ -36,249 +235,25 @@ def seed(db: Session):
                 role=role,
                 monthly_income=inc,
                 monthly_expenses=exp,
+                declared_savings=sav,
                 savings_balance=sav,
                 shg_id=shg.id if role in ("user", "shg_leader") else None,
+                kyc_status="verified",
+                kyc_aadhaar_last4="5432",
             )
             db.add(u)
             db.flush()
-        else:
-            # Sync user metadata
-            u.name = name
-            u.role = role
-            u.monthly_income = inc
-            u.monthly_expenses = exp
-            if u.savings_balance == 0:
-                u.savings_balance = sav
-            if not u.shg_id and role in ("user", "shg_leader"):
-                u.shg_id = shg.id
         user_objs[email] = u
 
-    # Link SHG Leader
-    if "leader@syra-demo.com" in user_objs:
-        shg.leader_id = user_objs["leader@syra-demo.com"].id
-
-    # Also update any local existing users (e.g. amit123@gmail.com, amit1@gmail.com)
-    for alt_email in ("amit123@gmail.com", "amit1@gmail.com"):
-        alt_u = db.scalar(select(models.User).where(models.User.email == alt_email))
-        if alt_u:
-            alt_u.name = "Amit Wadar"
-            if alt_u.monthly_income == 0:
-                alt_u.monthly_income = 18000.0
-            if alt_u.monthly_expenses == 0:
-                alt_u.monthly_expenses = 9300.0
-            if alt_u.savings_balance == 0:
-                alt_u.savings_balance = 24500.0
-            alt_u.shg_id = shg.id
-
-    # 3. Seed Amit Wadar's specific data
-    amit = user_objs.get("amit@syra-demo.com")
-    if amit:
-        # Check Amit's loans
-        amit_loan = db.scalar(select(models.Loan).where(models.Loan.user_id == amit.id))
-        if not amit_loan:
-            today = date.today()
-            amit_loan = models.Loan(
-                user_id=amit.id,
-                shg_id=shg.id,
-                amount=20000.0,
-                annual_rate=8.5,
-                tenure_months=12,
-                purpose="Agricultural Inputs & Irrigation Drip",
-                product_type="kisan_agri",
-                schedule_type="monthly",
-                status="approved",
-                emi=1850.0,
-                ai_score=0.88,
-                ai_band="ready",
-                ai_factors=[
-                    {"name": "Agricultural Cashflow", "impact": "High positive seasonal income"},
-                    {"name": "SHG Thrift Track", "impact": "100% on-time weekly savings"},
-                ],
-                officer_note="Verified land records and SHG group guarantee. Approved at 8.5% interest subvention.",
-            )
-            db.add(amit_loan)
-            db.flush()
-
-            for n in range(1, 13):
-                due_d = today - timedelta(days=(4 - n) * 30) if n < 4 else today + timedelta(days=(n - 4) * 30 + 5)
-                is_paid = n < 4
-                inst = models.Installment(
-                    loan_id=amit_loan.id,
-                    number=n,
-                    due_date=due_d,
-                    principal_part=1600.0,
-                    interest_part=250.0,
-                    amount=1850.0,
-                    paid_amount=1850.0 if is_paid else 0.0,
-                    paid_on=due_d if is_paid else None,
-                    status="paid" if is_paid else "pending",
-                )
-                db.add(inst)
-
-        # Amit's savings goal
-        amit_goal = db.scalar(select(models.SavingsGoal).where(models.SavingsGoal.user_id == amit.id))
-        if not amit_goal:
-            amit_goal = models.SavingsGoal(
-                user_id=amit.id,
-                title="Emergency fund",
-                target_amount=10000.0,
-                saved_amount=6800.0,
-                deadline=date.today() + timedelta(days=90),
-            )
-            db.add(amit_goal)
-            db.flush()
-
-        # Amit's real transactions matching the mockup
-        amit_tx_count = db.scalar(select(models.Transaction).where(models.Transaction.user_id == amit.id).limit(1))
-        if not amit_tx_count:
-            tx_data = [
-                ("Milk Sales", "milk_sales", 1200.0, True, "UPI", 1),
-                ("Groceries & Provisions", "groceries", 450.0, False, "UPI", 2),
-                ("Fertilizer & Bio-Neem Cake", "fertilizer", 800.0, False, "UPI", 4),
-                ("PM-KISAN Direct Benefit Subsidy", "subsidy", 2000.0, True, "Bank Transfer", 8),
-                ("Weekly Mandi Vegetable Sales", "crop_sale", 3400.0, True, "Cash", 15),
-                ("EMI Payment: Kisan Agri Loan (Instalment #3)", "emi_payment", 1850.0, False, "UPI Settlement", 22),
-                ("Cattle Feed & Mineral Mixture", "groceries", 1150.0, False, "UPI", 28),
-                ("SHG Kisan Loan Disbursement", "loan_disbursement", 20000.0, True, "Bank Transfer", 45),
-            ]
-            for title, cat, amt, is_cr, mode, days_ago in tx_data:
-                db.add(models.Transaction(
-                    user_id=amit.id,
-                    title=title,
-                    category=cat,
-                    amount=amt,
-                    is_credit=is_cr,
-                    mode=mode,
-                    created_at=models.now() - timedelta(days=days_ago),
-                ))
-
-    # 4. Seed Pooja Patil's specific data
-    pooja = user_objs.get("borrower@syra-demo.com")
-    if pooja:
-        pooja_loan = db.scalar(select(models.Loan).where(models.Loan.user_id == pooja.id))
-        if not pooja_loan:
-            today = date.today()
-            pooja_loan = models.Loan(
-                user_id=pooja.id,
-                shg_id=shg.id,
-                amount=15000.0,
-                annual_rate=9.0,
-                tenure_months=12,
-                purpose="Tailoring Machine & Cloth Inventory",
-                product_type="shg_enterprise",
-                schedule_type="monthly",
-                status="approved",
-                emi=1320.0,
-                ai_score=0.82,
-                ai_band="ready",
-                officer_note="Micro-enterprise garment stitching unit. Joint liability approved.",
-            )
-            db.add(pooja_loan)
-            db.flush()
-
-            for n in range(1, 13):
-                due_d = today - timedelta(days=(3 - n) * 30) if n < 3 else today + timedelta(days=(n - 3) * 30 + 9)
-                is_paid = n < 3
-                inst = models.Installment(
-                    loan_id=pooja_loan.id,
-                    number=n,
-                    due_date=due_d,
-                    principal_part=1150.0,
-                    interest_part=170.0,
-                    amount=1320.0,
-                    paid_amount=1320.0 if is_paid else 0.0,
-                    paid_on=due_d if is_paid else None,
-                    status="paid" if is_paid else "pending",
-                )
-                db.add(inst)
-
-        pooja_goal = db.scalar(select(models.SavingsGoal).where(models.SavingsGoal.user_id == pooja.id))
-        if not pooja_goal:
-            pooja_goal = models.SavingsGoal(
-                user_id=pooja.id,
-                title="Sewing Machine & Inventory",
-                target_amount=18000.0,
-                saved_amount=9500.0,
-                deadline=date.today() + timedelta(days=120),
-            )
-            db.add(pooja_goal)
-
-        pooja_tx = db.scalar(select(models.Transaction).where(models.Transaction.user_id == pooja.id).limit(1))
-        if not pooja_tx:
-            pooja_tx_data = [
-                ("Bridal Blouse & Stitching Orders", "tailoring", 2400.0, True, "Cash", 1),
-                ("Cotton Cloth & Lining Fabric", "materials", 1100.0, False, "UPI", 3),
-                ("Sewing Thread, Needles & Zippers", "materials", 250.0, False, "UPI", 6),
-                ("SHG Weekly Group Thrift Deposit", "savings_deposit", 500.0, False, "Internal Transfer", 11),
-                ("EMI Payment: Loan #2 (Instalment #2)", "emi_payment", 1320.0, False, "UPI Settlement", 21),
-                ("Festive School Uniform Order", "tailoring", 4500.0, True, "UPI", 25),
-            ]
-            for title, cat, amt, is_cr, mode, days_ago in pooja_tx_data:
-                db.add(models.Transaction(
-                    user_id=pooja.id,
-                    title=title,
-                    category=cat,
-                    amount=amt,
-                    is_credit=is_cr,
-                    mode=mode,
-                    created_at=models.now() - timedelta(days=days_ago),
-                ))
-
-    # 5. Seed a pending loan for Loan Officer queue review
-    officer = user_objs.get("officer@syra-demo.com")
-    pending_loan = db.scalar(select(models.Loan).where(models.Loan.status == "pending").limit(1))
-    if not pending_loan and amit:
-        # Create a pending loan proposal from a new group member
-        rekha = db.scalar(select(models.User).where(models.User.email == "rekha.shinde@syra-demo.com"))
-        if not rekha:
-            rekha = models.User(
-                name="Rekha Shinde",
-                email="rekha.shinde@syra-demo.com",
-                phone="+91 98450 67123",
-                password_hash=hash_password("rekha123"),
-                role="user",
-                monthly_income=16500.0,
-                monthly_expenses=8800.0,
-                savings_balance=14200.0,
-                shg_id=shg.id,
-            )
-            db.add(rekha)
-            db.flush()
-
-        pending_loan = models.Loan(
-            user_id=rekha.id,
-            shg_id=shg.id,
-            amount=35000.0,
-            annual_rate=7.0,
-            tenure_months=18,
-            purpose="Solar Water Pump & Drip Irrigation",
-            product_type="solar_green",
-            schedule_type="monthly",
-            status="pending",
-            emi=2050.0,
-            ai_score=0.86,
-            ai_band="ready",
-            ai_factors=[
-                {"name": "PM-KUSUM Subsidy", "impact": "60% government capital subsidy eligible"},
-                {"name": "Electricity Cost Elimination", "impact": "Zero monthly diesel/power cost"},
-            ],
-            officer_note="Underwriting review pending field verification of borehole.",
-        )
-        db.add(pending_loan)
-
-    # 6. Seed courses and schemes if needed
-    if not db.scalar(select(models.Course).limit(1)):
-        for slug, langs in COURSES.items():
-            for lang, (title, summary, content, quiz) in langs.items():
-                course = models.Course(slug=slug, language=lang, title=title, summary=summary, content=content)
-                for q, opts, ans, expl in quiz:
-                    course.questions.append(models.QuizQuestion(question=q, options=opts, answer_index=ans,
-                                                                explanation=expl))
-                db.add(course)
-    if not db.scalar(select(models.Scheme).limit(1)):
-        for lang, items in SCHEMES.items():
-            for name, desc, elig, url in items:
-                db.add(models.Scheme(name=name, language=lang, description=desc, eligibility=elig, url=url))
+    # Link Leader
+    if "leader@financesaathi.org" in user_objs:
+        shg.leader_id = user_objs["leader@financesaathi.org"].id
 
     db.commit()
 
+
+def seed(db: Session):
+    """Main seed entry point called during startup."""
+    seed_content(db)
+    if SEED_DEMO:
+        seed_demo(db)

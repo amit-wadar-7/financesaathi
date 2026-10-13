@@ -22,6 +22,7 @@ export default function Transactions() {
 
   const [search, setSearch] = useState('')
   const [filterType, setFilterType] = useState('all') // 'all', 'credit', 'debit'
+  const [selectedCategory, setSelectedCategory] = useState('all')
   const [selectedTxn, setSelectedTxn] = useState(null)
   const [showDepositModal, setShowDepositModal] = useState(false)
   const [depositAmt, setDepositAmt] = useState(1000)
@@ -36,6 +37,7 @@ export default function Transactions() {
   const filtered = transactions.filter((tx) => {
     if (filterType === 'credit' && !tx.is_credit) return false
     if (filterType === 'debit' && tx.is_credit) return false
+    if (selectedCategory !== 'all' && tx.category !== selectedCategory) return false
     if (!search.trim()) return true
     const q = search.toLowerCase()
     return (
@@ -144,31 +146,65 @@ export default function Transactions() {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="card filter-bar-card">
-        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-          {[
-            { id: 'all', label: 'All Transactions' },
-            { id: 'credit', label: 'Credits & Inflow (+)' },
-            { id: 'debit', label: 'EMI Debits & Outflow (-)' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              className={`btn small ${filterType === tab.id ? '' : 'ghost'}`}
-              onClick={() => setFilterType(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
+      <div className="card filter-bar-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        <div className="row between" style={{ alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+            {[
+              { id: 'all', label: 'All Transactions' },
+              { id: 'credit', label: 'Credits & Inflow (+)' },
+              { id: 'debit', label: 'Debits & Outflow (-)' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className={`btn small ${filterType === tab.id ? '' : 'ghost'}`}
+                onClick={() => setFilterType(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '220px' }}>
+            <input
+              placeholder="Search date, title, mode..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ fontSize: '0.84rem', padding: '6px 10px', width: '100%' }}
+            />
+          </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '260px' }}>
-          <input
-            placeholder="Search date, description..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ fontSize: '0.84rem', padding: '6px 10px' }}
-          />
+        {/* Category Pills Row */}
+        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', borderTop: '1px solid var(--border-color)', paddingTop: '0.65rem' }}>
+          <span className="muted small" style={{ alignSelf: 'center', marginRight: '0.25rem', fontWeight: 600 }}>Category:</span>
+          {[
+            { id: 'all', label: 'All Categories' },
+            { id: 'emi_payment', label: 'EMI Repayments' },
+            { id: 'savings_deposit', label: 'Savings & Deposits' },
+            { id: 'transfer', label: 'Goal Transfers' },
+            { id: 'milk_sales', label: 'Livelihood & Income' },
+            { id: 'general', label: 'General' },
+          ].map((cat) => (
+            <button
+              key={cat.id}
+              type="button"
+              className={`quick-pill ${selectedCategory === cat.id ? 'active' : ''}`}
+              style={{
+                fontSize: '0.76rem',
+                padding: '3px 10px',
+                borderRadius: 'var(--radius-full)',
+                fontWeight: selectedCategory === cat.id ? 700 : 500,
+                background: selectedCategory === cat.id ? 'var(--emerald-600)' : 'var(--slate-100)',
+                color: selectedCategory === cat.id ? '#ffffff' : 'var(--slate-700)',
+                border: '1px solid transparent',
+                cursor: 'pointer',
+              }}
+              onClick={() => setSelectedCategory(cat.id)}
+            >
+              {cat.label}
+            </button>
+          ))}
         </div>
       </div>
 

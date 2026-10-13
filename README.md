@@ -1,38 +1,61 @@
-# FinanceSaathi (साथी AI) - Digital Financial Literacy & Microfinance Platform
+# FinanceSaathi / SYRA (साथी AI) - Digital Financial Literacy & Microfinance Platform
 
-An institutional desktop microfinance platform designed for rural and semi-urban self-help groups (SHGs), micro-entrepreneurs, and credit officers. Built in compliance with **Reserve Bank of India (RBI) Microfinance Fair Practices Code** and the **Digital Personal Data Protection (DPDP) Act, 2023**.
+An institutional digital financial inclusion and microfinance platform engineered for rural and semi-urban Self-Help Groups (SHGs), smallholder farmers, micro-entrepreneurs, and credit underwriters.
+
+Built in strict compliance with the **Reserve Bank of India (RBI) Microfinance Loans Directions 2022**, **Priority Sector Lending (PSL) Guidelines**, and the **Digital Personal Data Protection (DPDP) Act, 2023**.
 
 ---
 
-## Architecture Overview
+## 1. Architectural Highlights
+
+- **Full-Stack Stack:** FastAPI (Python 3.11+) + SQLAlchemy 2.0 ORM + SQLite / PostgreSQL + React 18 + Vite + Custom Microfinance Design System.
+- **Consistent Double-Entry Ledger:** Centralized ledger service (`backend/app/ledger.py`) tracking wallets, savings balances, thrift contributions, and loans with zero balance drift.
+- **Microcredit Products:** 7 targeted loan facilities (Kisan Agri, PM MUDRA, Mahila Shakti SHG Enterprise, PM SVANidhi, Clean Energy Solar, Emergency Health, Artisan Microcredit).
+- **Flexible Amortization Engines:** Reducing Balance EMI alongside Agricultural Kisan Harvest-aligned schedules (Gestation interest maintenance + Mandi harvest sale lumpsum bullets) with zero foreclosure penalties.
+- **Real KYC Document Pipeline:** Magic byte validation (PDF, PNG, JPEG), file size limits (<= 2MB), borrower data isolation, and officer review desk.
+- **Autonomous SHG Governance:** Quorum tracking meetings, member thrift savings register, and peer-to-peer internal lending with leader approval and repayments.
+- **Offline RAG-Lite Saathi AI:** Zero paid APIs (`LLM_PROVIDER=none`), TF-IDF cosine-similarity retrieval over RBI rules, SHG guidelines, fraud defense, and schemes with trilingual responses (English, Hindi, Marathi).
+- **RBI Fair Practices Grievance Redressal:** Formal internal ombudsman ticket tracking (`/grievances`) with statutory 30-day turnaround tracking and officer resolution remarks.
+- **Mobile-First Responsive Interface:** Bottom navigation bar, slide-out navigation drawer, dark mode toggle, and clean `@media print` stylesheets for statements and sanction letters.
+- **Security & Privacy:** Silent token rotation (DPDP Act compliance), consent tracking, data portability (`GET /me/export`), and erasure requests.
+
+---
+
+## 2. Directory Structure
 
 ```
 syra/
 ├── backend/            # FastAPI REST backend & ML affordability engine
-│   ├── app/            # Core application (routers, auth, finance math, ML models)
-│   ├── tests/          # Comprehensive pytest test suite
-│   └── requirements.txt
-├── frontend/           # React 18 + Vite responsive desktop interface
-│   ├── src/            # Components, pages, custom SVG design system, i18n
+│   ├── app/            # Core application
+│   │   ├── ledger.py   # Double-entry ledger & money movement service
+│   │   ├── deps.py     # Auth dependencies, role enforcement & audit
+│   │   ├── models.py   # SQLAlchemy models (User, Loan, SHG, Grievance, etc.)
+│   │   ├── saathi/     # Offline RAG-Lite retriever & multilingual engine
+│   │   └── routers/    # Modular API routers (auth, loans, staff, community, grievances, etc.)
+│   ├── backups/        # Verified database backup archives (syra_backup_verified.db)
+│   ├── tests/          # Comprehensive pytest test suite (29 passing tests)
+│   ├── financesaathi.db# Active operational database
+│   ├── requirements.txt
+│   └── Dockerfile
+├── frontend/           # React 18 + Vite responsive mobile/desktop interface
+│   ├── src/            # Components, pages, custom SVG icons, i18n
+│   │   ├── pages/      # Dashboard, Loans, Community, Reports, Grievances, etc.
+│   │   ├── App.jsx     # Route definitions, mobile drawer & bottom navigation
+│   │   └── styles.css  # Production fintech design system & responsive rules
+│   ├── public/         # PWA Web App manifest & icons
 │   ├── package.json
-│   └── vite.config.js
-└── e2e/                # End-to-end browser integration tests
+│   └── Dockerfile
+├── docker-compose.yml  # Multi-container orchestration
+└── docs/               # Architecture, audit, and verification reports
 ```
 
 ---
 
-## Prerequisites
+## 3. Quick Start & Setup
 
-- **Python 3.10+** (Python 3.11/3.12 recommended)
-- **Node.js 18+** & **npm**
-- **Git**
-
----
-
-## 1. Backend Setup & Startup
+### 3.1 Backend Setup
 
 ```bash
-# Navigate to backend directory
 cd backend
 
 # Create and activate virtual environment
@@ -50,81 +73,56 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-- **Backend API**: `http://localhost:8000`
-- **Interactive Swagger Docs**: `http://localhost:8000/docs`
-- **Database**: SQLite `syra.db` is auto-initialized and seeded with demo accounts on first launch.
+- **Backend API:** `http://localhost:8000`
+- **Interactive Swagger Documentation:** `http://localhost:8000/docs`
 
----
+### 3.2 Frontend Setup
 
-## 2. Frontend Setup & Startup
-
-In a second terminal window:
+In a separate terminal window:
 
 ```bash
-# Navigate to frontend directory
 cd frontend
 
 # Install dependencies
 npm install
 
-# Start Vite development server
+# Start Vite dev server
 npm run dev
 ```
 
-- **Desktop Web App**: `http://localhost:5173`
+- **Frontend Application:** `http://localhost:5173`
 
----
+### 3.3 Docker Deployment
 
-## Default Demo Accounts (Pre-Seeded)
-
-| Role | Email | Password | Access Capabilities |
-|---|---|---|---|
-| **Admin** | `admin@syra-demo.com` | `admin123` | System audit log, user role configuration, batch reminder runner |
-| **Credit Officer** | `officer@syra-demo.com` | `officer123` | Underwriting terminal, KYC document authentication, loan sanction/rejection |
-| **SHG Leader** | `leader@syra-demo.com` | `leader123` | Group roster management, meeting ledger, member invitations |
-| **New Borrower** | *Self-Register* | *Any Password* | Full loan proposal, savings goals, passbook ledger, multilingual Saathi AI |
-
----
-
-## Key Features & Financial Tools
-
-1. **AI Affordability Engine**: Live underwriter pre-check evaluating Debt-to-Income (FOIR), expense ratios, and safe borrowing headroom.
-2. **Sahukar Debt Trap Exposer**: Unmasks informal moneylender rates (e.g. ₹3/mo per ₹100 = 36% APR) vs. SHG 12% reducing balance, calculating exact wealth saved and generating a 3-step refinance roadmap.
-3. **Kisan Harvest Flexi-EMI Planner**: Agricultural crop-cycle cashflow repayment schedule (gestation interest-only maintenance + harvest Mandi sale lumpsum principal clearance).
-4. **NABARD SHG-Bank Linkage Governance**: Group loan management, assembly schedule, statutory quorum tracking, and member rosters.
-5. **Printable Passbook Terminal**: Stamped digital passbook and transaction vouchers with cryptographic verification seals and one-click print styling (`@media print`).
-6. **Saathi AI Voice Assistant**: Multilingual financial guidance in English, Hindi (हिन्दी), and Marathi (मराठी) with Web Speech API audio narration and voice STT input.
-7. **Government Yojana Matcher**: Evaluates landholding, livelihood, and SHG status to match eligible grants (PM-KISAN, Lakhpati Didi, PM SVANidhi, PMFBY, Mudra).
-
----
-
-## Running Automated Tests
+To launch the complete platform using Docker Compose:
 
 ```bash
-# Run backend tests (100% pass rate)
-cd backend
-pytest -q
+docker compose up --build -d
+```
 
-# Run frontend production build verification
+- **Frontend:** `http://localhost:3000`
+- **Backend API:** `http://localhost:8000`
+
+---
+
+## 4. Verification & Testing
+
+Execute the automated test suites to verify system integrity:
+
+```bash
+# 1. Run backend tests (29/29 passing)
+backend\.venv\Scripts\python -m pytest backend/tests -v
+
+# 2. Run frontend production build (0 errors)
 cd frontend
 npm run build
 ```
 
 ---
 
-## Contributing & Collaboration
+## 5. Audit & Compliance Highlights
 
-1. Clone or fork this repository:
-   ```bash
-   git clone https://github.com/<your-username>/<repo-name>.git
-   cd syra
-   ```
-2. Create a feature branch:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-3. Commit your changes and push:
-   ```bash
-   git commit -m "Add descriptive commit message"
-   git push origin feature/your-feature-name
-   ```
+- **RBI Microfinance Directions 2022:** 100% collateral-free microfinance, zero prepayment penalties, reducing balance interest calculation, and strict PSL >= 75% target monitoring.
+- **DPDP Act 2023:** Mandatory consent checkboxes, user data export (`/me/export`), and digital erasure requests.
+- **RBI Fair Practices Redressal:** Turnaround Time (TAT) metrics with officer remarks and resolution timestamps on complaints.
+- **Zero Mock / Zero Fake Data:** All KPIs, passbooks, and reports are dynamically computed from transactions, repayments, and thrift entries in `financesaathi.db`.

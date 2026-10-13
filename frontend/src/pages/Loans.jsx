@@ -24,6 +24,8 @@ import {
   IconCalculator,
   IconPrinter,
   IconAward,
+  IconDownload,
+  IconUpload,
 } from '../icons'
 
 export const LOAN_PRODUCTS = [
@@ -1124,7 +1126,12 @@ export function LoanDetail() {
   const [msg, setMsg] = useState({ kind: 'error', text: '' })
   const [note, setNote] = useState('')
   const [paymentModal, setPaymentModal] = useState(null)
+  const [paySource, setPaySource] = useState('external_upi')
+  const [instUtr, setInstUtr] = useState('')
   const [showSanctionModal, setShowSanctionModal] = useState(false)
+  const [showForecloseModal, setShowForecloseModal] = useState(false)
+  const [forecloseQuote, setForecloseQuote] = useState(null)
+  const [busyForeclose, setBusyForeclose] = useState(false)
   const [customPayAmt, setCustomPayAmt] = useState('')
   const staff = user.role === 'officer' || user.role === 'admin'
   const l = loan.data
@@ -1149,6 +1156,43 @@ export function LoanDetail() {
       approve ? 'Loan sanction approved.' : 'Loan application rejected.'
     )
 
+  const disburse = () =>
+    act(
+      () => api('/loans/' + id + '/disburse', { method: 'POST' }),
+      'Loan principal disbursed to borrower wallet.'
+    )
+
+  const cancelLoan = () =>
+    act(
+      () => api('/loans/' + id + '/cancel', { method: 'POST' }),
+      'Loan application withdrawn successfully.'
+    )
+
+  const openForeclose = async () => {
+    try {
+      const q = await api('/loans/' + id + '/foreclosure-quote')
+      setForecloseQuote(q)
+      setShowForecloseModal(true)
+    } catch (e) {
+      toast.error(e.message || 'Failed to fetch foreclosure quote')
+    }
+  }
+
+  const executeForeclose = async () => {
+    setBusyForeclose(true)
+    try {
+      await api('/loans/' + id + '/foreclose', { method: 'POST' })
+      toast.success('Loan foreclosed and fully settled with zero penalty!')
+      setShowForecloseModal(false)
+      loan.reload()
+      sched.reload()
+    } catch (e) {
+      toast.error(e.message || 'Foreclosure settlement failed')
+    } finally {
+      setBusyForeclose(false)
+    }
+  }
+
   const recordPayment = async () => {
     if (!paymentModal) return
     const instNumber = paymentModal.number
@@ -1156,13 +1200,78 @@ export function LoanDetail() {
     setPaymentModal(null)
     setCustomPayAmt('')
     await act(
-      () => api('/loans/' + id + '/installments/' + instNumber + '/pay', { method: 'POST', body: { amount } }),
+      () =>
+        api('/loans/' + id + '/installments/' + instNumber + '/pay', {
+          method: 'POST',
+          body: {
+            amount,
+            source: paySource,
+            reference_id: paySource === 'external_upi' ? instUtr.trim() || undefined : undefined,
+          },
+        }),
       `Installment #${instNumber} payment registered.`
     )
   }
 
   const verify = (d) =>
     act(() => api('/loans/' + id + '/documents/' + d + '/verify', { method: 'POST' }), 'KYC Document authenticated.')
+
+  const rejectDoc = (d) => {
+    const reason = window.prompt('Enter reason for document rejection:', 'Document blurry or unreadable')
+    if (reason === null) return
+    act(
+      () => api('/loans/' + id + '/documents/' + d + '/reject', { method: 'POST', body: { approve: false, note: reason } }),
+      'Document rejected.'
+    )
+  }
+
+  const handleUploadDocument = async (docId, file) => {
+    if (!file) return
+    const formData = new FormData()
+    formData.append('file', file)
+    try {
+      const BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+      const token = localStorage.getItem('token')
+      const res = await fetch(`${BASE}/loans/${id}/documents/${docId}/upload`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.detail || 'Upload failed')
+      }
+      toast.success('Document uploaded successfully!')
+      loan.reload()
+    } catch (e) {
+      toast.error(e.message || 'Upload error')
+    }
+  }
+
+  const handleDownloadDocument = async (docId, origName) => {
+    try {
+      const BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+      const token = localStorage.getItem('token')
+      const res = await fetch(`${BASE}/loans/${id}/documents/${docId}/download`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.detail || 'Download failed')
+      }
+      const blob = await res.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = origName || `loan_${id}_doc_${docId}`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (e) {
+      toast.error(e.message || 'Download error')
+    }
+  }
 
   if (loan.loading) return <Loading />
   if (loan.error) return <Alert>{loan.error}</Alert>
@@ -1195,7 +1304,27 @@ export function LoanDetail() {
           <Badge>{l.status}</Badge>
           {l.shg_id && <Badge tone="pending">SHG Joint Liability</Badge>}
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          {['approved', 'disbursed'].includes(l.status) && remainingAmount > 0 && (
+            <button
+              type="button"
+              className="btn small"
+              onClick={openForeclose}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: '#059669', color: '#fff' }}
+            >
+              <IconCheck size={15} /> Foreclose Early (0% Fee)
+            </button>
+          )}
+          {l.status === 'pending' && (!staff || user.id === l.user_id) && (
+            <button
+              type="button"
+              className="btn small ghost danger"
+              onClick={cancelLoan}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+            >
+              Withdraw Application
+            </button>
+          )}
           {l.status === 'approved' && (
             <button
               type="button"
@@ -1264,32 +1393,97 @@ export function LoanDetail() {
           {l.documents.length === 0 ? (
             <p className="muted small">No auxiliary documents attached.</p>
           ) : (
-            <ul className="plain" style={{ margin: 0 }}>
+            <ul className="plain" style={{ margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {l.documents.map((d) => (
                 <li
                   key={d.id}
                   style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '0.5rem 0',
-                    borderBottom: '1px solid var(--border-color)',
+                    padding: '0.75rem',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color)',
+                    background: 'var(--bg-subtle, #f9fafb)',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <IconFileText size={16} className="text-muted" />
-                    <span>{d.doc_type.replace(/_/g, ' ').toUpperCase()}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <IconFileText size={18} className="text-muted" />
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                          {d.doc_type.replace(/_/g, ' ').toUpperCase()}
+                        </div>
+                        {d.original_name && (
+                          <div className="muted small" style={{ fontSize: '0.78rem' }}>
+                            {d.original_name} {d.file_size ? `(${Math.round(d.file_size / 1024)} KB)` : ''}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      {d.verified ? (
+                        <Badge tone="approved">Verified</Badge>
+                      ) : d.status === 'rejected' ? (
+                        <Badge tone="danger">Rejected</Badge>
+                      ) : d.file_path ? (
+                        <Badge tone="pending">Uploaded (Pending Check)</Badge>
+                      ) : (
+                        <Badge tone="neutral">Missing Upload</Badge>
+                      )}
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    {d.verified ? (
-                      <Badge tone="approved">Verified</Badge>
-                    ) : (
-                      <Badge tone="pending">Pending Check</Badge>
-                    )}
-                    {staff && !d.verified && (
-                      <button className="btn small ghost" onClick={() => verify(d.id)}>
-                        Authenticate
+
+                  {d.reject_reason && (
+                    <div className="small" style={{ color: '#dc2626', marginBottom: '0.5rem', background: '#fef2f2', padding: '0.3rem 0.6rem', borderRadius: '4px' }}>
+                      Rejection note: {d.reject_reason}
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.4rem' }}>
+                    {d.file_path && (
+                      <button
+                        type="button"
+                        className="btn small ghost"
+                        onClick={() => handleDownloadDocument(d.id, d.original_name)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                      >
+                        <IconDownload size={13} /> View / Download
                       </button>
+                    )}
+
+                    {!['closed', 'withdrawn', 'rejected'].includes(l.status) && (user.id === l.user_id || staff) && (
+                      <label
+                        className="btn small ghost"
+                        style={{ cursor: 'pointer', margin: 0, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                      >
+                        <IconUpload size={13} /> {d.file_path ? 'Replace File' : 'Upload File'}
+                        <input
+                          type="file"
+                          accept=".pdf,.png,.jpg,.jpeg"
+                          style={{ display: 'none' }}
+                          onChange={(e) => {
+                            if (e.target.files?.[0]) handleUploadDocument(d.id, e.target.files[0])
+                          }}
+                        />
+                      </label>
+                    )}
+
+                    {staff && d.file_path && !d.verified && (
+                      <>
+                        <button
+                          type="button"
+                          className="btn small emerald"
+                          onClick={() => verify(d.id)}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                        >
+                          <IconCheck size={13} /> Verify
+                        </button>
+                        <button
+                          type="button"
+                          className="btn small ghost danger"
+                          onClick={() => rejectDoc(d.id)}
+                        >
+                          Reject
+                        </button>
+                      </>
                     )}
                   </div>
                 </li>
@@ -1316,6 +1510,17 @@ export function LoanDetail() {
               <IconAlertTriangle size={16} /> Reject Application
             </button>
           </div>
+        </Card>
+      )}
+
+      {staff && l.status === 'approved' && !l.disbursed_on && (
+        <Card title="Loan Principal Disbursement Terminal" style={{ marginBottom: '1.25rem' }}>
+          <p className="muted small" style={{ marginBottom: '0.75rem' }}>
+            This loan was approved by credit underwriting. Executing disbursement credits <b>{money(l.amount)}</b> directly into the borrower's digital wallet and activates the amortization schedule.
+          </p>
+          <button className="btn emerald" onClick={disburse} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+            <IconCreditCard size={16} /> Disburse {money(l.amount)} to Borrower Wallet
+          </button>
         </Card>
       )}
 
@@ -1422,7 +1627,7 @@ export function LoanDetail() {
               </div>
             </div>
 
-            <Field label="Amount to Pay (Rs)">
+            <Field label="Amount to Settle (₹)">
               <input
                 type="number"
                 min="1"
@@ -1432,12 +1637,111 @@ export function LoanDetail() {
               />
             </Field>
 
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', margin: '1rem 0' }}>
+              <button
+                type="button"
+                className={`btn small ${paySource === 'external_upi' ? '' : 'ghost'}`}
+                onClick={() => setPaySource('external_upi')}
+              >
+                📱 UPI / Bank
+              </button>
+              <button
+                type="button"
+                className={`btn small ${paySource === 'wallet' ? '' : 'ghost'}`}
+                onClick={() => setPaySource('wallet')}
+              >
+                💼 Wallet ({money(user?.savings_balance || 0)})
+              </button>
+            </div>
+
+            {paySource === 'external_upi' ? (
+              <Field label="Bank / UPI Reference No. (UTR)">
+                <input
+                  type="text"
+                  placeholder="e.g. 428901234567"
+                  value={instUtr}
+                  onChange={(e) => setInstUtr(e.target.value)}
+                />
+              </Field>
+            ) : (
+              <div style={{ padding: '0.65rem 0.85rem', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '6px', marginBottom: '1rem', fontSize: '0.82rem' }}>
+                Wallet Balance: <b>{money(user?.savings_balance || 0)}</b>
+                {(user?.savings_balance || 0) < Number(customPayAmt || paymentModal.amount - (paymentModal.paid_amount || 0)) && (
+                  <p style={{ color: '#dc2626', marginTop: '0.3rem', fontWeight: 600 }}>
+                    ⚠️ Insufficient balance in wallet. Please choose UPI / Bank above.
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="modal-actions">
               <button className="btn ghost" onClick={() => setPaymentModal(null)}>
                 Cancel
               </button>
-              <button className="btn" onClick={recordPayment}>
-                Confirm UPI Payment
+              <button
+                className="btn"
+                disabled={paySource === 'wallet' && (user?.savings_balance || 0) < Number(customPayAmt || paymentModal.amount - (paymentModal.paid_amount || 0))}
+                onClick={recordPayment}
+              >
+                Confirm Settlement ({money(customPayAmt || paymentModal.amount - (paymentModal.paid_amount || 0))})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Foreclosure Modal (Zero Foreclosure Penalty Policy) */}
+      {showForecloseModal && forecloseQuote && (
+        <div className="modal-overlay" onClick={() => setShowForecloseModal(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+            <div className="row between" style={{ marginBottom: '1rem', alignItems: 'center' }}>
+              <h3 style={{ margin: 0 }}>Early Loan Foreclosure & Settlement</h3>
+              <button type="button" className="icon-btn" onClick={() => setShowForecloseModal(false)}>✕</button>
+            </div>
+
+            <div style={{ background: '#ecfdf5', border: '1px solid #10b981', borderRadius: '6px', padding: '0.65rem 0.85rem', marginBottom: '1rem', color: '#065f46', fontSize: '0.82rem', lineHeight: 1.4 }}>
+              <b>RBI Fair Practices Code Guarantee:</b> {forecloseQuote.message}
+            </div>
+
+            <div style={{ background: 'var(--slate-50)', padding: '0.85rem', borderRadius: '6px', marginBottom: '1rem', fontSize: '0.85rem' }}>
+              <div className="row between" style={{ marginBottom: '0.4rem' }}>
+                <span className="muted">Outstanding Principal:</span>
+                <b>{money(forecloseQuote.outstanding_principal)}</b>
+              </div>
+              <div className="row between" style={{ marginBottom: '0.4rem' }}>
+                <span className="muted">Accrued Month Interest:</span>
+                <b>{money(forecloseQuote.accrued_interest)}</b>
+              </div>
+              <div className="row between" style={{ marginBottom: '0.4rem' }}>
+                <span className="muted">Foreclosure Penalty Fee:</span>
+                <span style={{ color: '#059669', fontWeight: 700 }}>₹0.00 (Zero Penalty)</span>
+              </div>
+              <div className="row between" style={{ borderTop: '1px dashed var(--border-color)', paddingTop: '0.4rem', fontSize: '1rem' }}>
+                <span><b>Total Settlement Due:</b></span>
+                <b style={{ color: 'var(--emerald-700)' }}>{money(forecloseQuote.total_settlement_amount)}</b>
+              </div>
+            </div>
+
+            <div style={{ fontSize: '0.82rem', color: '#475569', marginBottom: '1rem' }}>
+              <span>Available Wallet Balance: <b>{money(user?.savings_balance || 0)}</b></span>
+              {(user?.savings_balance || 0) < forecloseQuote.total_settlement_amount && (
+                <p style={{ color: '#dc2626', marginTop: '0.3rem', fontWeight: 600 }}>
+                  ⚠️ Your wallet balance is less than the settlement amount. Please deposit funds into your wallet to complete early closure.
+                </p>
+              )}
+            </div>
+
+            <div className="modal-actions">
+              <button type="button" className="btn ghost" onClick={() => setShowForecloseModal(false)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn emerald"
+                disabled={busyForeclose || (user?.savings_balance || 0) < forecloseQuote.total_settlement_amount}
+                onClick={executeForeclose}
+              >
+                {busyForeclose ? 'Closing Loan…' : `Settle & Close Loan (${money(forecloseQuote.total_settlement_amount)})`}
               </button>
             </div>
           </div>

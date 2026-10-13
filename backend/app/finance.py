@@ -34,6 +34,10 @@ def add_months(d: date, m: int) -> date:
 
 def amortization(principal: float, annual_rate: float, months: int, start: date) -> list[dict]:
     """Rows of {number, due_date, amount, principal_part, interest_part, balance}."""
+    if principal <= 0:
+        raise ValueError("principal must be positive")
+    if months <= 0:
+        raise ValueError("months must be positive")
     r = monthly_rate(annual_rate)
     pay = emi(principal, annual_rate, months)
     balance = round(principal, 2)
@@ -139,6 +143,10 @@ def kisan_harvest_amortization(principal: float, annual_rate: float, months: int
     In gestation/growth months: borrower pays interest-only maintenance to avoid default.
     In harvest months (e.g. month 6 and month 12): borrower pays bulk principal lumpsum after mandi crop sale.
     """
+    if principal <= 0:
+        raise ValueError("principal must be positive")
+    if months <= 0:
+        raise ValueError("months must be positive")
     if harvest_months is None:
         # Default harvest milestones based on loan tenure
         if months <= 6:

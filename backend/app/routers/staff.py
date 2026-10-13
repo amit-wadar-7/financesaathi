@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from .. import models, schemas
+from .. import ledger, models, schemas
 from ..database import get_db
 from ..deps import audit, get_current_user, notify, require_roles
 
@@ -33,19 +33,49 @@ def at_risk(_=Depends(require_roles("officer", "admin")), db: Session = Depends(
     return sorted(out, key=lambda r: (-r["overdue"], r["ai_score"]))
 
 
+@router.post("/money/deposit")
+def deposit_funds(body: schemas.WalletDepositIn, user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Wallet top-up / UPI deposit with authoritative ledger recording."""
+    ref = body.reference_id or f"DEP-{int(date.today().strftime('%Y%m%d'))}-{user.id}"
+    tx = ledger.record_credit(
+        db=db,
+        user=user,
+        amount=body.amount,
+        category="wallet_deposit",
+        title=f"Wallet Top-Up ({body.mode})",
+        mode=body.mode,
+        reference_id=ref,
+    )
+    db.commit()
+    db.refresh(tx)
+    return {
+        "ok": True,
+        "balance": user.savings_balance,
+        "transaction": {
+            "id": f"tx-{tx.id}",
+            "date": tx.created_at.strftime("%d %b %Y"),
+            "category": tx.category,
+            "type": tx.title,
+            "title": tx.title,
+            "amount": tx.amount,
+            "mode": tx.mode,
+            "reference_id": tx.reference_id,
+            "is_credit": True,
+        },
+    }
+
+
 @router.post("/money/income")
 def add_income(body: schemas.IncomeIn, user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
-    user.savings_balance = round(user.savings_balance + body.amount, 2)
-    tx = models.Transaction(
-        user_id=user.id,
+    tx = ledger.record_credit(
+        db=db,
+        user=user,
+        amount=body.amount,
         category=body.category,
         title=body.title,
-        amount=body.amount,
-        is_credit=True,
         mode=body.mode,
+        reference_id=f"INC-{user.id}",
     )
-    db.add(tx)
-    audit(db, user.id, "income", "user", user.id, f"amount={body.amount} cat={body.category}")
     db.commit()
     db.refresh(tx)
     return {
@@ -66,17 +96,15 @@ def add_income(body: schemas.IncomeIn, user: models.User = Depends(get_current_u
 
 @router.post("/money/expense")
 def add_expense(body: schemas.ExpenseIn, user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
-    user.savings_balance = round(max(0.0, user.savings_balance - body.amount), 2)
-    tx = models.Transaction(
-        user_id=user.id,
+    tx = ledger.record_debit(
+        db=db,
+        user=user,
+        amount=body.amount,
         category=body.category,
         title=body.title,
-        amount=body.amount,
-        is_credit=False,
         mode=body.mode,
+        reference_id=f"EXP-{user.id}",
     )
-    db.add(tx)
-    audit(db, user.id, "expense", "user", user.id, f"amount={body.amount} cat={body.category}")
     db.commit()
     db.refresh(tx)
     return {
@@ -100,21 +128,8 @@ def transfer_to_goal(body: schemas.TransferIn, user: models.User = Depends(get_c
     goal = db.get(models.SavingsGoal, body.target_goal_id)
     if not goal or goal.user_id != user.id:
         raise HTTPException(404, "Savings goal not found")
-    if user.savings_balance < body.amount:
-        raise HTTPException(400, "Insufficient savings balance")
-    user.savings_balance = round(user.savings_balance - body.amount, 2)
-    goal.saved_amount = round(goal.saved_amount + body.amount, 2)
-    db.add(models.SavingsEntry(goal_id=goal.id, amount=body.amount))
-    tx = models.Transaction(
-        user_id=user.id,
-        category="transfer",
-        title=f"Transfer to {goal.title}" + (f" ({body.note})" if body.note else ""),
-        amount=body.amount,
-        is_credit=False,
-        mode="Internal Transfer",
-    )
-    db.add(tx)
-    audit(db, user.id, "transfer", "goal", goal.id, f"amount={body.amount}")
+
+    tx = ledger.record_transfer_to_goal(db, user, goal, body.amount, body.note)
     db.commit()
     db.refresh(tx)
     return {
@@ -325,25 +340,67 @@ def dashboard(user: models.User = Depends(get_current_user), db: Session = Depen
     tot_saved = round(sum(g.saved_amount for g in goals), 2)
     tot_assets = round(user.savings_balance + tot_saved, 2)
 
-    # 6-Month cashflow history
-    inc_base = user.monthly_income if user.monthly_income > 0 else 18000.0
-    exp_base = user.monthly_expenses if user.monthly_expenses > 0 else 9300.0
-    cashflow_history = [
-        {"month": "Apr", "income": round(inc_base * 0.78), "expenses": round(exp_base * 0.86)},
-        {"month": "May", "income": round(inc_base * 0.83), "expenses": round(exp_base * 0.91)},
-        {"month": "Jun", "income": round(inc_base * 0.89), "expenses": round(exp_base * 0.97)},
-        {"month": "Jul", "income": round(inc_base * 0.94), "expenses": round(exp_base * 0.95)},
-        {"month": "Aug", "income": round(inc_base * 0.97), "expenses": round(exp_base * 0.98)},
-        {"month": "Sep", "income": round(inc_base), "expenses": round(exp_base)},
-    ]
+    # 6-Month cashflow history calculated dynamically from actual transactions
+    today = date.today()
+    months_series = []
+    curr_y, curr_m = today.year, today.month
+    for offset in range(5, -1, -1):
+        m = curr_m - offset
+        y = curr_y
+        while m <= 0:
+            m += 12
+            y -= 1
+        m_date = date(y, m, 1)
+        months_series.append((y, m, m_date.strftime("%b")))
+
+    earliest_date = date(months_series[0][0], months_series[0][1], 1)
+    txs_period = db.scalars(
+        select(models.Transaction).where(
+            models.Transaction.user_id == user.id,
+            models.Transaction.created_at >= earliest_date,
+        )
+    ).all()
+
+    monthly_credits = {}
+    monthly_debits = {}
+    for tx in txs_period:
+        key = (tx.created_at.year, tx.created_at.month)
+        if tx.is_credit:
+            monthly_credits[key] = monthly_credits.get(key, 0.0) + tx.amount
+        else:
+            monthly_debits[key] = monthly_debits.get(key, 0.0) + tx.amount
+
+    cashflow_history = []
+    for y, m, lbl in months_series:
+        inc = monthly_credits.get((y, m), 0.0)
+        exp = monthly_debits.get((y, m), 0.0)
+        if inc == 0.0 and exp == 0.0 and (y, m) == (curr_y, curr_m):
+            inc = user.monthly_income or 0.0
+            exp = user.monthly_expenses or 0.0
+        cashflow_history.append({
+            "month": lbl,
+            "income": round(inc, 2),
+            "expenses": round(exp, 2),
+        })
+
+    curr_inc = cashflow_history[-1]["income"]
+    curr_exp = cashflow_history[-1]["expenses"]
+    prev_inc = cashflow_history[-2]["income"] if len(cashflow_history) >= 2 else 0.0
+    prev_exp = cashflow_history[-2]["expenses"] if len(cashflow_history) >= 2 else 0.0
+
+    inc_delta = f"{((curr_inc - prev_inc) / prev_inc * 100):+.0f}%" if prev_inc > 0 else ("+100%" if curr_inc > 0 else "0%")
+    exp_delta = f"{((curr_exp - prev_exp) / prev_exp * 100):+.0f}%" if prev_exp > 0 else ("+100%" if curr_exp > 0 else "0%")
+    curr_sav = max(0.0, curr_inc - curr_exp)
+    prev_sav = max(0.0, prev_inc - prev_exp)
+    sav_delta = f"{((curr_sav - prev_sav) / prev_sav * 100):+.0f}%" if prev_sav > 0 else ("+100%" if curr_sav > 0 else "0%")
 
     kpi_metrics = {
-        "income_this_month": round(inc_base, 2),
-        "income_delta": "+12%",
-        "expenses_this_month": round(exp_base, 2),
-        "expenses_delta": "-8%",
-        "savings_this_month": round(max(0, inc_base - exp_base), 2),
-        "savings_delta": "+20%",
+        "income_this_month": round(curr_inc, 2),
+        "income_delta": inc_delta,
+        "expenses_this_month": round(curr_exp, 2),
+        "expenses_delta": exp_delta,
+        "savings_this_month": round(curr_sav, 2),
+        "savings_delta": sav_delta,
     }
 
     seasonal_tip = {

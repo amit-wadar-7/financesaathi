@@ -15,6 +15,7 @@ import Tools from './pages/Tools'
 import { Savings, SHG } from './pages/Community'
 import { CourseView, Learn } from './pages/Learn'
 import { Admin, AtRisk, Notifications, Profile } from './pages/Account'
+import Grievances from './pages/Grievances'
 import { PrivacyPolicy, TermsOfService } from './pages/Legal'
 import {
   IconLogo,
@@ -32,6 +33,8 @@ import {
   IconCreditCard,
   IconCoins,
   IconFileText,
+  IconMenu,
+  IconClose,
 } from './icons'
 
 function BellDropdown() {
@@ -91,99 +94,21 @@ function BellDropdown() {
   )
 }
 
-const DEMO_PERSONAS = [
-  { id: 'amit', role: 'user', label: 'Amit Wadar', desc: 'Borrower (Kisan & Agri)', email: 'amit@syra-demo.com', pw: 'amit123' },
-  { id: 'pooja', role: 'user', label: 'Pooja Patil', desc: 'Borrower (SHG Tailoring)', email: 'borrower@syra-demo.com', pw: 'borrower123' },
-  { id: 'leader', role: 'shg_leader', label: 'Sunita Kamble', desc: 'SHG Leader (Group Desk)', email: 'leader@syra-demo.com', pw: 'leader123' },
-  { id: 'officer', role: 'officer', label: 'Ramesh Deshmukh', desc: 'Credit Officer (Sanctions)', email: 'officer@syra-demo.com', pw: 'officer123' },
-  { id: 'admin', role: 'admin', label: 'Rajesh Sharma', desc: 'Super Admin (System Console)', email: 'admin@syra-demo.com', pw: 'admin123' },
-]
-
-function RolePerspectiveSwitcher() {
-  const { user, login } = useAuth()
-  const [switching, setSwitching] = useState(false)
-  const [open, setOpen] = useState(false)
-  const navigate = useNavigate()
-
-  const currentPersona = DEMO_PERSONAS.find((p) => p.email === user?.email) ||
-    DEMO_PERSONAS.find((p) => p.role === user?.role) || DEMO_PERSONAS[0]
-
-  const switchRole = async (target) => {
-    if (target.email === user?.email) {
-      setOpen(false)
-      return
-    }
-    setSwitching(true)
-    setOpen(false)
-    try {
-      await login(target.email, target.pw)
-      navigate('/')
-    } catch (err) {
-      console.error('Failed to switch perspective', err)
-    } finally {
-      setSwitching(false)
-    }
-  }
-
-  return (
-    <div className="role-switcher-container">
-      <button
-        className="role-switcher-btn"
-        onClick={() => setOpen(!open)}
-        disabled={switching}
-        title="Switch perspective between user accounts"
-        aria-label="Switch perspective"
-      >
-        <span className="role-label-tag">{switching ? 'Switching…' : 'Active User:'}</span>
-        <span className="role-current-name">{currentPersona.label}</span>
-        <span className="role-arrow">{open ? '▲' : '▼'}</span>
-      </button>
-
-      {open && (
-        <div className="role-switcher-popup">
-          <div className="role-switcher-popup-header">
-            <span>Switch User Perspective</span>
-            <small className="muted">Instant Switch</small>
-          </div>
-          <div className="role-switcher-list">
-            {DEMO_PERSONAS.map((p) => {
-              const active = p.email === user?.email
-              return (
-                <button
-                  key={p.id}
-                  className={`role-switcher-item ${active ? 'active' : ''}`}
-                  onClick={() => switchRole(p)}
-                  disabled={switching}
-                >
-                  <div className="role-item-main">
-                    <span className="role-item-title">{p.label}</span>
-                    <span className="role-item-email">{p.desc}</span>
-                  </div>
-                  {active ? (
-                    <span className="active-indicator">Active</span>
-                  ) : (
-                    <span className="switch-to-pill">Switch</span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
 function DesktopLayout({ children }) {
   const { user, logout } = useAuth()
   const { t, lang, setLang } = useLang()
   const location = useLocation()
   const [floatingChatOpen, setFloatingChatOpen] = useState(false)
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light')
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
   }, [theme])
+
+  useEffect(() => {
+    setMobileDrawerOpen(false)
+  }, [location.pathname])
 
   const toggleTheme = () => {
     const next = theme === 'dark' ? 'light' : 'dark'
@@ -213,6 +138,7 @@ function DesktopLayout({ children }) {
     if (p === '/admin') return 'User Directory & Governance'
     if (p === '/profile') return 'Borrower Profile & KYC'
     if (p === '/notifications') return 'Notification Alerts'
+    if (p === '/grievances') return 'Grievance Redressal (RBI Cell)'
     return 'FinanceSaathi'
   }
 
@@ -240,6 +166,7 @@ function DesktopLayout({ children }) {
         secondary: [
           { to: '/learn', label: 'Financial Academy', icon: <IconAcademic size={18} /> },
           { to: '/tools', label: 'Decision Models', icon: <IconCalculator size={18} /> },
+          { to: '/grievances', label: 'RBI Grievance Cell', icon: <IconShield size={18} /> },
           { to: '/notifications', label: 'System Audit Alerts', icon: <IconBell size={18} /> },
         ],
       }
@@ -260,6 +187,7 @@ function DesktopLayout({ children }) {
         secondary: [
           { to: '/learn', label: 'Academy Modules', icon: <IconAcademic size={18} /> },
           { to: '/tools', label: 'Credit Risk Calculators', icon: <IconCalculator size={18} /> },
+          { to: '/grievances', label: 'RBI Grievance Cell', icon: <IconShield size={18} /> },
           { to: '/notifications', label: 'Credit Risk Alerts', icon: <IconBell size={18} /> },
         ],
       }
@@ -280,6 +208,7 @@ function DesktopLayout({ children }) {
         secondary: [
           { to: '/community', label: 'SHG Member Roster', icon: <IconUsers size={18} /> },
           { to: '/savings', label: 'Group Savings Goals', icon: <IconTarget size={18} /> },
+          { to: '/grievances', label: 'RBI Grievance Cell', icon: <IconShield size={18} /> },
           { to: '/tools', label: 'Financial Calculators', icon: <IconCalculator size={18} /> },
           { to: '/learn', label: 'Financial Literacy', icon: <IconAcademic size={18} /> },
           { to: '/profile', label: 'SHG Profile & KYC', icon: <IconUser size={18} /> },
@@ -304,6 +233,7 @@ function DesktopLayout({ children }) {
         { to: '/reports', label: 'Reports & Certificates', icon: <IconFileText size={18} /> },
         { to: '/tools', label: 'Financial Calculators', icon: <IconCalculator size={18} /> },
         { to: '/learn', label: 'Financial Academy', icon: <IconAcademic size={18} /> },
+        { to: '/grievances', label: 'RBI Grievance Cell', icon: <IconShield size={18} /> },
         { to: '/profile', label: 'Profile & KYC', icon: <IconUser size={18} /> },
       ],
     }
@@ -313,7 +243,73 @@ function DesktopLayout({ children }) {
 
   return (
     <div className="desktop-shell">
-      {/* 1. Desktop Sticky Left Navigation Sidebar */}
+      {/* Mobile Slide-Out Drawer Backdrop & Aside (<900px) */}
+      <div
+        className={`mobile-drawer-backdrop ${mobileDrawerOpen ? 'open' : ''}`}
+        onClick={() => setMobileDrawerOpen(false)}
+      />
+      <aside className={`mobile-nav-drawer ${mobileDrawerOpen ? 'open' : ''}`}>
+        <div className="drawer-header">
+          <div className="brand-box">
+            <div className="brand-logo-icon"><IconLogo size={20} /></div>
+            <span className="brand-title">FinanceSaathi</span>
+          </div>
+          <button className="close-btn" onClick={() => setMobileDrawerOpen(false)} aria-label="Close menu">
+            <IconClose size={18} />
+          </button>
+        </div>
+
+        <nav className="drawer-nav">
+          <div className="nav-group-title">{nav.groupTitle}</div>
+          {nav.primary.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.to === '/'}
+              onClick={() => setMobileDrawerOpen(false)}
+              className={({ isActive }) =>
+                `sidebar-link ${isActive ? 'active' : ''} ${item.isAi ? 'ai-special-link' : ''}`
+              }
+            >
+              <span className="nav-icon">{item.icon}</span>
+              <span className="nav-text">{item.label}</span>
+              {item.isAi && <span className="nav-pill-badge">AI</span>}
+            </NavLink>
+          ))}
+
+          <div className="nav-group-title" style={{ marginTop: '1rem' }}>{nav.secondaryGroupTitle}</div>
+          {nav.secondary.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              onClick={() => setMobileDrawerOpen(false)}
+              className={({ isActive }) =>
+                `sidebar-link ${isActive ? 'active' : ''}`
+              }
+            >
+              <span className="nav-icon">{item.icon}</span>
+              <span className="nav-text">{item.label}</span>
+            </NavLink>
+          ))}
+        </nav>
+
+        <div className="drawer-footer">
+          <div className="user-capsule">
+            <div className="avatar-circle">
+              {user?.name ? user.name.slice(0, 2).toUpperCase() : 'MB'}
+            </div>
+            <div className="user-capsule-text">
+              <span className="user-capsule-name">{user?.name || 'Member'}</span>
+              <span className="user-capsule-role">{getRoleLabel()}</span>
+            </div>
+            <button className="logout-btn" onClick={logout} title="Sign Out">
+              ⏻
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* 1. Desktop Sticky Left Navigation Sidebar (>=900px) */}
       <aside className="desktop-sidebar">
         {/* Brand Header */}
         <div className="sidebar-brand-box">
@@ -376,9 +372,16 @@ function DesktopLayout({ children }) {
 
       {/* 2. Main Content Wrapper */}
       <div className="desktop-main-wrapper">
-        {/* Desktop Top Header Bar */}
+        {/* Top Header Bar */}
         <header className="desktop-top-bar">
           <div className="top-bar-left">
+            <button
+              className="mobile-hamburger-btn"
+              onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}
+              aria-label="Toggle Navigation Drawer"
+            >
+              {mobileDrawerOpen ? <IconClose size={20} /> : <IconMenu size={20} />}
+            </button>
             <div className="top-brand-mobile"><IconLogo size={18} /> FinanceSaathi</div>
             <div className="context-breadcrumb">
               <span className="context-app-name">FinanceSaathi</span>
@@ -388,9 +391,6 @@ function DesktopLayout({ children }) {
           </div>
 
           <div className="top-bar-right">
-            {/* Quick 1-Click Role Perspective Switcher */}
-            <RolePerspectiveSwitcher />
-
             {/* Multilingual Pill Toggles (EN | हि | मरा) */}
             <div className="lang-toggle-pills" role="group" aria-label="Language selection">
               <button
@@ -448,12 +448,14 @@ function DesktopLayout({ children }) {
         {/* Page Content Body */}
         <main className="desktop-page-content">{children}</main>
 
-        {/* Global Desktop Footer */}
+        {/* Global Footer */}
         <footer className="desktop-global-footer">
           <div className="footer-left">
             <span>FinanceSaathi Platform © 2024 • Institutional SHG & Microfinance Network (RBI Fair Practices Compliant)</span>
           </div>
           <div className="legal-links">
+            <Link to="/grievances">Grievance Cell</Link>
+            <span className="sep">•</span>
             <Link to="/privacy">Privacy Policy</Link>
             <span className="sep">•</span>
             <Link to="/terms">Fair Practice Code</Link>
@@ -461,7 +463,31 @@ function DesktopLayout({ children }) {
         </footer>
       </div>
 
-      {/* 3. Floating Saathi AI Assistant */}
+      {/* 3. Mobile Bottom Navigation Bar (<900px) */}
+      <nav className="mobile-bottom-nav">
+        <NavLink to="/" end className={({ isActive }) => `mob-tab ${isActive ? 'active' : ''}`}>
+          <span className="mob-icon"><IconHome size={20} /></span>
+          <span className="mob-label">Home</span>
+        </NavLink>
+        <NavLink to="/loans" className={({ isActive }) => `mob-tab ${isActive ? 'active' : ''}`}>
+          <span className="mob-icon"><IconCreditCard size={20} /></span>
+          <span className="mob-label">Loans</span>
+        </NavLink>
+        <NavLink to="/transactions" className={({ isActive }) => `mob-tab ${isActive ? 'active' : ''}`}>
+          <span className="mob-icon"><IconCoins size={20} /></span>
+          <span className="mob-label">Passbook</span>
+        </NavLink>
+        <NavLink to="/community" className={({ isActive }) => `mob-tab ${isActive ? 'active' : ''}`}>
+          <span className="mob-icon"><IconUsers size={20} /></span>
+          <span className="mob-label">SHG</span>
+        </NavLink>
+        <NavLink to="/saathi" className={({ isActive }) => `mob-tab ${isActive ? 'active' : ''}`}>
+          <span className="mob-icon"><IconBot size={20} /></span>
+          <span className="mob-label">Saathi</span>
+        </NavLink>
+      </nav>
+
+      {/* 4. Floating Saathi AI Assistant (Desktop/Tablet) */}
       {location.pathname !== '/saathi' && (
         <>
           <button
@@ -481,6 +507,45 @@ function DesktopLayout({ children }) {
           )}
         </>
       )}
+    </div>
+  )
+}
+
+function ProtectedRoute({ allowedRoles, children }) {
+  const { user } = useAuth()
+  if (!user) return <Navigate to="/" replace />
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return (
+      <div className="page-container">
+        <div className="card" style={{ maxWidth: 520, margin: '3rem auto', textAlign: 'center', padding: '2.5rem' }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🔒</div>
+          <h3 style={{ color: 'var(--color-danger, #dc2626)' }}>Restricted Access</h3>
+          <p className="muted" style={{ margin: '0.75rem 0 1.5rem' }}>
+            Your current account role (<strong>{user.role}</strong>) does not have authorization to view this operational module.
+          </p>
+          <Link to="/" className="btn btn-primary">
+            Return to Dashboard
+          </Link>
+        </div>
+      </div>
+    )
+  }
+  return children
+}
+
+function NotFound() {
+  return (
+    <div className="page-container">
+      <div className="card" style={{ maxWidth: 520, margin: '3rem auto', textAlign: 'center', padding: '2.5rem' }}>
+        <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>🧭</div>
+        <h2>Page Not Found (404)</h2>
+        <p className="muted" style={{ margin: '0.75rem 0 1.5rem' }}>
+          The requested destination does not exist or has been relocated within FinanceSaathi.
+        </p>
+        <Link to="/" className="btn btn-primary">
+          Back to Dashboard
+        </Link>
+      </div>
     </div>
   )
 }
@@ -524,12 +589,27 @@ export default function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/learn" element={<Learn />} />
         <Route path="/learn/:id" element={<CourseView />} />
-        <Route path="/at-risk" element={<AtRisk />} />
-        <Route path="/admin" element={<Admin />} />
+        <Route
+          path="/at-risk"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'officer']}>
+              <AtRisk />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <Admin />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/grievances" element={<Grievances />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </DesktopLayout>
   )
