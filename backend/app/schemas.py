@@ -156,3 +156,36 @@ class SaathiChatIn(BaseModel):
     message: str = Field(min_length=1)
     language: Lang = "mr"
 
+
+class IncomeIn(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    category: str = "milk_sales"
+    amount: float = Field(gt=0)
+    mode: str = "UPI"
+
+
+class ExpenseIn(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    category: str = "groceries"
+    amount: float = Field(gt=0)
+    mode: str = "UPI"
+
+
+class TransferIn(BaseModel):
+    target_goal_id: int
+    amount: float = Field(gt=0)
+    note: str = ""
+
+
+class TransactionOut(ORM):
+    id: int
+    user_id: int
+    category: str
+    title: str
+    amount: float
+    is_credit: bool
+    mode: str
+    reference_id: str | None = None
+    created_at: datetime
+
+

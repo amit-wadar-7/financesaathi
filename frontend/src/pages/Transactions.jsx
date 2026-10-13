@@ -61,10 +61,13 @@ export default function Transactions() {
     setBusyDeposit(true)
     setStatusMsg({ kind: '', text: '' })
     try {
-      await api('/auth/me', {
-        method: 'PATCH',
+      await api('/money/income', {
+        method: 'POST',
         body: {
-          savings_balance: (user?.savings_balance || 0) + amt,
+          amount: amt,
+          title: 'Verified Savings Deposit',
+          category: 'savings_deposit',
+          mode: 'UPI / Bank',
         },
       })
       await refresh()

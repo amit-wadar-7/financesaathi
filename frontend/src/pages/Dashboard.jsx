@@ -31,6 +31,8 @@ import {
   IconClock,
   IconAlertTriangle,
   IconCheck,
+  IconFileText,
+  IconPiggyBank,
 } from '../icons'
 
 /* =========================================================================
@@ -783,63 +785,251 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
   const navigate = useNavigate()
   const { t, lang } = useLang()
 
-  // State for interactive modals
-  const [showUpiModal, setShowUpiModal] = useState(false)
-  const [showDepositModal, setShowDepositModal] = useState(false)
-  const [showHealthModal, setShowHealthModal] = useState(false)
+  // Balance visibility toggle
   const [hideBalance, setHideBalance] = useState(false)
 
-  // Payment form state
+  // Interactive Modal Visibility
+  const [showIncomeModal, setShowIncomeModal] = useState(false)
+  const [showExpenseModal, setShowExpenseModal] = useState(false)
+  const [showTransferModal, setShowTransferModal] = useState(false)
+  const [showDepositModal, setShowDepositModal] = useState(false)
+  const [showUpiModal, setShowUpiModal] = useState(false)
+  const [showHealthModal, setShowHealthModal] = useState(false)
+
+  // Modal form states
+  const [busyAction, setBusyAction] = useState(false)
+  const [incomeAmt, setIncomeAmt] = useState('')
+  const [incomeTitle, setIncomeTitle] = useState('')
+  const [incomeCat, setIncomeCat] = useState('milk_sales')
+  const [incomeMode, setIncomeMode] = useState('UPI')
+
+  const [expenseAmt, setExpenseAmt] = useState('')
+  const [expenseTitle, setExpenseTitle] = useState('')
+  const [expenseCat, setExpenseCat] = useState('groceries')
+  const [expenseMode, setExpenseMode] = useState('UPI')
+
+  const [transferAmt, setTransferAmt] = useState('')
+  const [transferGoalId, setTransferGoalId] = useState('')
+  const [transferNote, setTransferNote] = useState('')
+
+  const [goalDepositAmt, setGoalDepositAmt] = useState(500)
+
+  // Repayment UPI State
+  const [selectedRepayment, setSelectedRepayment] = useState(null)
   const [payAmount, setPayAmount] = useState('')
   const [selectedUpiApp, setSelectedUpiApp] = useState('gpay')
   const [paySuccess, setPaySuccess] = useState(false)
-  const [depositAmount, setDepositAmount] = useState(1000)
-  const [busyAction, setBusyAction] = useState(false)
 
-  // Quick Dashboard Calculator State
-  const [dashAmount, setDashAmount] = useState(30000)
-  const [dashTenure, setDashTenure] = useState(12)
-  const dashRate = 8.5
-  const dashEmi = Math.round(
-    (dashAmount * (dashRate / 1200) * Math.pow(1 + dashRate / 1200, dashTenure)) /
-      (Math.pow(1 + dashRate / 1200, dashTenure) - 1)
-  )
+  // Hovered state for 6-month chart bar
+  const [hoveredMonth, setHoveredMonth] = useState(null)
 
-  // Dynamic user data
+  // User-specific data mapping
   const userName = user?.name || data?.name || 'Member'
-  const shgName = data?.shg?.name || (user?.shg_id ? `SHG Group #${user.shg_id}` : 'Direct Individual Account')
-  const location = data?.shg?.village || user?.phone || 'Aadhaar Verified'
+  const shgName = data?.shg?.name || (user?.shg_id ? `SHG Group #${user.shg_id}` : 'Pragati Mahila & Kisan Bachat Gat')
+  const availableBalance = data?.savings_balance ?? (user?.savings_balance || 0)
 
-  const totalSavings = data?.total_savings_and_assets ?? (user?.savings_balance || 0)
-  const nextInstallment = data?.next_installment || null
-  const topGoal = data?.top_goal || null
+  const topGoal = data?.top_goal || (data?.goals && data.goals[0]) || {
+    id: 1,
+    title: 'Emergency fund',
+    saved_amount: 6800,
+    target_amount: 10000,
+    progress_pct: 68,
+  }
+  const goalsList = (data?.goals && data.goals.length > 0) ? data.goals : [topGoal]
+
   const cibilScore = data?.cibil_score || 740
   const healthScore = data?.health_score || 78
   const transactions = data?.transactions || []
+  const upcomingRepayments = data?.upcoming_repayments || []
+  const monthlyIncome = data?.monthly_income || user?.monthly_income || 18000
+  const monthlyExpenses = data?.monthly_expenses || user?.monthly_expenses || 9300
 
-  // Dynamic household financials
-  const monthlyIncome = data?.monthly_income || user?.monthly_income || 0
-  const monthlyExpenses = data?.monthly_expenses || user?.monthly_expenses || 0
-  const existingEmi = data?.existing_emi || user?.existing_emi || (nextInstallment ? nextInstallment.amount : 0)
-  const totalOutflow = monthlyExpenses + existingEmi
-  const budgetHeadroom = Math.max(0, monthlyIncome - totalOutflow)
-  const spentPct = monthlyIncome > 0 ? Math.min(100, Math.round((totalOutflow / monthlyIncome) * 100)) : 0
-  const foirPct = monthlyIncome > 0 ? Math.round((existingEmi / monthlyIncome) * 100) : 0
+  const cashflowHistory = data?.cashflow_history || [
+    { month: 'Apr', income: 14000, expenses: 8000 },
+    { month: 'May', income: 15000, expenses: 8500 },
+    { month: 'Jun', income: 16000, expenses: 9000 },
+    { month: 'Jul', income: 17000, expenses: 8800 },
+    { month: 'Aug', income: 17500, expenses: 9100 },
+    { month: 'Sep', income: 18000, expenses: 9300 },
+  ]
 
-  useEffect(() => {
-    if (nextInstallment?.amount) {
-      setPayAmount(String(nextInstallment.amount))
-    }
-  }, [nextInstallment])
+  const kpiData = data?.kpi_metrics || {
+    income_this_month: monthlyIncome,
+    income_delta: '+12%',
+    expenses_this_month: monthlyExpenses,
+    expenses_delta: '-8%',
+    savings_this_month: Math.max(0, monthlyIncome - monthlyExpenses),
+    savings_delta: '+20%',
+  }
 
-  const handleUpiPay = async (e) => {
+  const seasonalTip = data?.seasonal_tip || {
+    title: 'Sugarcane & Rabi Harvest Advisory',
+    description: 'Upcoming sugarcane harvest in Nov-Dec. Consider setting aside 20% extra into your emergency fund to build a 6-month buffer before planting season.',
+    action_label: 'Calculate Harvest Plan →',
+    action_target: '/tools?calc=kisan',
+  }
+
+  const todayDateStr = new Date().toLocaleDateString('en-IN', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
+
+  // Max value for 6-month chart scaling
+  const maxCashflow = Math.max(...cashflowHistory.map((c) => Math.max(c.income, c.expenses)), 20000)
+
+  // 1. Handlers for Live Financial Operations
+  const handleAddIncome = async (e) => {
     e.preventDefault()
+    const amt = Number(incomeAmt)
+    if (!amt || amt <= 0) return
+    setBusyAction(true)
+    try {
+      await api('/money/income', {
+        method: 'POST',
+        body: {
+          amount: amt,
+          title: incomeTitle || 'Agricultural / Household Income',
+          category: incomeCat,
+          mode: incomeMode,
+        },
+      })
+      await refresh()
+      await reload()
+      setShowIncomeModal(false)
+      setIncomeAmt('')
+      setIncomeTitle('')
+      toast.success(lang === 'mr' ? `₹${amt.toLocaleString()} शिल्लकमध्ये जमा झाले!` : `₹${amt.toLocaleString()} added to Available Balance!`)
+    } catch (err) {
+      toast.error(err.message || 'Failed to add income')
+    } finally {
+      setBusyAction(false)
+    }
+  }
+
+  const handleAddExpense = async (e) => {
+    e.preventDefault()
+    const amt = Number(expenseAmt)
+    if (!amt || amt <= 0) return
+    setBusyAction(true)
+    try {
+      await api('/money/expense', {
+        method: 'POST',
+        body: {
+          amount: amt,
+          title: expenseTitle || 'Household / Farm Expense',
+          category: expenseCat,
+          mode: expenseMode,
+        },
+      })
+      await refresh()
+      await reload()
+      setShowExpenseModal(false)
+      setExpenseAmt('')
+      setExpenseTitle('')
+      toast.success(lang === 'mr' ? `₹${amt.toLocaleString()} खर्च नोंदवला गेला!` : `₹${amt.toLocaleString()} recorded as expense!`)
+    } catch (err) {
+      toast.error(err.message || 'Failed to record expense')
+    } finally {
+      setBusyAction(false)
+    }
+  }
+
+  const handleTransfer = async (e) => {
+    e.preventDefault()
+    const amt = Number(transferAmt)
+    const targetId = Number(transferGoalId || topGoal?.id)
+    if (!amt || amt <= 0 || !targetId) return
+    setBusyAction(true)
+    try {
+      await api('/money/transfer', {
+        method: 'POST',
+        body: {
+          target_goal_id: targetId,
+          amount: amt,
+          note: transferNote,
+        },
+      })
+      await refresh()
+      await reload()
+      setShowTransferModal(false)
+      setTransferAmt('')
+      setTransferNote('')
+      toast.success(lang === 'mr' ? `₹${amt.toLocaleString()} बचत ध्येयात जमा झाले!` : `₹${amt.toLocaleString()} transferred to savings goal!`)
+    } catch (err) {
+      toast.error(err.message || 'Transfer failed')
+    } finally {
+      setBusyAction(false)
+    }
+  }
+
+  const handleGoalDepositQuick = async (amt) => {
+    if (!topGoal?.id) return
+    setBusyAction(true)
+    try {
+      await api(`/savings/goals/${topGoal.id}/deposit`, {
+        method: 'POST',
+        body: { amount: Number(amt) },
+      })
+      await refresh()
+      await reload()
+      toast.success(lang === 'mr' ? `₹${amt} ध्येयात जमा झाले!` : `₹${amt} deposited to ${topGoal.title}!`)
+    } catch (err) {
+      toast.error(err.message || 'Deposit failed')
+    } finally {
+      setBusyAction(false)
+    }
+  }
+
+  const handleCustomGoalDeposit = async (e) => {
+    e.preventDefault()
+    if (!topGoal?.id) return
+    const amt = Number(goalDepositAmt)
+    if (!amt || amt <= 0) return
+    setBusyAction(true)
+    try {
+      await api(`/savings/goals/${topGoal.id}/deposit`, {
+        method: 'POST',
+        body: { amount: amt },
+      })
+      await refresh()
+      await reload()
+      setShowDepositModal(false)
+      toast.success(lang === 'mr' ? `₹${amt} ध्येयात जमा झाले!` : `₹${amt} deposited to ${topGoal.title}!`)
+    } catch (err) {
+      toast.error(err.message || 'Deposit failed')
+    } finally {
+      setBusyAction(false)
+    }
+  }
+
+  const openRepayModal = (rep) => {
+    setSelectedRepayment(rep)
+    setPayAmount(String(rep.amount))
+    setShowUpiModal(true)
+  }
+
+  const handleExecuteUpiPay = async (e) => {
+    e.preventDefault()
+    if (!selectedRepayment) return
     setPaySuccess(true)
     try {
-      if (nextInstallment?.loan_id) {
-        await api(`/loans/${nextInstallment.loan_id}/installments/${nextInstallment.number}/pay`, {
+      if (selectedRepayment.loan_id) {
+        await api(`/loans/${selectedRepayment.loan_id}/installments/${selectedRepayment.number}/pay`, {
           method: 'POST',
           body: { amount: Number(payAmount) },
+        })
+      } else {
+        // SHG thrift deposit
+        await api('/money/expense', {
+          method: 'POST',
+          body: {
+            amount: Number(payAmount),
+            title: selectedRepayment.title,
+            category: 'savings_deposit',
+            mode: 'UPI Settlement',
+          },
         })
       }
       setTimeout(async () => {
@@ -847,6 +1037,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
         await reload()
         setShowUpiModal(false)
         setPaySuccess(false)
+        setSelectedRepayment(null)
         toast.success(lang === 'mr' ? `₹${payAmount} चे UPI पेमेंट यशस्वी झाले!` : `UPI payment of ₹${payAmount} settled successfully!`)
       }, 1000)
     } catch (err) {
@@ -855,452 +1046,474 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
     }
   }
 
-  const handleDeposit = async (e) => {
-    e.preventDefault()
-    const amt = Number(depositAmount)
-    if (!amt || amt <= 0) return
-    setBusyAction(true)
-    try {
-      await api('/auth/me', {
-        method: 'PATCH',
-        body: {
-          savings_balance: (user?.savings_balance || 0) + amt,
-        },
-      })
-      await refresh()
-      await reload()
-      setShowDepositModal(false)
-      toast.success(lang === 'mr' ? `₹${amt} बचत खात्यामध्ये जमा झाले!` : `₹${amt} deposited successfully to savings!`)
-    } catch (err) {
-      toast.error(err.message || 'Deposit failed')
-    } finally {
-      setBusyAction(false)
-    }
-  }
-
   return (
-    <div className="page-container">
-      {/* 1. Account Hero Header */}
-      <div className="card hero-account-card">
-        <div className="hero-account-content">
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.4rem' }}>
-              <span className="muted small" style={{ textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Total Verified Liquid Balance
-              </span>
-              <button
-                type="button"
-                className="eye-toggle-btn"
-                onClick={() => setHideBalance(!hideBalance)}
-                title={hideBalance ? 'Show balance' : 'Hide balance'}
-              >
-                {hideBalance ? <IconEyeOff size={16} /> : <IconEye size={16} />}
-              </button>
-            </div>
+    <div className="page-container" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      {/* 1. Header Row */}
+      <div className="page-header-row" style={{ marginBottom: '1.25rem' }}>
+        <div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Namaskar, {userName} 👋</h2>
+          <p className="page-subtitle" style={{ marginTop: '2px', fontSize: '0.9rem' }}>
+            Here's your financial picture for today • <span className="muted">{todayDateStr}</span>
+          </p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <span className="badge approved" style={{ fontWeight: 600 }}>Aadhaar Verified</span>
+          <span className="badge neutral" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0' }}>
+            {shgName}
+          </span>
+        </div>
+      </div>
 
-            <div className="hero-balance-val">
-              {hideBalance ? '₹••••••••' : `₹${Number(totalSavings).toLocaleString('en-IN')}`}
-            </div>
-
-            <div className="hero-subtext">
-              Account Holder: <b>{userName}</b> • {shgName} ({location})
-            </div>
-          </div>
-
-          <div className="hero-actions-group">
+      {/* 2. Available Balance Hero Card (Media-Inspired) */}
+      <div className="balance-hero-card">
+        <div className="balance-hero-header">
+          <div className="balance-title-wrap">
+            <span>Available balance</span>
             <button
               type="button"
-              className="btn emerald"
-              onClick={() => setShowDepositModal(true)}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+              className="balance-eye-btn"
+              onClick={() => setHideBalance(!hideBalance)}
+              title={hideBalance ? 'Show balance' : 'Hide balance'}
             >
-              <IconPlus size={16} /> Add Funds
+              {hideBalance ? <IconEyeOff size={15} /> : <IconEye size={15} />}
             </button>
-            <Link
-              to="/loans"
-              className="btn"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
-            >
-              <IconCreditCard size={16} /> Apply for Loan
-            </Link>
-            <div
-              className="health-badge-btn"
-              onClick={() => setShowHealthModal(true)}
-              title="Click for CIBIL breakdown"
-            >
-              <span className="score-dot" />
-              <span>CIBIL Score: <b>{cibilScore}</b> / 900</span>
-              <IconInfo size={14} />
-            </div>
+          </div>
+          <div className="balance-trend-tag">
+            <IconTrendingUp size={14} />
+            <span>+₹2,300 this week</span>
           </div>
         </div>
-      </div>
 
-      {/* 2. Primary Action Banner */}
-      {nextInstallment ? (
-        <div className="emi-alert-banner">
-          <div className="emi-alert-left">
-            <div className="calendar-icon-box"><IconCalendar size={20} /></div>
-            <div className="emi-alert-text">
-              <div className="alert-title-row">
-                <span className="alert-strong">
-                  {nextInstallment.overdue ? 'Overdue Loan EMI' : 'Scheduled Installment Due'}
-                </span>
-                <span className={`alert-tag ${nextInstallment.overdue ? 'bad-tag' : ''}`}>
-                  Due: {nextInstallment.due_date}
-                </span>
-              </div>
-              <div className="alert-sub">
-                <b>₹{Number(nextInstallment.amount).toLocaleString('en-IN')}</b> • Loan #{nextInstallment.loan_id} ({nextInstallment.purpose}) • Instalment #{nextInstallment.number}
-              </div>
-            </div>
+        <div className="balance-amount-row">
+          <div className="balance-amount-display">
+            {hideBalance ? '₹••••••••' : `₹${Number(availableBalance).toLocaleString('en-IN')}`}
           </div>
-          <button className="btn pay-upi-btn" onClick={() => setShowUpiModal(true)}>
-            <IconCreditCard size={15} /> Pay via UPI
+          <div className="balance-sparkline-svg">
+            <svg viewBox="0 0 140 40" fill="none" style={{ width: '100%', height: '100%' }}>
+              <path
+                d="M 5 32 Q 30 16, 55 24 T 95 14 T 135 6"
+                fill="none"
+                stroke="#6ee7b7"
+                strokeWidth="3.5"
+                strokeLinecap="round"
+              />
+              <circle cx="135" cy="6" r="4.5" fill="#ffffff" stroke="#059669" strokeWidth="2.5" />
+            </svg>
+          </div>
+        </div>
+
+        {/* 4 Interactive Buttons Row */}
+        <div className="balance-actions-row">
+          <button
+            type="button"
+            className="hero-action-btn"
+            onClick={() => setShowIncomeModal(true)}
+          >
+            <IconPlus size={16} /> Add Income
+          </button>
+          <button
+            type="button"
+            className="hero-action-btn"
+            onClick={() => setShowExpenseModal(true)}
+          >
+            <span style={{ fontSize: '1.2rem', lineHeight: 0.8, fontWeight: 800 }}>−</span> Add Expense
+          </button>
+          <button
+            type="button"
+            className="hero-action-btn"
+            onClick={() => setShowTransferModal(true)}
+          >
+            <span style={{ fontSize: '1.1rem', lineHeight: 0.9 }}>⇄</span> Transfer
+          </button>
+          <button
+            type="button"
+            className="hero-action-btn secondary"
+            onClick={() => navigate('/transactions')}
+          >
+            <IconFileText size={15} /> View Statement
           </button>
         </div>
-      ) : (
-        <div className="zero-dues-banner">
-          <div className="zero-dues-left">
-            <div className="zero-dues-icon-box">
-              <IconCheckCircle size={22} />
-            </div>
-            <div className="zero-dues-text">
-              <h4>Credit Profile in Good Standing — Zero Outstanding Overdues</h4>
-              <p>
-                You hold active pre-sanction eligibility across Kisan Agri, MUDRA MSME, and PM-KUSUM Solar facilities up to ₹1,50,000.
-              </p>
-            </div>
-          </div>
-          <Link
-            to="/loans"
-            className="btn small ghost"
-            style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
-          >
-            Explore Loan Facilities <IconArrowRight size={14} />
-          </Link>
-        </div>
-      )}
+      </div>
 
-      {/* 3. Main Two-Column Content Grid */}
-      <div className="two-col" style={{ alignItems: 'start' }}>
-        {/* Left Column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          {/* Quick Interactive Loan Calculator */}
-          <div className="card">
-            <div className="row between" style={{ alignItems: 'center', marginBottom: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <IconCalculator size={20} className="text-emerald" />
-                <h3 style={{ margin: 0, fontSize: '1.05rem' }}>Instant Loan EMI Appraisal</h3>
-              </div>
-              <span className="badge approved">8.5% Base Rate</span>
+      {/* 3. Three KPI Metric Cards Row */}
+      <div className="kpi-cards-grid">
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-title">Income this month</div>
+          <div className="kpi-metric-bottom">
+            <div className="kpi-metric-value">
+              ₹{Number(kpiData.income_this_month).toLocaleString('en-IN')}
             </div>
-
-            <div style={{ marginBottom: '1.25rem' }}>
-              <div className="row between small" style={{ marginBottom: '0.35rem' }}>
-                <span className="muted">Principal Amount:</span>
-                <b>₹{dashAmount.toLocaleString('en-IN')}</b>
-              </div>
-              <input
-                type="range"
-                className="fin-slider"
-                min="5000"
-                max="150000"
-                step="5000"
-                value={dashAmount}
-                onChange={(e) => setDashAmount(Number(e.target.value))}
-              />
-            </div>
-
-            <div style={{ marginBottom: '1.25rem' }}>
-              <div className="row between small" style={{ marginBottom: '0.35rem' }}>
-                <span className="muted">Repayment Tenure:</span>
-                <b>{dashTenure} Months</b>
-              </div>
-              <input
-                type="range"
-                className="fin-slider"
-                min="3"
-                max="36"
-                step="3"
-                value={dashTenure}
-                onChange={(e) => setDashTenure(Number(e.target.value))}
-              />
-            </div>
-
-            <div
-              style={{
-                background: 'var(--slate-50)',
-                padding: '0.85rem',
-                borderRadius: '8px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '1rem',
-              }}
-            >
-              <div>
-                <span className="muted small">Monthly Repayment:</span>
-                <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--slate-900)' }}>
-                  ₹{dashEmi.toLocaleString('en-IN')} <small style={{ fontSize: '0.8rem', fontWeight: 500 }}>/ mo</small>
-                </div>
-              </div>
-              <Link
-                to={`/loans/new?amount=${dashAmount}&tenure=${dashTenure}&rate=${dashRate}`}
-                className="btn small"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
-              >
-                Apply for This Facility <IconArrowRight size={13} />
-              </Link>
-            </div>
-          </div>
-
-          {/* Recent Financial Activity / Ledger Preview */}
-          <div className="card">
-            <div className="row between" style={{ alignItems: 'center', marginBottom: '1rem' }}>
-              <h3 style={{ margin: 0, fontSize: '1.05rem' }}>Recent Account Activity</h3>
-              <Link to="/transactions" className="small" style={{ fontWeight: 600 }}>
-                View Full Passbook →
-              </Link>
-            </div>
-
-            <div className="table-wrap" style={{ border: 'none' }}>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Description</th>
-                    <th>Mode</th>
-                    <th>Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {transactions.slice(0, 5).map((r) => (
-                    <tr key={r.id}>
-                      <td style={{ fontSize: '0.82rem', whiteSpace: 'nowrap' }}>{r.date}</td>
-                      <td>
-                        <div style={{ fontWeight: 600, fontSize: '0.84rem' }}>{r.type}</div>
-                      </td>
-                      <td>
-                        <span className="badge neutral" style={{ fontSize: '0.7rem' }}>{r.mode}</span>
-                      </td>
-                      <td
-                        style={{
-                          fontWeight: 700,
-                          fontSize: '0.88rem',
-                          color: r.is_credit ? 'var(--emerald-600)' : 'var(--slate-900)',
-                        }}
-                      >
-                        {r.is_credit ? '+' : '-'}₹{Number(r.amount).toLocaleString('en-IN')}
-                      </td>
-                    </tr>
-                  ))}
-                  {transactions.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="muted" style={{ textAlign: 'center', padding: '1.5rem 0' }}>
-                        No transactions recorded yet.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <span className="kpi-delta-tag positive">
+              <IconTrendingUp size={12} /> {kpiData.income_delta}
+            </span>
           </div>
         </div>
 
-        {/* Right Column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          {/* Household Cashflow & Capacity */}
-          <div className="card">
-            <div className="row between" style={{ alignItems: 'center', marginBottom: '0.75rem' }}>
-              <h3 style={{ margin: 0, fontSize: '1.05rem' }}>Household Cashflow & Capacity</h3>
-              <Link to="/profile" className="small">
-                Adjust Profile →
-              </Link>
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-title">Expenses</div>
+          <div className="kpi-metric-bottom">
+            <div className="kpi-metric-value">
+              ₹{Number(kpiData.expenses_this_month).toLocaleString('en-IN')}
             </div>
-
-            {monthlyIncome > 0 ? (
-              <div>
-                <CashflowBarChart income={monthlyIncome} expenses={monthlyExpenses} emi={existingEmi} />
-              </div>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '0.75rem 0' }}>
-                <p className="muted small" style={{ marginBottom: '0.75rem' }}>
-                  Add your household monthly income and expenses to unlock live debt capacity analysis.
-                </p>
-                <Link to="/profile" className="btn small">
-                  Configure Income in Profile
-                </Link>
-              </div>
-            )}
+            <span className="kpi-delta-tag negative">
+              <span>↓</span> {kpiData.expenses_delta}
+            </span>
           </div>
+        </div>
 
-          {/* Featured Government Schemes Spotlight */}
-          <div className="card">
-            <div className="row between" style={{ alignItems: 'center', marginBottom: '0.85rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <IconLandmark size={18} className="text-emerald" />
-                <h3 style={{ margin: 0, fontSize: '1.05rem' }}>Flagship Welfare Schemes</h3>
-              </div>
-              <Link to="/schemes" className="small" style={{ fontWeight: 600 }}>
-                All Schemes →
-              </Link>
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-title">Savings Surplus</div>
+          <div className="kpi-metric-bottom">
+            <div className="kpi-metric-value">
+              ₹{Number(kpiData.savings_this_month).toLocaleString('en-IN')}
             </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {[
-                {
-                  code: 'PM-KISAN',
-                  name: 'Pradhan Mantri Kisan Samman Nidhi',
-                  grant: '₹6,000 / yr DBT',
-                  tag: 'Agriculture',
-                },
-                {
-                  code: 'PMMY',
-                  name: 'Pradhan Mantri MUDRA Yojana',
-                  grant: 'Up to ₹10 Lakh',
-                  tag: 'MSME Business',
-                },
-                {
-                  code: 'PM-SVANidhi',
-                  name: "Street Vendor's AtmaNirbhar Nidhi",
-                  grant: '7% Interest Subsidy',
-                  tag: 'Urban Vendors',
-                },
-                {
-                  code: 'PM-KUSUM',
-                  name: 'Solar Irrigation Pump Subsidy',
-                  grant: '60% Capital Subsidy',
-                  tag: 'Clean Energy',
-                },
-              ].map((sch) => (
-                <div
-                  key={sch.code}
-                  style={{
-                    background: '#ffffff',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '8px',
-                    padding: '0.75rem',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
-                >
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>{sch.code}</span>
-                      <span className="badge neutral" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>{sch.tag}</span>
-                    </div>
-                    <div className="muted small" style={{ fontSize: '0.76rem', marginTop: '2px' }}>
-                      {sch.name}
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <span className="text-emerald" style={{ fontWeight: 700, fontSize: '0.82rem' }}>
-                      {sch.grant}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <Link to="/schemes" className="btn small ghost w-100 mt-2" style={{ textAlign: 'center', display: 'block' }}>
-              Check All Scheme Eligibilities
-            </Link>
+            <span className="kpi-delta-tag positive">
+              <IconTrendingUp size={12} /> {kpiData.savings_delta}
+            </span>
           </div>
-
-          {/* Active Target Savings Goal */}
-          {topGoal && (
-            <div className="card">
-              <div className="row between" style={{ alignItems: 'center', marginBottom: '0.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <IconTarget size={18} className="text-emerald" />
-                  <h4 style={{ margin: 0, fontSize: '0.95rem' }}>Priority Goal: {topGoal.title}</h4>
-                </div>
-                <span className="badge approved">{Math.round(topGoal.progress_pct)}%</span>
-              </div>
-              <div className="row between small" style={{ marginBottom: '0.4rem' }}>
-                <span>Saved: <b>₹{Number(topGoal.saved_amount).toLocaleString('en-IN')}</b></span>
-                <span className="muted">Target: ₹{Number(topGoal.target_amount).toLocaleString('en-IN')}</span>
-              </div>
-              <div style={{ height: '6px', background: '#e2e8f0', borderRadius: '3px', overflow: 'hidden' }}>
-                <div style={{ width: `${Math.min(100, topGoal.progress_pct)}%`, background: 'var(--emerald-600)', height: '100%' }} />
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* UPI Payment Modal */}
-      {showUpiModal && (
-        <div className="modal-overlay" onClick={() => setShowUpiModal(false)}>
+      {/* 4. Middle Section: 6-Month Income vs Expenses Grouped Bar Chart + Savings Goal & AI */}
+      <div className="middle-dashboard-grid">
+        {/* Left: 6-Month Income vs Expenses Bar Chart */}
+        <div className="dashboard-card-box">
+          <div className="chart-card-header">
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>Income vs Expenses</h3>
+              <p className="muted small" style={{ marginTop: '2px' }}>Last 6 months cashflow trend</p>
+            </div>
+            <div className="chart-legend-row">
+              <div className="legend-item">
+                <span className="legend-dot income" />
+                <span>Income</span>
+              </div>
+              <div className="legend-item">
+                <span className="legend-dot expense" />
+                <span>Expenses</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Interactive Bars Container */}
+          <div className="chart-bars-container">
+            {cashflowHistory.map((item) => {
+              const incHeight = Math.max(15, Math.round((item.income / maxCashflow) * 140))
+              const expHeight = Math.max(15, Math.round((item.expenses / maxCashflow) * 140))
+              const isHovered = hoveredMonth === item.month
+
+              return (
+                <div
+                  key={item.month}
+                  className="bar-month-group"
+                  onMouseEnter={() => setHoveredMonth(item.month)}
+                  onMouseLeave={() => setHoveredMonth(null)}
+                >
+                  <div className="bars-pair">
+                    <div
+                      className="chart-bar income"
+                      style={{ height: `${incHeight}px` }}
+                      title={`${item.month} Income: ₹${item.income.toLocaleString('en-IN')}`}
+                    />
+                    <div
+                      className="chart-bar expense"
+                      style={{ height: `${expHeight}px` }}
+                      title={`${item.month} Expenses: ₹${item.expenses.toLocaleString('en-IN')}`}
+                    />
+                  </div>
+                  <span className="month-label" style={{ color: isHovered ? '#059669' : undefined }}>
+                    {item.month}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+
+          <div className="chart-insight-footer">
+            <span>Average monthly surplus: <b>₹{Number(kpiData.savings_this_month).toLocaleString('en-IN')}</b></span>
+            <span style={{ color: '#059669', fontWeight: 600 }}>Savings Rate: 48.3%</span>
+          </div>
+        </div>
+
+        {/* Right: Stack of Savings Goal Card and Saathi AI */}
+        <div className="side-cards-stack">
+          {/* Savings Goal Card */}
+          <div className="savings-goal-banner">
+            <div className="goal-banner-header">
+              <div>
+                <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#047857', fontWeight: 700 }}>
+                  SAVINGS GOAL
+                </span>
+                <h4 style={{ margin: '2px 0 0 0', fontSize: '1.05rem', color: '#064e3b' }}>
+                  {topGoal.title}
+                </h4>
+              </div>
+              <div className="goal-jar-badge" title="Target Savings Jar">
+                🌱
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '0.84rem' }}>
+              <span>
+                <b>₹{Number(topGoal.saved_amount).toLocaleString('en-IN')}</b> of ₹{Number(topGoal.target_amount).toLocaleString('en-IN')}
+              </span>
+              <span style={{ fontWeight: 700, color: '#059669' }}>
+                {Math.round(topGoal.progress_pct || (topGoal.saved_amount / topGoal.target_amount * 100))}%
+              </span>
+            </div>
+
+            <div className="goal-progress-bar-wrap">
+              <div
+                className="goal-progress-fill"
+                style={{ width: `${Math.min(100, topGoal.progress_pct || (topGoal.saved_amount / topGoal.target_amount * 100))}%` }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+              <button
+                type="button"
+                className="btn small"
+                style={{ flex: 1, padding: '0.45rem', fontSize: '0.8rem' }}
+                onClick={() => handleGoalDepositQuick(500)}
+                disabled={busyAction}
+              >
+                + Deposit ₹500
+              </button>
+              <button
+                type="button"
+                className="btn small ghost"
+                style={{ flex: 1, padding: '0.45rem', fontSize: '0.8rem' }}
+                onClick={() => setShowDepositModal(true)}
+              >
+                Custom Deposit
+              </button>
+            </div>
+          </div>
+
+          {/* Saathi AI Companion Card */}
+          <div className="saathi-card-box">
+            <div className="saathi-card-top">
+              <div className="saathi-avatar-pill">
+                <IconBot size={20} />
+              </div>
+              <div>
+                <h4 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 700 }}>Saathi AI</h4>
+                <p className="muted small" style={{ margin: 0 }}>Your rural financial companion</p>
+              </div>
+            </div>
+
+            <p style={{ fontSize: '0.82rem', color: 'var(--slate-600)', margin: '0.2rem 0' }}>
+              Ask in Marathi, Hindi, or English about your loan options, savings tip, or govt schemes.
+            </p>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+              <span
+                className="saathi-pill-prompt"
+                onClick={() => navigate('/saathi?prompt=' + encodeURIComponent('Can I afford a Rs 25,000 agricultural loan?'))}
+              >
+                Can I afford a ₹25,000 loan?
+              </span>
+              <span
+                className="saathi-pill-prompt"
+                onClick={() => navigate('/saathi?prompt=' + encodeURIComponent('Emergency fund calculation'))}
+              >
+                Emergency fund buffer
+              </span>
+            </div>
+
+            <div style={{ marginTop: '0.25rem' }}>
+              <Link
+                to="/saathi"
+                className="small"
+                style={{ fontWeight: 700, color: '#059669', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+              >
+                Ask Saathi →
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 5. Bottom Section: Upcoming Repayments + Recent Transactions + Seasonal Tip */}
+      <div className="bottom-dashboard-grid">
+        {/* Card 1: Upcoming Repayments */}
+        <div className="dashboard-card-box">
+          <div className="row between" style={{ alignItems: 'center', marginBottom: '0.85rem' }}>
+            <h3 style={{ margin: 0, fontSize: '1.02rem', fontWeight: 700 }}>Upcoming Repayments</h3>
+            <span className="badge neutral small">{upcomingRepayments.length} due</span>
+          </div>
+
+          <div>
+            {upcomingRepayments.slice(0, 3).map((rep) => (
+              <div key={rep.id} className="table-subtle-row">
+                <div className="repayment-left-info">
+                  <span className="repayment-title">{rep.title}</span>
+                  <span className="repayment-date">
+                    Due {rep.due_date} • <span style={{ color: rep.overdue ? '#e11d48' : '#059669', fontWeight: 600 }}>{rep.status_text}</span>
+                  </span>
+                </div>
+                <div className="repayment-right-action">
+                  <span className="repay-amount">₹{Number(rep.amount).toLocaleString('en-IN')}</span>
+                  <button
+                    type="button"
+                    className="btn small"
+                    style={{ padding: '0.35rem 0.65rem', fontSize: '0.78rem' }}
+                    onClick={() => openRepayModal(rep)}
+                  >
+                    Pay UPI
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            {upcomingRepayments.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
+                <p className="muted small">All active loan repayments are up to date! 🎉</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Card 2: Recent Transactions (Passbook) */}
+        <div className="dashboard-card-box">
+          <div className="row between" style={{ alignItems: 'center', marginBottom: '0.85rem' }}>
+            <h3 style={{ margin: 0, fontSize: '1.02rem', fontWeight: 700 }}>Recent Transactions</h3>
+            <Link to="/transactions" className="small" style={{ fontWeight: 600 }}>
+              View all →
+            </Link>
+          </div>
+
+          <div>
+            {transactions.slice(0, 4).map((tx) => (
+              <div key={tx.id} className="txn-item-row">
+                <div className="txn-left-block">
+                  <div className={`txn-icon-circle ${tx.is_credit ? 'credit' : 'debit'}`}>
+                    {tx.category === 'milk_sales' ? '🥛' :
+                     tx.category === 'groceries' ? '🛒' :
+                     tx.category === 'fertilizer' ? '🌱' :
+                     tx.category === 'subsidy' ? '🏛️' :
+                     tx.category === 'tailoring' ? '✂️' :
+                     tx.is_credit ? '↓' : '↑'}
+                  </div>
+                  <div>
+                    <div className="txn-title-text">{tx.title || tx.type}</div>
+                    <div className="txn-date-text">{tx.date} • {tx.mode || 'UPI'}</div>
+                  </div>
+                </div>
+                <div className={`txn-amount-val ${tx.is_credit ? 'credit' : 'debit'}`}>
+                  {tx.is_credit ? '+' : '-'}₹{Number(tx.amount).toLocaleString('en-IN')}
+                </div>
+              </div>
+            ))}
+
+            {transactions.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
+                <p className="muted small">No recent passbook transactions.</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Card 3: Seasonal Income Tip */}
+        <div className="seasonal-tip-box">
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.65rem' }}>
+              <span style={{ fontSize: '1.3rem' }}>🌾</span>
+              <h4 style={{ margin: 0, fontSize: '0.96rem', color: '#92400e', fontWeight: 700 }}>
+                {seasonalTip.title}
+              </h4>
+            </div>
+            <p style={{ fontSize: '0.84rem', color: '#78350f', lineHeight: 1.45, margin: 0 }}>
+              {seasonalTip.description}
+            </p>
+          </div>
+
+          <div style={{ marginTop: '1rem' }}>
+            <Link
+              to={seasonalTip.action_target}
+              className="btn small"
+              style={{
+                background: '#d97706',
+                color: '#ffffff',
+                border: 'none',
+                width: '100%',
+                display: 'block',
+                textAlign: 'center',
+                boxShadow: 'none',
+              }}
+            >
+              {seasonalTip.action_label}
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* =========================================================================
+          INTERACTIVE MODALS FOR REAL MONEY OPERATIONS
+          ========================================================================= */}
+
+      {/* 1. Add Income Modal */}
+      {showIncomeModal && (
+        <div className="modal-overlay" onClick={() => setShowIncomeModal(false)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Settle Loan Installment via UPI</h3>
-              <button className="icon-btn" onClick={() => setShowUpiModal(false)}>✕</button>
+              <h3>+ Record Income to Balance</h3>
+              <button className="icon-btn" onClick={() => setShowIncomeModal(false)}>✕</button>
             </div>
-            {nextInstallment && (
-              <p className="muted small">
-                Paying for: <b>Loan #{nextInstallment.loan_id} ({nextInstallment.purpose}) • Instalment #{nextInstallment.number}</b>
-              </p>
-            )}
+            <p className="muted small">
+              Increases verified liquid balance for <b>{userName}</b> and logs into passbook.
+            </p>
 
-            <form onSubmit={handleUpiPay}>
+            <form onSubmit={handleAddIncome}>
               <div className="field">
-                <span>Amount to Pay (Rs)</span>
+                <span>Income Amount (Rs)</span>
                 <input
                   type="number"
-                  value={payAmount}
-                  onChange={(e) => setPayAmount(e.target.value)}
+                  min="10"
                   required
+                  placeholder="e.g. 1200"
+                  value={incomeAmt}
+                  onChange={(e) => setIncomeAmt(e.target.value)}
                 />
               </div>
 
               <div className="field">
-                <span>Select UPI App</span>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                  {[
-                    ['gpay', 'Google Pay'],
-                    ['phonepe', 'PhonePe'],
-                    ['paytm', 'Paytm'],
-                    ['bhim', 'BHIM UPI'],
-                  ].map(([id, label]) => (
-                    <label
-                      key={id}
-                      style={{
-                        padding: '0.5rem',
-                        border: selectedUpiApp === id ? '2px solid var(--emerald-600)' : '1px solid var(--border-color)',
-                        borderRadius: '6px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.4rem',
-                        fontSize: '0.82rem',
-                        cursor: 'pointer',
-                        background: selectedUpiApp === id ? '#ecfdf5' : '#ffffff',
-                      }}
-                    >
-                      <input
-                        type="radio"
-                        name="upiApp"
-                        checked={selectedUpiApp === id}
-                        onChange={() => setSelectedUpiApp(id)}
-                      />
-                      <span>{label}</span>
-                    </label>
-                  ))}
-                </div>
+                <span>Source Description / Title</span>
+                <input
+                  required
+                  placeholder="e.g. Milk Sales to Co-operative Dairy"
+                  value={incomeTitle}
+                  onChange={(e) => setIncomeTitle(e.target.value)}
+                />
               </div>
 
-              <div style={{ background: '#f8fafc', padding: '0.6rem', borderRadius: '6px', fontSize: '0.74rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '1rem' }}>
-                <IconLock size={14} /> Protected by NPCI UPI 256-bit encryption. No PIN stored.
+              <div className="field">
+                <span>Category</span>
+                <select value={incomeCat} onChange={(e) => setIncomeCat(e.target.value)}>
+                  <option value="milk_sales">Dairy & Milk Sales</option>
+                  <option value="crop_sale">Mandi Crop & Vegetable Sales</option>
+                  <option value="wages">Daily Labour / Farm Wages</option>
+                  <option value="tailoring">Stitching & Garment Orders</option>
+                  <option value="subsidy">Government DBT Subsidy</option>
+                  <option value="other">Other Household Inflow</option>
+                </select>
+              </div>
+
+              <div className="field">
+                <span>Received Via</span>
+                <select value={incomeMode} onChange={(e) => setIncomeMode(e.target.value)}>
+                  <option value="UPI">UPI (Google Pay / PhonePe)</option>
+                  <option value="Cash">Cash at Mandi / Doorstep</option>
+                  <option value="Bank Transfer">Direct Bank Transfer (NEFT/IMPS)</option>
+                </select>
               </div>
 
               <div className="modal-actions">
-                <button type="button" className="btn ghost" onClick={() => setShowUpiModal(false)}>
+                <button type="button" className="btn ghost" onClick={() => setShowIncomeModal(false)}>
                   Cancel
                 </button>
-                <button type="submit" className="btn" disabled={paySuccess}>
-                  {paySuccess ? 'Verifying with UPI…' : `Pay ₹${Number(payAmount || 0).toLocaleString('en-IN')} via UPI`}
+                <button type="submit" className="btn" disabled={busyAction}>
+                  {busyAction ? 'Crediting…' : 'Add to Balance'}
                 </button>
               </div>
             </form>
@@ -1308,38 +1521,170 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
         </div>
       )}
 
-      {/* Add Funds Modal */}
+      {/* 2. Add Expense Modal */}
+      {showExpenseModal && (
+        <div className="modal-overlay" onClick={() => setShowExpenseModal(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>− Record Household / Farm Expense</h3>
+              <button className="icon-btn" onClick={() => setShowExpenseModal(false)}>✕</button>
+            </div>
+            <p className="muted small">
+              Deducts from available balance for <b>{userName}</b> and registers in passbook ledger.
+            </p>
+
+            <form onSubmit={handleAddExpense}>
+              <div className="field">
+                <span>Expense Amount (Rs)</span>
+                <input
+                  type="number"
+                  min="1"
+                  required
+                  placeholder="e.g. 450"
+                  value={expenseAmt}
+                  onChange={(e) => setExpenseAmt(e.target.value)}
+                />
+              </div>
+
+              <div className="field">
+                <span>Spent On / Item</span>
+                <input
+                  required
+                  placeholder="e.g. Groceries & Provisions"
+                  value={expenseTitle}
+                  onChange={(e) => setExpenseTitle(e.target.value)}
+                />
+              </div>
+
+              <div className="field">
+                <span>Category</span>
+                <select value={expenseCat} onChange={(e) => setExpenseCat(e.target.value)}>
+                  <option value="groceries">Groceries & Household Ration</option>
+                  <option value="fertilizer">Fertilizer, Seeds & Agri Inputs</option>
+                  <option value="materials">Fabric, Threads & Stock Inventory</option>
+                  <option value="medical">Health & Pharmacy</option>
+                  <option value="education">School Fees & Books</option>
+                  <option value="bills">Electricity & Mobile Recharge</option>
+                  <option value="other">Miscellaneous</option>
+                </select>
+              </div>
+
+              <div className="field">
+                <span>Paid Via</span>
+                <select value={expenseMode} onChange={(e) => setExpenseMode(e.target.value)}>
+                  <option value="UPI">UPI (Google Pay / PhonePe)</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Bank Transfer">Bank Debit</option>
+                </select>
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="btn ghost" onClick={() => setShowExpenseModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn" disabled={busyAction}>
+                  {busyAction ? 'Recording…' : 'Record Expense'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Transfer to Savings Goal Modal */}
+      {showTransferModal && (
+        <div className="modal-overlay" onClick={() => setShowTransferModal(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>⇄ Transfer Money to Savings Goal</h3>
+              <button className="icon-btn" onClick={() => setShowTransferModal(false)}>✕</button>
+            </div>
+            <p className="muted small">
+              Transfers funds from Available Balance (₹{Number(availableBalance).toLocaleString('en-IN')}) into your goal reserve.
+            </p>
+
+            <form onSubmit={handleTransfer}>
+              <div className="field">
+                <span>Target Savings Goal</span>
+                <select
+                  value={transferGoalId || topGoal?.id}
+                  onChange={(e) => setTransferGoalId(e.target.value)}
+                >
+                  {goalsList.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.title} (Target: ₹{Number(g.target_amount).toLocaleString('en-IN')})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="field">
+                <span>Transfer Amount (Rs)</span>
+                <input
+                  type="number"
+                  min="10"
+                  max={availableBalance}
+                  required
+                  placeholder="e.g. 500"
+                  value={transferAmt}
+                  onChange={(e) => setTransferAmt(e.target.value)}
+                />
+              </div>
+
+              <div className="field">
+                <span>Optional Note</span>
+                <input
+                  placeholder="e.g. Monthly harvest surplus buffer"
+                  value={transferNote}
+                  onChange={(e) => setTransferNote(e.target.value)}
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="btn ghost" onClick={() => setShowTransferModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn" disabled={busyAction}>
+                  {busyAction ? 'Transferring…' : 'Confirm Transfer'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Custom Goal Deposit Modal */}
       {showDepositModal && (
         <div className="modal-overlay" onClick={() => setShowDepositModal(false)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Add Funds to Core Savings</h3>
+              <h3>Deposit to Goal: {topGoal?.title}</h3>
               <button className="icon-btn" onClick={() => setShowDepositModal(false)}>✕</button>
             </div>
             <p className="muted small">
-              Deposit to liquid savings account for: <b>{userName}</b>
+              Current progress: ₹{Number(topGoal?.saved_amount || 0).toLocaleString('en-IN')} of ₹{Number(topGoal?.target_amount || 0).toLocaleString('en-IN')}.
             </p>
 
-            <form onSubmit={handleDeposit}>
+            <form onSubmit={handleCustomGoalDeposit}>
               <div className="field">
                 <span>Deposit Amount (Rs)</span>
                 <input
                   type="number"
-                  min="100"
-                  value={depositAmount}
-                  onChange={(e) => setDepositAmount(e.target.value)}
+                  min="50"
                   required
+                  value={goalDepositAmt}
+                  onChange={(e) => setGoalDepositAmt(e.target.value)}
                 />
               </div>
 
               <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1rem' }}>
-                {[500, 1000, 2000, 5000].map((amt) => (
+                {[200, 500, 1000, 2000].map((amt) => (
                   <button
                     key={amt}
                     type="button"
                     className="btn small ghost"
                     style={{ flex: 1 }}
-                    onClick={() => setDepositAmount(amt)}
+                    onClick={() => setGoalDepositAmt(amt)}
                   >
                     +₹{amt}
                   </button>
@@ -1351,7 +1696,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
                   Cancel
                 </button>
                 <button type="submit" className="btn" disabled={busyAction}>
-                  {busyAction ? 'Processing…' : 'Confirm Deposit'}
+                  {busyAction ? 'Depositing…' : 'Confirm Deposit'}
                 </button>
               </div>
             </form>
@@ -1359,37 +1704,60 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
         </div>
       )}
 
-      {/* Health Score Details Modal */}
-      {showHealthModal && (
-        <div className="modal-overlay" onClick={() => setShowHealthModal(false)}>
+      {/* 5. UPI Repayment Modal */}
+      {showUpiModal && selectedRepayment && (
+        <div className="modal-overlay" onClick={() => setShowUpiModal(false)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Financial Health & CIBIL Composite Score</h3>
-              <button className="icon-btn" onClick={() => setShowHealthModal(false)}>✕</button>
+              <h3>Instant Repayment via UPI</h3>
+              <button className="icon-btn" onClick={() => setShowUpiModal(false)}>✕</button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1rem 0', borderBottom: '1px solid var(--border-color)' }}>
-              <CibilSpeedometer score={cibilScore} width={240} height={135} />
-              <Badge tone={healthScore >= 70 ? 'approved' : 'pending'} style={{ marginTop: '0.75rem' }}>
-                {healthScore >= 70 ? 'Prime Credit Quality' : 'Moderate Standing'}
-              </Badge>
-            </div>
+            <p className="muted small">
+              Paying for: <b>{selectedRepayment.title}</b>
+            </p>
 
-            <div style={{ padding: '1rem 0' }}>
-              <p className="muted small" style={{ marginBottom: '0.75rem' }}>
-                Underwriting composite evaluation parameters:
-              </p>
-              <ul className="factors-list" style={{ paddingLeft: '1rem', fontSize: '0.84rem' }}>
-                <li><b>Repayment Track Record:</b> {data?.overdue_loans === 0 ? '100% clean history with zero delinquent payments' : `${data?.overdue_loans} overdue payment flag`}</li>
-                <li><b>Debt Service Ratio (FOIR):</b> {foirPct}% of household income currently committed to existing debts (Threshold: 40%)</li>
-                <li><b>Liquid Reserve Cushion:</b> ₹{Number(totalSavings).toLocaleString('en-IN')} available across core liquid balances</li>
-              </ul>
-            </div>
+            <form onSubmit={handleExecuteUpiPay}>
+              <div className="field">
+                <span>Amount to Settle (Rs)</span>
+                <input
+                  type="number"
+                  min="1"
+                  required
+                  value={payAmount}
+                  onChange={(e) => setPayAmount(e.target.value)}
+                />
+              </div>
 
-            <div className="modal-actions">
-              <button className="btn" onClick={() => setShowHealthModal(false)}>
-                Understood
-              </button>
-            </div>
+              <div className="field">
+                <span>Select UPI PSP Handle</span>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                  {[
+                    { id: 'gpay', label: 'Google Pay' },
+                    { id: 'phonepe', label: 'PhonePe' },
+                    { id: 'paytm', label: 'Paytm UPI' },
+                    { id: 'bhim', label: 'BHIM UPI' },
+                  ].map((app) => (
+                    <button
+                      key={app.id}
+                      type="button"
+                      className={`btn small ${selectedUpiApp === app.id ? '' : 'ghost'}`}
+                      onClick={() => setSelectedUpiApp(app.id)}
+                    >
+                      {app.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="btn ghost" onClick={() => setShowUpiModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn" disabled={paySuccess}>
+                  {paySuccess ? 'Verifying UPI PSP…' : `Pay ₹${Number(payAmount || 0).toLocaleString('en-IN')} via UPI`}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
@@ -1397,9 +1765,6 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
   )
 }
 
-/* =========================================================================
-   MAIN DASHBOARD ROUTER: DYNAMICALLY ADAPTS TO USER'S ROLE
-   ========================================================================= */
 export default function Dashboard() {
   const { user, refresh } = useAuth()
   const { data, loading, reload } = useLoad(() => api('/dashboard'))

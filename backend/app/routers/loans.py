@@ -153,6 +153,15 @@ def pay(loan_id: int, number: int, body: schemas.PayIn, user: models.User = Depe
     inst.paid_on = date.today()
     inst.status = "paid" if inst.paid_amount >= inst.amount - 0.01 else "partial"
     audit(db, user.id, "payment", "loan", loan.id, f"installment={number} amount={amount}")
+    db.add(models.Transaction(
+        user_id=loan.user_id,
+        category="emi_payment",
+        title=f"EMI Payment: Loan #{loan.id} (Instalment #{number})",
+        amount=amount,
+        is_credit=False,
+        mode="UPI Settlement",
+        reference_id=f"LOAN-{loan.id}-INST-{number}",
+    ))
     if all(i.status == "paid" for i in loan.installments):
         loan.status = "closed"
         notify(db, loan.user_id, f"Loan #{loan.id} is fully repaid. Congratulations!")

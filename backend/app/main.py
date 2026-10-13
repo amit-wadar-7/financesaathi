@@ -20,6 +20,16 @@ async def lifespan(app: FastAPI):
             if cols and "product_type" not in cols:
                 con.execute(text("ALTER TABLE loans ADD COLUMN product_type VARCHAR(50) DEFAULT 'standard'"))
                 con.commit()
+            if cols and "schedule_type" not in cols:
+                con.execute(text("ALTER TABLE loans ADD COLUMN schedule_type VARCHAR(30) DEFAULT 'monthly'"))
+                con.commit()
+            icols = [c[1] for c in con.execute(text("PRAGMA table_info(installments)"))]
+            if icols and "phase" not in icols:
+                con.execute(text("ALTER TABLE installments ADD COLUMN phase VARCHAR(50) DEFAULT 'Regular EMI'"))
+                con.commit()
+            if icols and "is_harvest" not in icols:
+                con.execute(text("ALTER TABLE installments ADD COLUMN is_harvest BOOLEAN DEFAULT 0"))
+                con.commit()
         except Exception:
             pass
     with SessionLocal() as db:

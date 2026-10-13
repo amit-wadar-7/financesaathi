@@ -92,10 +92,11 @@ function BellDropdown() {
 }
 
 const DEMO_PERSONAS = [
-  { role: 'user', label: 'Borrower', desc: 'Borrower Portal (Pooja)', email: 'borrower@syra-demo.com', pw: 'borrower123' },
-  { role: 'officer', label: 'Loan Officer', desc: 'Underwriting & Sanctions', email: 'officer@syra-demo.com', pw: 'officer123' },
-  { role: 'shg_leader', label: 'SHG Leader', desc: 'Joint Liability & Group Desk', email: 'leader@syra-demo.com', pw: 'leader123' },
-  { role: 'admin', label: 'Super Admin', desc: 'System Executive & Roles', email: 'admin@syra-demo.com', pw: 'admin123' },
+  { id: 'amit', role: 'user', label: 'Amit Wadar', desc: 'Borrower (Kisan & Agri)', email: 'amit@syra-demo.com', pw: 'amit123' },
+  { id: 'pooja', role: 'user', label: 'Pooja Patil', desc: 'Borrower (SHG Tailoring)', email: 'borrower@syra-demo.com', pw: 'borrower123' },
+  { id: 'leader', role: 'shg_leader', label: 'Sunita Kamble', desc: 'SHG Leader (Group Desk)', email: 'leader@syra-demo.com', pw: 'leader123' },
+  { id: 'officer', role: 'officer', label: 'Ramesh Deshmukh', desc: 'Credit Officer (Sanctions)', email: 'officer@syra-demo.com', pw: 'officer123' },
+  { id: 'admin', role: 'admin', label: 'Rajesh Sharma', desc: 'Super Admin (System Console)', email: 'admin@syra-demo.com', pw: 'admin123' },
 ]
 
 function RolePerspectiveSwitcher() {
@@ -104,11 +105,11 @@ function RolePerspectiveSwitcher() {
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
 
-  const currentRole = user?.role || 'user'
-  const currentPersona = DEMO_PERSONAS.find((p) => p.role === currentRole) || DEMO_PERSONAS[0]
+  const currentPersona = DEMO_PERSONAS.find((p) => p.email === user?.email) ||
+    DEMO_PERSONAS.find((p) => p.role === user?.role) || DEMO_PERSONAS[0]
 
   const switchRole = async (target) => {
-    if (target.role === currentRole) {
+    if (target.email === user?.email) {
       setOpen(false)
       return
     }
@@ -130,10 +131,10 @@ function RolePerspectiveSwitcher() {
         className="role-switcher-btn"
         onClick={() => setOpen(!open)}
         disabled={switching}
-        title="Switch perspective between roles"
+        title="Switch perspective between user accounts"
         aria-label="Switch perspective"
       >
-        <span className="role-label-tag">{switching ? 'Switching…' : 'Persona:'}</span>
+        <span className="role-label-tag">{switching ? 'Switching…' : 'Active User:'}</span>
         <span className="role-current-name">{currentPersona.label}</span>
         <span className="role-arrow">{open ? '▲' : '▼'}</span>
       </button>
@@ -141,15 +142,15 @@ function RolePerspectiveSwitcher() {
       {open && (
         <div className="role-switcher-popup">
           <div className="role-switcher-popup-header">
-            <span>Switch Role Perspective</span>
-            <small className="muted">Instant Preview</small>
+            <span>Switch User Perspective</span>
+            <small className="muted">Instant Switch</small>
           </div>
           <div className="role-switcher-list">
             {DEMO_PERSONAS.map((p) => {
-              const active = p.role === currentRole
+              const active = p.email === user?.email
               return (
                 <button
-                  key={p.role}
+                  key={p.id}
                   className={`role-switcher-item ${active ? 'active' : ''}`}
                   onClick={() => switchRole(p)}
                   disabled={switching}
@@ -291,19 +292,19 @@ function DesktopLayout({ children }) {
       groupTitle: 'FINANCIAL SERVICES',
       primary: [
         { to: '/', label: 'Overview', icon: <IconHome size={18} /> },
-        { to: '/reports', label: 'Reports & Certificates', icon: <IconFileText size={18} /> },
-        { to: '/loans', label: 'Loans & Credit', icon: <IconCreditCard size={18} /> },
-        { to: '/schemes', label: 'Govt Schemes', icon: <IconLandmark size={18} /> },
-        { to: '/transactions', label: 'Passbook & Ledger', icon: <IconCoins size={18} /> },
+        { to: '/transactions', label: 'My Passbook & Ledger', icon: <IconCoins size={18} /> },
+        { to: '/savings', label: 'Savings Goals', icon: <IconTarget size={18} /> },
+        { to: '/loans', label: 'Loans & Credit Facility', icon: <IconCreditCard size={18} /> },
+        { to: '/community', label: 'SHG Community Hub', icon: <IconUsers size={18} /> },
+        { to: '/schemes', label: 'Government Schemes', icon: <IconLandmark size={18} /> },
         { to: '/saathi', label: 'Saathi AI Advisor', icon: <IconBot size={18} />, isAi: true },
-        { to: '/profile', label: 'Profile & KYC', icon: <IconUser size={18} /> },
       ],
-      secondaryGroupTitle: 'EDUCATION & TOOLS',
+      secondaryGroupTitle: 'TOOLS & ACADEMY',
       secondary: [
-        { to: '/learn', label: 'Financial Academy', icon: <IconAcademic size={18} /> },
+        { to: '/reports', label: 'Reports & Certificates', icon: <IconFileText size={18} /> },
         { to: '/tools', label: 'Financial Calculators', icon: <IconCalculator size={18} /> },
-        { to: '/savings', label: 'Savings & Targets', icon: <IconTarget size={18} /> },
-        { to: '/notifications', label: 'Reminders & Alerts', icon: <IconBell size={18} /> },
+        { to: '/learn', label: 'Financial Academy', icon: <IconAcademic size={18} /> },
+        { to: '/profile', label: 'Profile & KYC', icon: <IconUser size={18} /> },
       ],
     }
   }
@@ -319,7 +320,7 @@ function DesktopLayout({ children }) {
           <div className="brand-logo-icon"><IconLogo size={22} /></div>
           <div className="brand-text-wrap">
             <h1 className="brand-title">FinanceSaathi</h1>
-            <span className="brand-tagline">Institutional Microfinance</span>
+            <span className="brand-tagline">Your Money • Your Goals • Your Future</span>
           </div>
         </div>
 

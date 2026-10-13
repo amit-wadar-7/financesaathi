@@ -94,5 +94,15 @@ def deposit(goal_id: int, body: schemas.DepositIn, user=Depends(get_current_user
         raise HTTPException(404, "Goal not found")
     g.saved_amount = round(g.saved_amount + body.amount, 2)
     db.add(models.SavingsEntry(goal_id=g.id, amount=body.amount))
+    db.add(models.Transaction(
+        user_id=user.id,
+        category="savings_deposit",
+        title=f"Savings Deposit: {g.title}",
+        amount=body.amount,
+        is_credit=True,
+        mode="UPI / Bank",
+        reference_id=f"GOAL-{g.id}",
+    ))
     db.commit()
     return _goal(g)
+
