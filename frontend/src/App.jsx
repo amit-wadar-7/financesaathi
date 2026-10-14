@@ -130,122 +130,122 @@ function DesktopLayout({ children }) {
   const getContextTitle = () => {
     const p = location.pathname
     if (p === '/') {
-      if (user?.role === 'admin') return 'Admin Executive Console'
-      if (user?.role === 'officer') return 'Credit Underwriting Desk'
-      if (user?.role === 'shg_leader') return 'SHG Community Hub'
-      return 'Borrower Financial Portal'
+      if (user?.role === 'admin') return t('admin_console') || 'Admin Executive Console'
+      if (user?.role === 'officer') return t('officer_desk') || 'Credit Underwriting Desk'
+      if (user?.role === 'shg_leader') return t('shg_hub') || 'SHG Community Hub'
+      return t('borrower_portal') || 'Borrower Financial Portal'
     }
-    if (p === '/reports') return 'Reports & Statements Center'
-    if (p === '/tools') return 'Financial Decision Calculators'
-    if (p === '/savings') return 'Household Savings & Goals'
-    if (p === '/community') return 'SHG Community Hub'
-    if (p === '/saathi') return 'Saathi AI Advisor'
-    if (p.startsWith('/loans')) return 'Loans & Credit Facility'
-    if (p === '/schemes') return 'Government Schemes & Subsidies'
-    if (p === '/transactions') return 'Passbook & Digital Ledger'
-    if (p.startsWith('/learn')) return 'Financial Academy'
-    if (p === '/at-risk') return 'At-Risk Credit Radar'
-    if (p === '/admin') return 'User Directory & Governance'
-    if (p === '/profile') return 'Borrower Profile & KYC'
-    if (p === '/notifications') return 'Notification Alerts'
-    if (p === '/grievances') return 'Grievance Redressal (RBI Cell)'
+    if (p === '/reports') return t('nav_reports') || 'Reports & Statements Center'
+    if (p === '/tools') return t('nav_tools') || 'Financial Decision Calculators'
+    if (p === '/savings') return t('nav_savings') || 'Household Savings & Goals'
+    if (p === '/community') return t('nav_community') || 'SHG Community Hub'
+    if (p === '/saathi') return t('nav_saathi') || 'Saathi AI Advisor'
+    if (p.startsWith('/loans')) return t('nav_loans') || 'Loans & Credit Facility'
+    if (p === '/schemes') return t('nav_schemes') || 'Government Schemes & Subsidies'
+    if (p === '/transactions') return t('nav_passbook') || 'Passbook & Digital Ledger'
+    if (p.startsWith('/learn')) return t('nav_learn') || 'Financial Academy'
+    if (p === '/at-risk') return t('nav_at_risk') || 'At-Risk Credit Radar'
+    if (p === '/admin') return t('nav_admin') || 'User Directory & Governance'
+    if (p === '/profile') return t('nav_profile') || 'Borrower Profile & KYC'
+    if (p === '/notifications') return t('notifications') || 'Notification Alerts'
+    if (p === '/grievances') return t('nav_grievances') || 'Grievance Redressal (RBI Cell)'
     return 'FinanceSaathi'
   }
 
   const getRoleLabel = () => {
-    if (user?.role === 'admin') return 'Super Admin'
-    if (user?.role === 'officer') return 'Credit Officer'
-    if (user?.role === 'shg_leader') return 'SHG Leader'
-    if (user?.monthly_income > 0) return 'Active Borrower'
-    return 'Registered Member'
+    if (user?.role === 'admin') return t('role_admin') || 'Super Admin'
+    if (user?.role === 'officer') return t('role_officer') || 'Credit Officer'
+    if (user?.role === 'shg_leader') return t('role_leader') || 'SHG Leader'
+    if (user?.monthly_income > 0) return t('role_borrower') || 'Active Borrower'
+    return t('role_registered') || 'Registered Member'
   }
 
   const getNavItems = () => {
     if (user?.role === 'admin') {
       return {
-        groupTitle: 'EXECUTIVE CONSOLE',
+        groupTitle: t('nav_group_admin') || 'EXECUTIVE CONSOLE',
         primary: [
-          { to: '/', label: 'Overview Console', icon: <IconHome size={18} /> },
-          { to: '/admin', label: 'User Directory & Roles', icon: <IconSettings size={18} /> },
-          { to: '/reports', label: 'Reports & Analytics', icon: <IconFileText size={18} /> },
-          { to: '/loans', label: 'Loan Underwriting Desk', icon: <IconCreditCard size={18} /> },
-          { to: '/at-risk', label: 'At-Risk Credit Radar', icon: <IconShield size={18} /> },
-          { to: '/schemes', label: 'Govt Schemes Directory', icon: <IconLandmark size={18} /> },
-          { to: '/transactions', label: 'Audit Transactions', icon: <IconCoins size={18} /> },
+          { to: '/', label: t('nav_overview'), icon: <IconHome size={18} /> },
+          { to: '/admin', label: t('nav_admin'), icon: <IconSettings size={18} /> },
+          { to: '/reports', label: t('nav_reports'), icon: <IconFileText size={18} /> },
+          { to: '/loans', label: t('nav_loans'), icon: <IconCreditCard size={18} /> },
+          { to: '/at-risk', label: t('nav_at_risk'), icon: <IconShield size={18} /> },
+          { to: '/schemes', label: t('nav_schemes'), icon: <IconLandmark size={18} /> },
+          { to: '/transactions', label: t('nav_passbook'), icon: <IconCoins size={18} /> },
         ],
-        secondaryGroupTitle: 'PLATFORM GOVERNANCE',
+        secondaryGroupTitle: t('nav_group_governance') || 'PLATFORM GOVERNANCE',
         secondary: [
-          { to: '/learn', label: 'Financial Academy', icon: <IconAcademic size={18} /> },
-          { to: '/tools', label: 'Decision Models', icon: <IconCalculator size={18} /> },
-          { to: '/grievances', label: 'RBI Grievance Cell', icon: <IconShield size={18} /> },
-          { to: '/notifications', label: 'System Audit Alerts', icon: <IconBell size={18} /> },
+          { to: '/learn', label: t('nav_learn'), icon: <IconAcademic size={18} /> },
+          { to: '/tools', label: t('nav_tools'), icon: <IconCalculator size={18} /> },
+          { to: '/grievances', label: t('nav_grievances'), icon: <IconShield size={18} /> },
+          { to: '/notifications', label: t('notifications'), icon: <IconBell size={18} /> },
         ],
       }
     }
 
     if (user?.role === 'officer') {
       return {
-        groupTitle: 'UNDERWRITING WORKSPACE',
+        groupTitle: t('nav_group_staff') || 'UNDERWRITING WORKSPACE',
         primary: [
-          { to: '/', label: 'Underwriting Queue', icon: <IconHome size={18} /> },
-          { to: '/reports', label: 'Reports & Statements', icon: <IconFileText size={18} /> },
-          { to: '/loans', label: 'Sanction Desk & Reviews', icon: <IconCreditCard size={18} /> },
-          { to: '/at-risk', label: 'At-Risk Delinquency Radar', icon: <IconShield size={18} /> },
-          { to: '/schemes', label: 'Govt Subsidy Catalog', icon: <IconLandmark size={18} /> },
-          { to: '/transactions', label: 'Borrower Passbooks', icon: <IconCoins size={18} /> },
+          { to: '/', label: t('underwriting_queue') || 'Underwriting Queue', icon: <IconHome size={18} /> },
+          { to: '/reports', label: t('nav_reports'), icon: <IconFileText size={18} /> },
+          { to: '/loans', label: t('nav_loans'), icon: <IconCreditCard size={18} /> },
+          { to: '/at-risk', label: t('nav_at_risk'), icon: <IconShield size={18} /> },
+          { to: '/schemes', label: t('nav_schemes'), icon: <IconLandmark size={18} /> },
+          { to: '/transactions', label: t('nav_passbook'), icon: <IconCoins size={18} /> },
         ],
-        secondaryGroupTitle: 'FIELD OPERATIONS',
+        secondaryGroupTitle: t('nav_group_ops') || 'FIELD OPERATIONS',
         secondary: [
-          { to: '/learn', label: 'Academy Modules', icon: <IconAcademic size={18} /> },
-          { to: '/tools', label: 'Credit Risk Calculators', icon: <IconCalculator size={18} /> },
-          { to: '/grievances', label: 'RBI Grievance Cell', icon: <IconShield size={18} /> },
-          { to: '/notifications', label: 'Credit Risk Alerts', icon: <IconBell size={18} /> },
+          { to: '/learn', label: t('nav_learn'), icon: <IconAcademic size={18} /> },
+          { to: '/tools', label: t('nav_tools'), icon: <IconCalculator size={18} /> },
+          { to: '/grievances', label: t('nav_grievances'), icon: <IconShield size={18} /> },
+          { to: '/notifications', label: t('notifications'), icon: <IconBell size={18} /> },
         ],
       }
     }
 
     if (user?.role === 'shg_leader') {
       return {
-        groupTitle: 'COMMUNITY & GROUP HUB',
+        groupTitle: t('nav_group_community') || 'COMMUNITY & GROUP HUB',
         primary: [
-          { to: '/', label: 'SHG Leader Hub', icon: <IconHome size={18} /> },
-          { to: '/reports', label: 'Group Audit & Reports', icon: <IconFileText size={18} /> },
-          { to: '/loans', label: 'Group Loans & Limits', icon: <IconCreditCard size={18} /> },
-          { to: '/transactions', label: 'Group Passbook & Ledger', icon: <IconCoins size={18} /> },
-          { to: '/schemes', label: 'Govt Schemes & Grants', icon: <IconLandmark size={18} /> },
-          { to: '/saathi', label: 'Saathi AI Advisor', icon: <IconBot size={18} />, isAi: true },
+          { to: '/', label: t('shg_hub') || 'SHG Leader Hub', icon: <IconHome size={18} /> },
+          { to: '/reports', label: t('nav_reports'), icon: <IconFileText size={18} /> },
+          { to: '/loans', label: t('nav_loans'), icon: <IconCreditCard size={18} /> },
+          { to: '/transactions', label: t('nav_passbook'), icon: <IconCoins size={18} /> },
+          { to: '/schemes', label: t('nav_schemes'), icon: <IconLandmark size={18} /> },
+          { to: '/saathi', label: t('nav_saathi'), icon: <IconBot size={18} />, isAi: true },
         ],
-        secondaryGroupTitle: 'GROUP DEVELOPMENT',
+        secondaryGroupTitle: t('nav_group_development') || 'GROUP DEVELOPMENT',
         secondary: [
-          { to: '/community', label: 'SHG Member Roster', icon: <IconUsers size={18} /> },
-          { to: '/savings', label: 'Group Savings Goals', icon: <IconTarget size={18} /> },
-          { to: '/grievances', label: 'RBI Grievance Cell', icon: <IconShield size={18} /> },
-          { to: '/tools', label: 'Financial Calculators', icon: <IconCalculator size={18} /> },
-          { to: '/learn', label: 'Financial Literacy', icon: <IconAcademic size={18} /> },
-          { to: '/profile', label: 'SHG Profile & KYC', icon: <IconUser size={18} /> },
+          { to: '/community', label: t('nav_member_roster') || 'SHG Member Roster', icon: <IconUsers size={18} /> },
+          { to: '/savings', label: t('nav_group_savings') || 'Group Savings Goals', icon: <IconTarget size={18} /> },
+          { to: '/grievances', label: t('nav_grievances'), icon: <IconShield size={18} /> },
+          { to: '/tools', label: t('nav_tools'), icon: <IconCalculator size={18} /> },
+          { to: '/learn', label: t('nav_learn'), icon: <IconAcademic size={18} /> },
+          { to: '/profile', label: t('nav_profile'), icon: <IconUser size={18} /> },
         ],
       }
     }
 
     // Default: Borrower (user)
     return {
-      groupTitle: 'FINANCIAL SERVICES',
+      groupTitle: t('nav_group_financial') || 'FINANCIAL SERVICES',
       primary: [
-        { to: '/', label: 'Overview', icon: <IconHome size={18} /> },
-        { to: '/transactions', label: 'My Passbook & Ledger', icon: <IconCoins size={18} /> },
-        { to: '/savings', label: 'Savings Goals', icon: <IconTarget size={18} /> },
-        { to: '/loans', label: 'Loans & Credit Facility', icon: <IconCreditCard size={18} /> },
-        { to: '/community', label: 'SHG Community Hub', icon: <IconUsers size={18} /> },
-        { to: '/schemes', label: 'Government Schemes', icon: <IconLandmark size={18} /> },
-        { to: '/saathi', label: 'Saathi AI Advisor', icon: <IconBot size={18} />, isAi: true },
+        { to: '/', label: t('nav_overview'), icon: <IconHome size={18} /> },
+        { to: '/transactions', label: t('nav_passbook'), icon: <IconCoins size={18} /> },
+        { to: '/savings', label: t('nav_savings'), icon: <IconTarget size={18} /> },
+        { to: '/loans', label: t('nav_loans'), icon: <IconCreditCard size={18} /> },
+        { to: '/community', label: t('nav_community'), icon: <IconUsers size={18} /> },
+        { to: '/schemes', label: t('nav_schemes'), icon: <IconLandmark size={18} /> },
+        { to: '/saathi', label: t('nav_saathi'), icon: <IconBot size={18} />, isAi: true },
       ],
-      secondaryGroupTitle: 'TOOLS & ACADEMY',
+      secondaryGroupTitle: t('nav_group_tools') || 'TOOLS & ACADEMY',
       secondary: [
-        { to: '/reports', label: 'Reports & Certificates', icon: <IconFileText size={18} /> },
-        { to: '/tools', label: 'Financial Calculators', icon: <IconCalculator size={18} /> },
-        { to: '/learn', label: 'Financial Academy', icon: <IconAcademic size={18} /> },
-        { to: '/grievances', label: 'RBI Grievance Cell', icon: <IconShield size={18} /> },
-        { to: '/profile', label: 'Profile & KYC', icon: <IconUser size={18} /> },
+        { to: '/reports', label: t('nav_reports'), icon: <IconFileText size={18} /> },
+        { to: '/tools', label: t('nav_tools'), icon: <IconCalculator size={18} /> },
+        { to: '/learn', label: t('nav_learn'), icon: <IconAcademic size={18} /> },
+        { to: '/grievances', label: t('nav_grievances'), icon: <IconShield size={18} /> },
+        { to: '/profile', label: t('nav_profile'), icon: <IconUser size={18} /> },
       ],
     }
   }
@@ -466,11 +466,11 @@ function DesktopLayout({ children }) {
             <span>FinanceSaathi Platform © {new Date().getFullYear()} • Institutional SHG & Microfinance Network (RBI Fair Practices Compliant)</span>
           </div>
           <div className="legal-links">
-            <Link to="/grievances">Grievance Cell</Link>
+            <Link to="/grievances">{t('grievance_cell') || 'Grievance Cell'}</Link>
             <span className="sep">•</span>
-            <Link to="/privacy">Privacy Policy</Link>
+            <Link to="/privacy">{t('privacy_policy') || 'Privacy Policy'}</Link>
             <span className="sep">•</span>
-            <Link to="/terms">Fair Practice Code</Link>
+            <Link to="/terms">{t('fair_practice_code') || 'Fair Practice Code'}</Link>
           </div>
         </footer>
       </div>
@@ -479,29 +479,29 @@ function DesktopLayout({ children }) {
       <nav className="mobile-bottom-nav">
         <NavLink to="/" end className={({ isActive }) => `mob-tab ${isActive ? 'active' : ''}`}>
           <span className="mob-icon"><IconHome size={20} /></span>
-          <span className="mob-label">Home</span>
+          <span className="mob-label">{t('home') || 'Home'}</span>
         </NavLink>
         <NavLink to="/loans" className={({ isActive }) => `mob-tab ${isActive ? 'active' : ''}`}>
           <span className="mob-icon"><IconCreditCard size={20} /></span>
-          <span className="mob-label">Loans</span>
+          <span className="mob-label">{t('loans') || 'Loans'}</span>
         </NavLink>
         <NavLink to="/transactions" className={({ isActive }) => `mob-tab ${isActive ? 'active' : ''}`}>
           <span className="mob-icon"><IconCoins size={20} /></span>
-          <span className="mob-label">Passbook</span>
+          <span className="mob-label">{t('passbook') || 'Passbook'}</span>
         </NavLink>
         <NavLink to="/saathi" className={({ isActive }) => `mob-tab ${isActive ? 'active' : ''}`}>
           <span className="mob-icon"><IconBot size={20} /></span>
-          <span className="mob-label">Saathi</span>
+          <span className="mob-label">{t('saathi') || 'Saathi'}</span>
         </NavLink>
         <button
           type="button"
           className="mob-tab"
           onClick={() => setMobileDrawerOpen(true)}
           style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
-          aria-label="Open More Menu"
+          aria-label={t('more') || 'Open More Menu'}
         >
           <span className="mob-icon"><IconMenu size={20} /></span>
-          <span className="mob-label">More</span>
+          <span className="mob-label">{t('more') || 'More'}</span>
         </button>
       </nav>
 
@@ -511,11 +511,11 @@ function DesktopLayout({ children }) {
           <button
             className="floating-saathi-trigger"
             onClick={() => setFloatingChatOpen(!floatingChatOpen)}
-            title="Ask Saathi AI"
-            aria-label="Ask Saathi AI Assistant"
+            title={t('askSaathi') || 'Ask Saathi AI'}
+            aria-label={t('askSaathi') || 'Ask Saathi AI Assistant'}
           >
             <span className="floating-robot"><IconBot size={18} /></span>
-            <span className="floating-label">Ask Saathi</span>
+            <span className="floating-label">{t('askSaathi') || 'Ask Saathi'}</span>
             <span className="floating-dot" />
           </button>
 

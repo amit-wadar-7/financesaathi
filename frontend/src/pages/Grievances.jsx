@@ -116,9 +116,9 @@ export default function Grievances() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-primary, #059669)', fontWeight: 600, fontSize: '0.85rem' }}>
               <IconShield size={18} />
-              <span>RBI FAIR PRACTICES CODE • GRIEVANCE REDRESSAL MECHANISM</span>
+              <span>{t("rbiFairPracticesCode")}</span>
             </div>
-            <h2 style={{ margin: '0.35rem 0' }}>Internal Ombudsman & Grievance Cell</h2>
+            <h2 style={{ margin: '0.35rem 0' }}>{t("internalOmbudsmanCell")}</h2>
             <p className="muted" style={{ maxWidth: '680px', margin: 0 }}>
               Under the Reserve Bank of India (RBI) Microfinance Loans Directions 2022, every borrower has an institutional right to fair dispute redressal. All complaints are time-stamped and resolved within statutory 30-day turnaround.
             </p>
@@ -229,7 +229,7 @@ export default function Grievances() {
                 </div>
 
                 <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: 'var(--color-bg-alt, #f8fafc)', borderRadius: 'var(--radius-sm, 6px)', fontSize: '0.92rem' }}>
-                  <strong>Description:</strong>
+                  <strong>{t("descriptionLabel")}</strong>
                   <p style={{ margin: '0.35rem 0 0', whiteSpace: 'pre-wrap' }}>{g.description}</p>
                 </div>
 
@@ -237,7 +237,7 @@ export default function Grievances() {
                   <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: 'rgba(16, 185, 129, 0.08)', borderLeft: '3px solid #10b981', borderRadius: 'var(--radius-sm, 6px)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#059669', fontWeight: 600, fontSize: '0.85rem' }}>
                       <IconCheckCircle size={15} />
-                      <span>OFFICIAL RESOLUTION • GRIEVANCE CELL</span>
+                      <span>{t("officialResolutionCell")}</span>
                       {g.resolved_at && (
                         <span className="muted" style={{ fontWeight: 400, marginLeft: 'auto' }}>
                           Resolved on {new Date(g.resolved_at).toLocaleDateString()}
@@ -260,7 +260,7 @@ export default function Grievances() {
         <div className="modal-overlay" onClick={() => setShowLodgeModal(false)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '540px' }}>
             <div className="modal-header">
-              <h3>Lodge a Formal Grievance</h3>
+              <h3>{t("lodgeFormalGrievance")}</h3>
               <button className="icon-btn" onClick={() => setShowLodgeModal(false)}>✕</button>
             </div>
             <form onSubmit={handleLodge}>
@@ -268,7 +268,7 @@ export default function Grievances() {
                 {formErr && <div className="alert danger">{formErr}</div>}
 
                 <div className="form-group">
-                  <label className="label">Grievance Category</label>
+                  <label className="label">{t("grievanceCategory")}</label>
                   <select
                     className="input"
                     value={form.category}
@@ -281,7 +281,7 @@ export default function Grievances() {
                 </div>
 
                 <div className="form-group">
-                  <label className="label">Subject / Issue Summary</label>
+                  <label className="label">{t("subjectIssueSummary")}</label>
                   <input
                     className="input"
                     placeholder="e.g. Loan disbursement delay beyond standard TAT"
@@ -292,7 +292,7 @@ export default function Grievances() {
                 </div>
 
                 <div className="form-group">
-                  <label className="label">Detailed Explanation & Transaction / Loan Ref</label>
+                  <label className="label">{t("detailedExplanationRef")}</label>
                   <textarea
                     className="input"
                     rows={4}
@@ -334,31 +334,31 @@ export default function Grievances() {
                 {resolveErr && <div className="alert danger">{resolveErr}</div>}
 
                 <div>
-                  <div className="muted small">Subject:</div>
+                  <div className="muted small">{t("subjectLabel")}</div>
                   <strong>{resolveTicket.subject}</strong>
                 </div>
 
                 <div>
-                  <div className="muted small">Borrower Description:</div>
+                  <div className="muted small">{t("borrowerDescription")}</div>
                   <div style={{ background: 'var(--color-bg-alt, #f8fafc)', padding: '0.5rem', borderRadius: '4px', fontSize: '0.88rem' }}>
                     {resolveTicket.description}
                   </div>
                 </div>
 
                 <div className="form-group">
-                  <label className="label">Resolution Status</label>
+                  <label className="label">{t("resolutionStatus")}</label>
                   <select
                     className="input"
                     value={resolveForm.status}
                     onChange={(e) => setResolveForm({ ...resolveForm, status: e.target.value })}
                   >
-                    <option value="resolved">Resolved (Action completed)</option>
+                    <option value="resolved">{t("resolvedCompleted")}</option>
                     <option value="in_progress">In Progress (Under investigation)</option>
                   </select>
                 </div>
 
                 <div className="form-group">
-                  <label className="label">Official Resolution Remarks</label>
+                  <label className="label">{t("officialResolutionRemarks")}</label>
                   <textarea
                     className="input"
                     rows={4}

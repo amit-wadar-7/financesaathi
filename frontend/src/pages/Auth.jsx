@@ -27,7 +27,7 @@ function Shell({ title, children }) {
         {children}
 
         <div style={{ marginTop: '1.5rem', paddingTop: '0.8rem', borderTop: '1px solid var(--border-color, #f1f5f9)', textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted, #64748b)', display: 'flex', justifyContent: 'center', gap: '0.8rem' }}>
-          <Link to="/privacy" style={{ color: 'var(--text-muted, #64748b)' }}>Privacy Policy</Link>
+          <Link to="/privacy" style={{ color: 'var(--text-muted, #64748b)' }}>{t("privacy")}</Link>
           <span>•</span>
           <Link to="/terms" style={{ color: 'var(--text-muted, #64748b)' }}>Terms & Fair Practice</Link>
         </div>
@@ -95,49 +95,51 @@ export function Login() {
           {busy ? 'Signing In…' : t('login')}
         </button>
 
-        <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color, #e2e8f0)' }}>
-          <div className="muted small" style={{ marginBottom: '0.6rem', textAlign: 'center', fontWeight: 600 }}>
-            {lang === 'hi' ? 'डेमो त्वरित लॉगिन (1-क्लिक):' : lang === 'mr' ? 'डेमो त्वरित लॉगिन (1-क्लिक):' : 'Demo Quick Login (1-Click):'}
+        {import.meta.env.VITE_DEMO_MODE === 'true' && (
+          <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color, #e2e8f0)' }}>
+            <div className="muted small" style={{ marginBottom: '0.6rem', textAlign: 'center', fontWeight: 600 }}>
+              {lang === 'hi' ? 'डेमो त्वरित लॉगिन (1-क्लिक):' : lang === 'mr' ? 'डेमो त्वरित लॉगिन (1-क्लिक):' : 'Demo Quick Login (1-Click):'}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+              <button
+                type="button"
+                className="btn small ghost"
+                disabled={busy}
+                onClick={() => quickLogin('borrower@financesaathi.in', 'Borrower#2025!')}
+                style={{ fontSize: '0.8rem', justifyContent: 'center', padding: '0.45rem 0.5rem' }}
+              >
+                👩‍🌾 {lang === 'hi' ? 'उधारकर्ता (Asha)' : lang === 'mr' ? 'कर्जदार (Asha)' : 'Borrower (Asha)'}
+              </button>
+              <button
+                type="button"
+                className="btn small ghost"
+                disabled={busy}
+                onClick={() => quickLogin('leader@financesaathi.in', 'Leader#2025!')}
+                style={{ fontSize: '0.8rem', justifyContent: 'center', padding: '0.45rem 0.5rem' }}
+              >
+                🤝 {lang === 'hi' ? 'एसएचजी लीडर' : lang === 'mr' ? 'बचत गट प्रमुख' : 'SHG Leader'}
+              </button>
+              <button
+                type="button"
+                className="btn small ghost"
+                disabled={busy}
+                onClick={() => quickLogin('officer@financesaathi.in', 'Officer#2025!')}
+                style={{ fontSize: '0.8rem', justifyContent: 'center', padding: '0.45rem 0.5rem' }}
+              >
+                📋 {lang === 'hi' ? 'क्रेडिट ऑफिसर' : lang === 'mr' ? 'क्रेडिट अधिकारी' : 'Credit Officer'}
+              </button>
+              <button
+                type="button"
+                className="btn small ghost"
+                disabled={busy}
+                onClick={() => quickLogin('admin@financesaathi.in', 'Admin#2025!')}
+                style={{ fontSize: '0.8rem', justifyContent: 'center', padding: '0.45rem 0.5rem' }}
+              >
+                ⚙️ {lang === 'hi' ? 'व्यवस्थापक (Admin)' : lang === 'mr' ? 'प्रशासक (Admin)' : 'Administrator'}
+              </button>
+            </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-            <button
-              type="button"
-              className="btn small ghost"
-              disabled={busy}
-              onClick={() => quickLogin('borrower@financesaathi.in', 'Borrower#2025!')}
-              style={{ fontSize: '0.8rem', justifyContent: 'center', padding: '0.45rem 0.5rem' }}
-            >
-              👩‍🌾 {lang === 'hi' ? 'उधारकर्ता (Asha)' : lang === 'mr' ? 'कर्जदार (Asha)' : 'Borrower (Asha)'}
-            </button>
-            <button
-              type="button"
-              className="btn small ghost"
-              disabled={busy}
-              onClick={() => quickLogin('leader@financesaathi.in', 'Leader#2025!')}
-              style={{ fontSize: '0.8rem', justifyContent: 'center', padding: '0.45rem 0.5rem' }}
-            >
-              🤝 {lang === 'hi' ? 'एसएचजी लीडर' : lang === 'mr' ? 'बचत गट प्रमुख' : 'SHG Leader'}
-            </button>
-            <button
-              type="button"
-              className="btn small ghost"
-              disabled={busy}
-              onClick={() => quickLogin('officer@financesaathi.in', 'Officer#2025!')}
-              style={{ fontSize: '0.8rem', justifyContent: 'center', padding: '0.45rem 0.5rem' }}
-            >
-              📋 {lang === 'hi' ? 'क्रेडिट ऑफिसर' : lang === 'mr' ? 'क्रेडिट अधिकारी' : 'Credit Officer'}
-            </button>
-            <button
-              type="button"
-              className="btn small ghost"
-              disabled={busy}
-              onClick={() => quickLogin('admin@financesaathi.in', 'Admin#2025!')}
-              style={{ fontSize: '0.8rem', justifyContent: 'center', padding: '0.45rem 0.5rem' }}
-            >
-              ⚙️ {lang === 'hi' ? 'व्यवस्थापक (Admin)' : lang === 'mr' ? 'प्रशासक (Admin)' : 'Administrator'}
-            </button>
-          </div>
-        </div>
+        )}
       </form>
 
       <p style={{ marginTop: '1rem', textAlign: 'center' }}>
@@ -206,7 +208,7 @@ export function Register() {
               style={{ marginTop: '0.2rem' }}
             />
             <span>
-              I consent to the collection and processing of my financial data in accordance with the <strong>Digital Personal Data Protection (DPDP) Act, 2023</strong> and the platform <Link to="/privacy">Privacy Policy</Link>.
+              I consent to the collection and processing of my financial data in accordance with the <strong>Digital Personal Data Protection (DPDP) Act, 2023</strong> and the platform <Link to="/privacy">{t("privacy")}</Link>.
             </span>
           </label>
         </div>

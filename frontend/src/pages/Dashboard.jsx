@@ -41,6 +41,7 @@ import {
    ========================================================================= */
 function AdminDashboardView({ data, reload }) {
   const toast = useToast()
+  const { t, lang } = useLang()
   const users = useLoad(() => api('/admin/users'))
   const audit = useLoad(() => api('/admin/audit?limit=15'))
   const [msg, setMsg] = useState({ kind: 'error', text: '' })
@@ -95,9 +96,9 @@ function AdminDashboardView({ data, reload }) {
       <div className="page-header-row">
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span className="badge approved" style={{ fontWeight: 700 }}>SYSTEM ADMINISTRATOR CONSOLE</span>
+            <span className="badge approved" style={{ fontWeight: 700 }}>{t('sysAdminConsole')}</span>
           </div>
-          <h2>Enterprise Operations & Governance Hub</h2>
+          <h2>{t('enterpriseOpsHub')}</h2>
           <p className="page-subtitle">
             Centralized platform oversight, user role-based access control, statutory audit trails, and automated batch cron engines
           </p>
@@ -110,7 +111,7 @@ function AdminDashboardView({ data, reload }) {
             disabled={runningReminders}
             style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
           >
-            <IconClock size={16} /> {runningReminders ? 'Dispatching Reminders…' : 'Run EMI Reminders Cron'}
+            <IconClock size={16} /> {runningReminders ? 'Dispatching Reminders…' : t('runEmiRemindersCron')}
           </button>
         </div>
       </div>
@@ -120,22 +121,22 @@ function AdminDashboardView({ data, reload }) {
       {/* Admin Platform KPIs */}
       <div className="grid" style={{ marginBottom: '1.25rem' }}>
         <Stat
-          label="Total Registered Users"
+          label={t("totalRegisteredUsers")}
           value={data?.total_users || users.data?.length || 0}
           sub="Platform user directory"
         />
         <Stat
-          label="Pending Underwriting"
+          label={t("pendingUnderwriting")}
           value={data?.pending_review || loansByStatus.pending || 0}
           sub="Awaiting officer decision"
         />
         <Stat
-          label="Active Performing Loans"
+          label={t("activePerformingLoans")}
           value={loansByStatus.approved || 0}
           sub="Capital disbursed & performing"
         />
         <Stat
-          label="Overdue Delinquencies"
+          label={t("overdueDelinquencies")}
           value={data?.overdue_loans || 0}
           sub="Requires early warning action"
         />
@@ -146,8 +147,8 @@ function AdminDashboardView({ data, reload }) {
         <div className="card">
           <div className="row between" style={{ alignItems: 'center', marginBottom: '0.85rem' }}>
             <div>
-              <h3 style={{ margin: 0, fontSize: '1.05rem' }}>User Directory & Privilege Management</h3>
-              <span className="muted small">Promote or assign permissions across roles</span>
+              <h3 style={{ margin: 0, fontSize: '1.05rem' }}>{t("userDirectoryPrivilege")}</h3>
+              <span className="muted small">{t("promoteAssignPermissions")}</span>
             </div>
             <input
               placeholder="Search user name, email..."
@@ -164,10 +165,10 @@ function AdminDashboardView({ data, reload }) {
               <table>
                 <thead>
                   <tr>
-                    <th>User ID</th>
-                    <th>User Name</th>
-                    <th>Email</th>
-                    <th>Assigned Role</th>
+                    <th>{t("userId")}</th>
+                    <th>{t("userName")}</th>
+                    <th>{t("email")}</th>
+                    <th>{t("assignedRole")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -191,10 +192,10 @@ function AdminDashboardView({ data, reload }) {
                             background: u.role === 'admin' ? '#f1f5f9' : u.role === 'officer' ? '#eff6ff' : '#ffffff',
                           }}
                         >
-                          <option value="user">USER (Borrower)</option>
-                          <option value="officer">OFFICER (Credit Underwriter)</option>
-                          <option value="shg_leader">SHG_LEADER (Group Head)</option>
-                          <option value="admin">ADMIN (Superuser)</option>
+                          <option value="user">{t("roleUserBorrower")}</option>
+                          <option value="officer">{t("roleOfficerCredit")}</option>
+                          <option value="shg_leader">{t("roleShgLeader")}</option>
+                          <option value="admin">{t("roleAdminSuperuser")}</option>
                         </select>
                       </td>
                     </tr>
@@ -217,8 +218,8 @@ function AdminDashboardView({ data, reload }) {
           <div className="card">
             <div className="row between" style={{ alignItems: 'center', marginBottom: '0.85rem' }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '1.05rem' }}>Statutory Audit Log</h3>
-                <span className="muted small">Real-time DPDP Act 2023 compliance record</span>
+                <h3 style={{ margin: 0, fontSize: '1.05rem' }}>{t("statutoryAuditLog")}</h3>
+                <span className="muted small">{t("dpdpCompliance")}</span>
               </div>
               <button type="button" className="btn small ghost" onClick={() => audit.reload()}>
                 Refresh
@@ -232,10 +233,10 @@ function AdminDashboardView({ data, reload }) {
                 <table>
                   <thead>
                     <tr>
-                      <th>Time</th>
-                      <th>Action</th>
-                      <th>Entity</th>
-                      <th>Operation Details</th>
+                      <th>{t("timeLabel")}</th>
+                      <th>{t("actionLabel")}</th>
+                      <th>{t("entityLabel")}</th>
+                      <th>{t("operationDetails")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -270,7 +271,7 @@ function AdminDashboardView({ data, reload }) {
 
           {/* Quick Admin Actions Card */}
           <div className="card">
-            <h4 style={{ margin: '0 0 0.5rem 0' }}>Superuser Operations</h4>
+            <h4 style={{ margin: '0 0 0.5rem 0' }}>{t("superuserOps")}</h4>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <Link to="/loans" className="btn small ghost">
                 Review All Loans ({loansByStatus.pending || 0} Pending)
@@ -293,6 +294,7 @@ function AdminDashboardView({ data, reload }) {
    2. LOAN OFFICER DASHBOARD WORKSPACE
    ========================================================================= */
 function OfficerDashboardView({ data, reload }) {
+  const { t, lang } = useLang()
   const pendingLoans = useLoad(() => api('/loans?status=pending'))
   const atRisk = useLoad(() => api('/officer/at-risk'))
 
@@ -305,9 +307,9 @@ function OfficerDashboardView({ data, reload }) {
       <div className="page-header-row">
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span className="badge pending" style={{ fontWeight: 700 }}>CREDIT UNDERWRITING TERMINAL</span>
+            <span className="badge pending" style={{ fontWeight: 700 }}>{t('creditUnderwritingTerminal')}</span>
           </div>
-          <h2>Loan Officer Sanction & Risk Workbench</h2>
+          <h2>{t('officerWorkbench')}</h2>
           <p className="page-subtitle">
             Statutory credit appraisal, AI affordability evaluation, KYC authentication, and Portfolio-at-Risk (PAR) mitigation
           </p>
@@ -326,22 +328,22 @@ function OfficerDashboardView({ data, reload }) {
       {/* Officer KPIs */}
       <div className="grid" style={{ marginBottom: '1.25rem' }}>
         <Stat
-          label="Underwriting Queue"
+          label={t("underwritingQueue")}
           value={pendingList.length}
           sub="Awaiting sanction decision"
         />
         <Stat
-          label="Approved Active Loans"
+          label={t("approvedActiveLoans")}
           value={data?.loans_by_status?.approved || 0}
           sub="Performing assets"
         />
         <Stat
-          label="Overdue Delinquencies"
+          label={t("overdueDelinquencies")}
           value={data?.overdue_loans || 0}
           sub="Requires borrower contact"
         />
         <Stat
-          label="At-Risk Credit Flagged"
+          label={t("atRiskCreditFlagged")}
           value={atRiskList.length}
           sub="Early warning triggers"
         />
@@ -352,8 +354,8 @@ function OfficerDashboardView({ data, reload }) {
         <div className="card">
           <div className="row between" style={{ alignItems: 'center', marginBottom: '0.85rem' }}>
             <div>
-              <h3 style={{ margin: 0, fontSize: '1.05rem' }}>Pending Applications Awaiting Sanction</h3>
-              <span className="muted small">Review AI scores, authenticate KYC documents, and approve</span>
+              <h3 style={{ margin: 0, fontSize: '1.05rem' }}>{t("pendingApplicationsAwaiting")}</h3>
+              <span className="muted small">{t("reviewAiScoresAuth")}</span>
             </div>
             <span className="badge pending">{pendingList.length} In Queue</span>
           </div>
@@ -365,11 +367,11 @@ function OfficerDashboardView({ data, reload }) {
               <table>
                 <thead>
                   <tr>
-                    <th>Ref #</th>
-                    <th>Borrower</th>
-                    <th>Principal</th>
+                    <th>{t("refNum")}</th>
+                    <th>{t("borrower")}</th>
+                    <th>{t("principal")}</th>
                     <th>AI Score</th>
-                    <th>Action</th>
+                    <th>{t("actionLabel")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -408,11 +410,11 @@ function OfficerDashboardView({ data, reload }) {
         <div className="card">
           <div className="row between" style={{ alignItems: 'center', marginBottom: '0.85rem' }}>
             <div>
-              <h3 style={{ margin: 0, fontSize: '1.05rem' }}>Portfolio at Risk (PAR) Early Warning</h3>
-              <span className="muted small">Automated ML delinquency detection</span>
+              <h3 style={{ margin: 0, fontSize: '1.05rem' }}>{t("parEarlyWarning")}</h3>
+              <span className="muted small">{t("automatedMlDetection")}</span>
             </div>
             <Link to="/at-risk" className="small" style={{ fontWeight: 600 }}>
-              Full Risk Radar →
+              {t('fullRiskRadar')} →
             </Link>
           </div>
 
@@ -423,11 +425,11 @@ function OfficerDashboardView({ data, reload }) {
               <table>
                 <thead>
                   <tr>
-                    <th>Ref</th>
-                    <th>Borrower</th>
-                    <th>Overdue Count</th>
-                    <th>Risk Rationale</th>
-                    <th>Action</th>
+                    <th>{t("refNum")}</th>
+                    <th>{t("borrower")}</th>
+                    <th>{t("overdueCount")}</th>
+                    <th>{t("riskRationale")}</th>
+                    <th>{t("actionLabel")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -474,6 +476,7 @@ function OfficerDashboardView({ data, reload }) {
    ========================================================================= */
 function SHGLeaderDashboardView({ user, refresh }) {
   const toast = useToast()
+  const { t, lang } = useLang()
   const [shgSummaryData, setShgSummaryData] = useState(null)
   const [loadingShg, setLoadingShg] = useState(true)
   const [showCreateShg, setShowCreateShg] = useState(false)
@@ -555,9 +558,9 @@ function SHGLeaderDashboardView({ user, refresh }) {
       <div className="page-header-row">
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span className="badge approved" style={{ fontWeight: 700 }}>SHG LEADER FEDERATION HUB</span>
+            <span className="badge approved" style={{ fontWeight: 700 }}>{t('shgLeaderFederationHub')}</span>
           </div>
-          <h2>Self-Help Group (SHG) Governance Desk</h2>
+          <h2>{t('shgGovernanceDesk')}</h2>
           <p className="page-subtitle">
             Joint-liability member roll, NABARD SHG-Bank Linkage coordination, and peer-guarantee microcredit voting
           </p>
@@ -570,7 +573,7 @@ function SHGLeaderDashboardView({ user, refresh }) {
               onClick={() => setShowAddMember(true)}
               style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
             >
-              <IconPlus size={16} /> Enroll New Member
+              <IconPlus size={16} /> {t("enrollNewMember")}
             </button>
           ) : (
             <button
@@ -579,7 +582,7 @@ function SHGLeaderDashboardView({ user, refresh }) {
               onClick={() => setShowCreateShg(true)}
               style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
             >
-              <IconPlus size={16} /> Establish SHG Group
+              <IconPlus size={16} /> {t("establishShgGroup")}
             </button>
           )}
         </div>
@@ -593,22 +596,22 @@ function SHGLeaderDashboardView({ user, refresh }) {
           {/* Group Overview Stats */}
           <div className="grid" style={{ marginBottom: '1.25rem' }}>
             <Stat
-              label="SHG Group Name"
+              label={t("shgGroupName")}
               value={shgSummaryData.name}
               sub={`Village: ${shgSummaryData.village}`}
             />
             <Stat
-              label="Enrolled Group Members"
+              label={t("enrolledGroupMembers")}
               value={shgSummaryData.members?.length || 0}
               sub="Joint liability members"
             />
             <Stat
-              label="Collective Active Loans"
+              label={t("collectiveActiveLoans")}
               value={shgSummaryData.group_loans || 0}
               sub="Peer guaranteed facilities"
             />
             <Stat
-              label="Group Outstanding Capital"
+              label={t("groupOutstandingCapital")}
               value={money(shgSummaryData.outstanding || 0)}
               sub={`${shgSummaryData.overdue_installments || 0} Overdue instalments`}
             />
@@ -619,8 +622,8 @@ function SHGLeaderDashboardView({ user, refresh }) {
             <div className="card">
               <div className="row between" style={{ alignItems: 'center', marginBottom: '0.85rem' }}>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '1.05rem' }}>Registered Member Roster</h3>
-                  <span className="muted small">Self-Help Group joint-liability members</span>
+                  <h3 style={{ margin: 0, fontSize: '1.05rem' }}>{t("registeredMemberRoster")}</h3>
+                  <span className="muted small">{t("shgJointLiabilityMembers")}</span>
                 </div>
                 <button
                   type="button"
@@ -635,9 +638,9 @@ function SHGLeaderDashboardView({ user, refresh }) {
                 <table>
                   <thead>
                     <tr>
-                      <th>Member ID</th>
-                      <th>Legal Name</th>
-                      <th>Affiliation Status</th>
+                      <th>{t("memberId")}</th>
+                      <th>{t("legalName")}</th>
+                      <th>{t("status")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -646,7 +649,7 @@ function SHGLeaderDashboardView({ user, refresh }) {
                         <td style={{ fontWeight: 600 }}>#{m.id}</td>
                         <td style={{ fontWeight: 600, color: 'var(--slate-900)' }}>{m.name}</td>
                         <td>
-                          <span className="badge approved">Active Member</span>
+                          <span className="badge approved">{t("activeMember")}</span>
                         </td>
                       </tr>
                     ))}
@@ -753,7 +756,7 @@ function SHGLeaderDashboardView({ user, refresh }) {
             </p>
             <form onSubmit={handleAddMember}>
               <div className="field">
-                <span>Member Email Address</span>
+                <span>{t("memberEmailAddress")}</span>
                 <input
                   type="email"
                   required
@@ -856,6 +859,8 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
   const upcomingRepayments = data?.upcoming_repayments || []
   const monthlyIncome = data?.monthly_income || user?.monthly_income || 0
   const monthlyExpenses = data?.monthly_expenses || user?.monthly_expenses || 0
+  const incomeNum = Number(monthlyIncome || 0)
+  const expensesNum = Number(monthlyExpenses || 0)
 
   const cashflowHistory = data?.cashflow_history || []
   const kpiData = data?.kpi_metrics || {
@@ -1066,7 +1071,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
           <span className={`badge ${user?.kyc_status === 'verified' ? 'approved' : 'pending'}`} style={{ fontWeight: 600 }}>
-            {user?.kyc_status === 'verified' ? 'KYC Verified' : 'KYC Pending'}
+            {user?.kyc_status === 'verified' ? t('kycVerified') : t('kycPending')}
           </span>
           {shgName && (
             <span className="badge neutral" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0' }}>
@@ -1080,7 +1085,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
       <div className="balance-hero-card">
         <div className="balance-hero-header">
           <div className="balance-title-wrap">
-            <span>Available balance</span>
+            <span>{t("availableBalance")}</span>
             <button
               type="button"
               className="balance-eye-btn"
@@ -1157,7 +1162,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
       {/* 3. Three KPI Metric Cards Row */}
       <div className="kpi-cards-grid">
         <div className="kpi-metric-card">
-          <div className="kpi-metric-title">Income this month</div>
+          <div className="kpi-metric-title">{t("incomeThisMonth")}</div>
           <div className="kpi-metric-bottom">
             <div className="kpi-metric-value">
               ₹{Number(kpiData.income_this_month).toLocaleString('en-IN')}
@@ -1169,7 +1174,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
         </div>
 
         <div className="kpi-metric-card">
-          <div className="kpi-metric-title">Expenses</div>
+          <div className="kpi-metric-title">{t("expenses")}</div>
           <div className="kpi-metric-bottom">
             <div className="kpi-metric-value">
               ₹{Number(kpiData.expenses_this_month).toLocaleString('en-IN')}
@@ -1181,7 +1186,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
         </div>
 
         <div className="kpi-metric-card">
-          <div className="kpi-metric-title">Savings Surplus</div>
+          <div className="kpi-metric-title">{t("savingsSurplus")}</div>
           <div className="kpi-metric-bottom">
             <div className="kpi-metric-value">
               ₹{Number(kpiData.savings_this_month).toLocaleString('en-IN')}
@@ -1199,17 +1204,17 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
         <div className="dashboard-card-box">
           <div className="chart-card-header">
             <div>
-              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>Income vs Expenses</h3>
-              <p className="muted small" style={{ marginTop: '2px' }}>Last 6 months cashflow trend</p>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>{t("incomeVsExpenses")}</h3>
+              <p className="muted small" style={{ marginTop: '2px' }}>{t("last6MonthsTrend")}</p>
             </div>
             <div className="chart-legend-row">
               <div className="legend-item">
                 <span className="legend-dot income" />
-                <span>Income</span>
+                <span>{t("income")}</span>
               </div>
               <div className="legend-item">
                 <span className="legend-dot expense" />
-                <span>Expenses</span>
+                <span>{t("expenses")}</span>
               </div>
             </div>
           </div>
@@ -1249,14 +1254,14 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
           </div>
 
           <div className="chart-insight-footer">
-            <span>Average monthly surplus: <b>₹{Number(kpiData.savings_this_month).toLocaleString('en-IN')}</b></span>
+            <span>{t("avgMonthlySurplus")} <b>₹{Number(kpiData.savings_this_month).toLocaleString('en-IN')}</b></span>
             {incomeNum > 0 ? (
               <span style={{ color: 'var(--emerald-600)', fontWeight: 600 }}>
-                Savings Rate: {Math.max(0, Math.round(((incomeNum - expensesNum) / incomeNum) * 100))}%
+                {t('savingsRate')}: {Math.max(0, Math.round(((incomeNum - expensesNum) / incomeNum) * 100))}%
               </span>
             ) : (
               <span className="muted" style={{ fontWeight: 500 }}>
-                Savings Rate: —
+                {t('savingsRate')}: —
               </span>
             )}
           </div>
@@ -1346,13 +1351,13 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
                 <IconBot size={20} />
               </div>
               <div>
-                <h4 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 700 }}>Saathi AI</h4>
-                <p className="muted small" style={{ margin: 0 }}>Your rural financial companion</p>
+                <h4 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 700 }}>{t("saathiAi")}</h4>
+                <p className="muted small" style={{ margin: 0 }}>{t("ruralFinancialCompanion")}</p>
               </div>
             </div>
 
             <p style={{ fontSize: '0.82rem', color: 'var(--slate-600)', margin: '0.2rem 0' }}>
-              Ask in Marathi, Hindi, or English about your loan options, savings tip, or govt schemes.
+              {t("saathiCardDesc")}
             </p>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
@@ -1360,13 +1365,13 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
                 className="saathi-pill-prompt"
                 onClick={() => navigate('/saathi?prompt=' + encodeURIComponent('Can I afford a Rs 25,000 agricultural loan?'))}
               >
-                Can I afford a ₹25,000 loan?
+                {t("saathiPromptPill1")}
               </span>
               <span
                 className="saathi-pill-prompt"
                 onClick={() => navigate('/saathi?prompt=' + encodeURIComponent('Emergency fund calculation'))}
               >
-                Emergency fund buffer
+                {t("saathiPromptPill2")}
               </span>
             </div>
 
@@ -1388,7 +1393,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
         {/* Card 1: Upcoming Repayments */}
         <div className="dashboard-card-box">
           <div className="row between" style={{ alignItems: 'center', marginBottom: '0.85rem' }}>
-            <h3 style={{ margin: 0, fontSize: '1.02rem', fontWeight: 700 }}>Upcoming Repayments</h3>
+            <h3 style={{ margin: 0, fontSize: '1.02rem', fontWeight: 700 }}>{t("upcomingRepayments")}</h3>
             <span className="badge neutral small">{upcomingRepayments.length} due</span>
           </div>
 
@@ -1417,7 +1422,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
 
             {upcomingRepayments.length === 0 && (
               <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
-                <p className="muted small">All active loan repayments are up to date! 🎉</p>
+                <p className="muted small">{t("allRepaymentsUpToDate")} 🎉</p>
               </div>
             )}
           </div>
@@ -1426,9 +1431,9 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
         {/* Card 2: Recent Transactions (Passbook) */}
         <div className="dashboard-card-box">
           <div className="row between" style={{ alignItems: 'center', marginBottom: '0.85rem' }}>
-            <h3 style={{ margin: 0, fontSize: '1.02rem', fontWeight: 700 }}>Recent Transactions</h3>
+            <h3 style={{ margin: 0, fontSize: '1.02rem', fontWeight: 700 }}>{t("recentTransactions")}</h3>
             <Link to="/transactions" className="small" style={{ fontWeight: 600 }}>
-              View all →
+              {t('viewAll')} →
             </Link>
           </div>
 
@@ -1515,7 +1520,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
 
             <form onSubmit={handleAddIncome}>
               <div className="field">
-                <span>Income Amount (Rs)</span>
+                <span>{t("incomeAmount")}</span>
                 <input
                   type="number"
                   min="10"
@@ -1527,7 +1532,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
               </div>
 
               <div className="field">
-                <span>Source Description / Title</span>
+                <span>{t("sourceDesc")}</span>
                 <input
                   required
                   placeholder="e.g. Milk Sales to Co-operative Dairy"
@@ -1537,23 +1542,23 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
               </div>
 
               <div className="field">
-                <span>Category</span>
+                <span>{t("category")}</span>
                 <select value={incomeCat} onChange={(e) => setIncomeCat(e.target.value)}>
-                  <option value="milk_sales">Dairy & Milk Sales</option>
-                  <option value="crop_sale">Mandi Crop & Vegetable Sales</option>
-                  <option value="wages">Daily Labour / Farm Wages</option>
-                  <option value="tailoring">Stitching & Garment Orders</option>
-                  <option value="subsidy">Government DBT Subsidy</option>
-                  <option value="other">Other Household Inflow</option>
+                  <option value="milk_sales">{t("catDairySales")}</option>
+                  <option value="crop_sale">{t("catMandiSales")}</option>
+                  <option value="wages">{t("catLabourWages")}</option>
+                  <option value="tailoring">{t("catStitchingOrders")}</option>
+                  <option value="subsidy">{t("catDbtSubsidy")}</option>
+                  <option value="other">{t("catOtherInflow")}</option>
                 </select>
               </div>
 
               <div className="field">
-                <span>Received Via</span>
+                <span>{t("receivedVia")}</span>
                 <select value={incomeMode} onChange={(e) => setIncomeMode(e.target.value)}>
-                  <option value="UPI">UPI (Google Pay / PhonePe)</option>
-                  <option value="Cash">Cash at Mandi / Doorstep</option>
-                  <option value="Bank Transfer">Direct Bank Transfer (NEFT/IMPS)</option>
+                  <option value="UPI">{t("viaUpi")}</option>
+                  <option value="Cash">{t("viaCashMandi")}</option>
+                  <option value="Bank Transfer">{t("viaBankTransfer")}</option>
                 </select>
               </div>
 
@@ -1584,7 +1589,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
 
             <form onSubmit={handleAddExpense}>
               <div className="field">
-                <span>Expense Amount (Rs)</span>
+                <span>{t("expenseAmount")}</span>
                 <input
                   type="number"
                   min="1"
@@ -1596,7 +1601,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
               </div>
 
               <div className="field">
-                <span>Spent On / Item</span>
+                <span>{t("spentOnItem")}</span>
                 <input
                   required
                   placeholder="e.g. Groceries & Provisions"
@@ -1606,24 +1611,24 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
               </div>
 
               <div className="field">
-                <span>Category</span>
+                <span>{t("category")}</span>
                 <select value={expenseCat} onChange={(e) => setExpenseCat(e.target.value)}>
-                  <option value="groceries">Groceries & Household Ration</option>
-                  <option value="fertilizer">Fertilizer, Seeds & Agri Inputs</option>
-                  <option value="materials">Fabric, Threads & Stock Inventory</option>
-                  <option value="medical">Health & Pharmacy</option>
-                  <option value="education">School Fees & Books</option>
-                  <option value="bills">Electricity & Mobile Recharge</option>
-                  <option value="other">Miscellaneous</option>
+                  <option value="groceries">{t("catGroceries")}</option>
+                  <option value="fertilizer">{t("catAgriInputs")}</option>
+                  <option value="materials">{t("catFabricInventory")}</option>
+                  <option value="medical">{t("catHealthPharmacy")}</option>
+                  <option value="education">{t("catSchoolFees")}</option>
+                  <option value="bills">{t("catElectricityMobile")}</option>
+                  <option value="other">{t("catMisc")}</option>
                 </select>
               </div>
 
               <div className="field">
-                <span>Paid Via</span>
+                <span>{t("paidVia")}</span>
                 <select value={expenseMode} onChange={(e) => setExpenseMode(e.target.value)}>
-                  <option value="UPI">UPI (Google Pay / PhonePe)</option>
-                  <option value="Cash">Cash</option>
-                  <option value="Bank Transfer">Bank Debit</option>
+                  <option value="UPI">{t("viaUpi")}</option>
+                  <option value="Cash">{t("viaCash")}</option>
+                  <option value="Bank Transfer">{t("viaBankDebit")}</option>
                 </select>
               </div>
 
@@ -1654,7 +1659,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
 
             <form onSubmit={handleTransfer}>
               <div className="field">
-                <span>Target Savings Goal</span>
+                <span>{t("targetSavingsGoal")}</span>
                 <select
                   value={transferGoalId || topGoal?.id}
                   onChange={(e) => setTransferGoalId(e.target.value)}
@@ -1668,7 +1673,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
               </div>
 
               <div className="field">
-                <span>Transfer Amount (Rs)</span>
+                <span>{t("transferAmount")}</span>
                 <input
                   type="number"
                   min="10"
@@ -1681,7 +1686,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
               </div>
 
               <div className="field">
-                <span>Optional Note</span>
+                <span>{t("optionalNote")}</span>
                 <input
                   placeholder="e.g. Monthly harvest surplus buffer"
                   value={transferNote}
@@ -1716,7 +1721,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
 
             <form onSubmit={handleCustomGoalDeposit}>
               <div className="field">
-                <span>Deposit Amount (Rs)</span>
+                <span>{t("depositAmount")}</span>
                 <input
                   type="number"
                   min="50"
@@ -1767,7 +1772,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
 
             <form onSubmit={handleExecuteUpiPay}>
               <div className="field">
-                <span>Amount to Settle (₹)</span>
+                <span>{t("amountToSettle")}</span>
                 <input
                   type="number"
                   min="1"
@@ -1828,28 +1833,28 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
                   </div>
 
                   <div className="field" style={{ textAlign: 'left' }}>
-                    <span>Bank / UPI Reference No. (UTR)</span>
+                    <span>{t("bankUpiRefUtr")}</span>
                     <input
                       type="text"
                       placeholder="e.g. 428901234567"
                       value={utrNumber}
                       onChange={(e) => setUtrNumber(e.target.value)}
                     />
-                    <small className="muted">Enter UTR number from your payment confirmation to record on statement.</small>
+                    <small className="muted">{t("enterUtrHelp")}</small>
                   </div>
                 </div>
               ) : (
                 <div style={{ padding: '0.75rem', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '6px', marginBottom: '1rem', fontSize: '0.85rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                    <span>Available Wallet Balance:</span>
+                    <span>{t("availableWalletBalance")}</span>
                     <b>₹{Number(availableBalance).toLocaleString('en-IN')}</b>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                    <span>Amount to Debit:</span>
+                    <span>{t("amountToDebit")}</span>
                     <b>₹{Number(payAmount || 0).toLocaleString('en-IN')}</b>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #86efac', paddingTop: '0.3rem' }}>
-                    <span>Remaining Balance:</span>
+                    <span>{t("remainingBalanceLabel")}</span>
                     <b>₹{Math.max(0, availableBalance - Number(payAmount || 0)).toLocaleString('en-IN')}</b>
                   </div>
                   {availableBalance < Number(payAmount || 0) && (

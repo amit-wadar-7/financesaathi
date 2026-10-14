@@ -45,6 +45,7 @@ function Num({ label, v, set, step = 'any', min = 0 }) {
 }
 
 function SahukarTrap() {
+  const { t } = useLang()
   const [amount, setAmount] = useState(30000)
   const [quoteRate, setQuoteRate] = useState(3.0) // Rs 3 per month per Rs 100
   const [months, setMonths] = useState(12)
@@ -157,7 +158,7 @@ function SahukarTrap() {
                   True Effective Annual Percentage Rate: {res.sahukar.effective_apr}% APR
                 </h4>
               </div>
-              <Badge tone="not_ready">PREDATORY DEBT</Badge>
+              <Badge tone="not_ready">{t("predatoryDebt")}</Badge>
             </div>
             <p style={{ margin: 0, fontSize: '0.85rem', color: '#7f1d1d' }}>
               On a ₹{amount.toLocaleString()} loan, the moneylender gives you only <b>{money(res.in_hand_amount)}</b> in hand while taking <b>{money(res.sahukar.total_interest)}</b> in raw interest. You pay <b>{res.wealth_loss.interest_multiple}x times</b> more interest than through an SHG!
@@ -201,7 +202,7 @@ function SahukarTrap() {
                   1
                 </span>
                 <div>
-                  <b>Request Final Payoff Statement:</b> Ask the moneylender for exact principal outstanding without compounding penalties.
+                  <b>{t("requestFinalPayoff")}</b> Ask the moneylender for exact principal outstanding without compounding penalties.
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
@@ -209,7 +210,7 @@ function SahukarTrap() {
                   2
                 </span>
                 <div>
-                  <b>Apply for SHG Joint Refinance Loan:</b> Present your proposal under the FinanceSaathi portal to obtain subsidized credit at 12% reducing balance.
+                  <b>{t("applyShgRefinance")}</b> Present your proposal under the FinanceSaathi portal to obtain subsidized credit at 12% reducing balance.
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
@@ -217,7 +218,7 @@ function SahukarTrap() {
                   3
                 </span>
                 <div>
-                  <b>Retire Informal Debt & Release Pledged Gold/Assets:</b> Pay off the moneylender in full, obtain an official discharge receipt, and begin safe EMI repayments with your SHG.
+                  <b>{t("retireInformalDebt")}</b> Pay off the moneylender in full, obtain an official discharge receipt, and begin safe EMI repayments with your SHG.
                 </div>
               </div>
             </div>
@@ -229,6 +230,7 @@ function SahukarTrap() {
 }
 
 function KisanFlexiEMI() {
+  const { t } = useLang()
   const [amount, setAmount] = useState(40000)
   const [rate, setRate] = useState(7.0) // 7% KCC concessional rate
   const [months, setMonths] = useState(12)
@@ -315,13 +317,13 @@ function KisanFlexiEMI() {
             <table>
               <thead>
                 <tr>
-                  <th>Month</th>
-                  <th>Scheduled Due Date</th>
-                  <th>Seasonal Phase</th>
-                  <th>Due Installment</th>
-                  <th>Principal Component</th>
-                  <th>Interest Component</th>
-                  <th>Remaining Loan Balance</th>
+                  <th>{t("month")}</th>
+                  <th>{t("scheduledDueDate")}</th>
+                  <th>{t("seasonalPhase")}</th>
+                  <th>{t("dueInstallment")}</th>
+                  <th>{t("principalComponent")}</th>
+                  <th>{t("interestComponent")}</th>
+                  <th>{t("remainingLoanBalance")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -385,17 +387,17 @@ function EMI() {
             <Stat label="Total Interest" value={money(c.res.total_interest)} sub={`At ${r}% per annum`} />
             <Stat label="Total Repayment" value={money(c.res.total_payment)} sub={`Principal + Interest`} />
           </div>
-          <h4 style={{ margin: '1.5rem 0 0.5rem', fontSize: '0.95rem' }}>Full Amortization Repayment Schedule</h4>
+          <h4 style={{ margin: '1.5rem 0 0.5rem', fontSize: '0.95rem' }}>{t("fullAmortizationSchedule")}</h4>
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
                   <th>#</th>
-                  <th>Due Date</th>
-                  <th>Monthly EMI</th>
-                  <th>Principal Part</th>
-                  <th>Interest Part</th>
-                  <th>Remaining Balance</th>
+                  <th>{t("dueDate")}</th>
+                  <th>{t("monthlyEmi")}</th>
+                  <th>{t("principalPart")}</th>
+                  <th>{t("interestPart")}</th>
+                  <th>{t("balancePrincipal")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -419,6 +421,7 @@ function EMI() {
 }
 
 function EmergencyFund() {
+  const { t } = useLang()
   const [exp, setExp] = useState(12000)
   const [targetMonths, setTargetMonths] = useState(3)
   const [sav, setSav] = useState(15000)
@@ -500,11 +503,11 @@ function EmergencyFund() {
 
         {gap > 0 ? (
           <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-            <h4 style={{ margin: '0 0 0.5rem', fontSize: '0.88rem', color: '#0f172a' }}>Actionable Savings Milestones:</h4>
+            <h4 style={{ margin: '0 0 0.5rem', fontSize: '0.88rem', color: '#0f172a' }}>{t("actionableMilestones")}</h4>
             <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.85rem', color: '#334155', lineHeight: 1.6 }}>
-              <li>Deposit <b>{money(Math.round(gap / 6))} / month</b> to reach full family safety in <b>6 months</b>.</li>
-              <li>Deposit <b>{money(Math.round(gap / 12))} / month</b> to reach full family safety in <b>12 months</b>.</li>
-              <li>Keep this fund in your SHG group passbook or bank account; do not lock into illiquid assets.</li>
+              <li>{t('milestone6Months').replace('{amount}', money(Math.round(gap / 6)))}</li>
+              <li>{t('milestone12Months').replace('{amount}', money(Math.round(gap / 12)))}</li>
+              <li>{t("depositKeepNotice")}</li>
             </ul>
           </div>
         ) : (
@@ -520,6 +523,7 @@ function EmergencyFund() {
 }
 
 function Interest() {
+  const { t } = useLang()
   const [p, setP] = useState(10000)
   const [r, setR] = useState(10)
   const [y, setY] = useState(2)
@@ -543,7 +547,7 @@ function Interest() {
         <Num label="Duration (Years)" v={y} set={setY} />
         <Num label="Compounding Frequency (per year)" v={n} set={setN} min={1} />
       </div>
-      <button className="btn" onClick={go}>Compare Returns</button>
+      <button className="btn" onClick={go}>{t("compareReturns")}</button>
       <Alert>{si.err || ci.err}</Alert>
       {si.res && ci.res && (
         <div className="grid" style={{ marginTop: '1.2rem' }}>
@@ -569,6 +573,7 @@ function Interest() {
 }
 
 function SavingsGrowth() {
+  const { t } = useLang()
   const [m, setM] = useState(500)
   const [r, setR] = useState(7)
   const [mo, setMo] = useState(24)
@@ -586,7 +591,7 @@ function SavingsGrowth() {
         <Num label="Interest Rate (% per year)" v={r} set={setR} />
         <Num label="Duration (Months)" v={mo} set={setMo} min={1} />
       </div>
-      <button className="btn" onClick={go}>Project Savings</button>
+      <button className="btn" onClick={go}>{t("projectSavings")}</button>
       <Alert>{c.err}</Alert>
       {c.res && (
         <div className="grid" style={{ marginTop: '1.2rem' }}>
@@ -600,6 +605,7 @@ function SavingsGrowth() {
 }
 
 function Compare() {
+  const { t } = useLang()
   const [a, setA] = useState(30000)
   const [m, setM] = useState(12)
   const [ra, setRa] = useState(12)
@@ -619,7 +625,7 @@ function Compare() {
         <Num label="Lender A Rate (% per year)" v={ra} set={setRa} />
         <Num label="Lender B Rate (% per year)" v={rb} set={setRb} />
       </div>
-      <button className="btn" onClick={go}>Compare Lenders</button>
+      <button className="btn" onClick={go}>{t("compareLenders")}</button>
       <Alert>{c.err}</Alert>
       {c.res && (
         <div style={{ marginTop: '1.2rem' }}>

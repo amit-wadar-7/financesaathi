@@ -238,38 +238,306 @@ export function formatDocLabel(docKey) {
   return map[docKey] || docKey.replace('_', ' ').toUpperCase()
 }
 
+
+const LOCALIZED_PRODUCT_DATA = {
+  hi: {
+    kisan_agri: {
+      title: 'किसान कृषि एवं फसल ऋण सुविधा',
+      subtitle: 'फसल बुवाई, संकरित बीज, खाद एवं कृषि उपकरण',
+      tag: '3% ब्याज सब्सिडी हेतु पात्र',
+      features: [
+        'रबी एवं खरीफ फसल कटाई बिक्री के अनुसार मौसमी भुगतान',
+        'नाबार्ड एवं किसान क्रेडिट कार्ड दिशानिर्देश अनुरूप',
+        'फसल आपदा रियायत एवं शून्य पूर्व-भुगतान शुल्क',
+      ],
+      presets: [
+        'खरीफ संकरित बीज एवं उर्वरक खरीद',
+        'सूक्ष्म ड्रिप सिंचाई उपकरण एवं पाइप',
+        'ट्रैक्टर एवं थ्रेशर मशीन सेवा किराया',
+        'बोरवेल सबमर्सिबल पंप मरम्मत',
+      ],
+    },
+    pm_mudra: {
+      title: 'पीएम मुद्रा एमएसएमई व्यापार ऋण',
+      subtitle: 'लघु गैर-कृषि उद्यमों हेतु कार्यशील पूंजी व उपकरण',
+      tag: 'बिना गारंटी मुद्रा समर्थित',
+      features: [
+        'शिशु एवं किशोर ऋण हेतु किसी संपार्श्विक जमानत की आवश्यकता नहीं',
+        'व्यापारिक खरीद हेतु विशेष मुद्रा रुपे कार्ड सुविधा',
+        'विनिर्माण एवं दुकान इकाइयों हेतु रियायती ब्याज दर',
+      ],
+      presets: [
+        'किराना दुकान स्टॉक रिफिल एवं विस्तार',
+        'आटा चक्की एवं मसाला पिसाई मशीनरी',
+        'रेडीमेड गारमेंट एवं कपड़ा भंडार स्टॉक',
+        'हथकरघा एवं हस्तशिल्प कच्चा माल खरीद',
+      ],
+    },
+    mahila_shakti: {
+      title: 'महिला शक्ति एसएचजी उद्यम ऋण',
+      subtitle: 'महिला आजीविका संवर्धन हेतु संयुक्त देयता पूंजी',
+      tag: 'एसएचजी समूह समर्थित ऋण',
+      features: [
+        'स्वयं सहायता समूह की सामाजिक गारंटी पर आधारित',
+        'समय पर पुनर्भुगतान करने पर 1.5% ब्याज प्रोत्साहन',
+        'व्यापक वित्तीय प्रशिक्षण एवं समूह मार्गदर्शन',
+      ],
+      presets: [
+        'दुधारू गाय एवं पशुधन खरीद',
+        'सिलाई एवं परिधान कार्यशाला इकाई',
+        'मसाला पिसाई एवं अचार पैकेजिंग इकाई',
+        'ग्रामीण किराना दुकान विस्तार',
+      ],
+    },
+    pm_svanidhi: {
+      title: 'पीएम स्वनिधि स्ट्रीट वेंडर क्रेडिट',
+      subtitle: 'स्ट्रीट वेंडर एवं फेरीवालों हेतु कार्यशील पूंजी',
+      tag: '7% प्रत्यक्ष ब्याज सब्सिडी',
+      features: [
+        'नियमित डिजिटल लेन-देन पर प्रति माह ₹100 तक कैशबैक',
+        'समय पर पुनर्भुगतान पर बढ़ी हुई ऋण सीमा',
+        'बिना किसी कागजी बंधक के तुरंत स्वीकृति',
+      ],
+      presets: [
+        'फल एवं सब्जी ठेला कार्यशील पूंजी',
+        'चाय एवं नाश्ता स्टॉल सामग्री',
+        'रेडीमेड परिधान एवं फुटपाथ व्यापार',
+      ],
+    },
+    emergency_health: {
+      title: 'आपातकालीन चिकित्सा एवं स्वास्थ्य अग्रिम',
+      subtitle: 'चिकित्सा उपचार हेतु तत्काल संपार्श्विक-मुक्त सहायता',
+      tag: 'त्वरित अनुमोदन सुविधा',
+      features: [
+        'अस्पताल भर्ती एवं आपातकाल में त्वरित संवितरण',
+        'पारिवारिक आपातकाल हेतु शून्य दंडात्मक प्रभार',
+        'सरल मासिक अथवा त्रैमासिक चुकौती विकल्प',
+      ],
+      presets: [
+        'आपातकालीन अस्पताल उपचार एवं सर्जरी',
+        'दवाइयां एवं चिकित्सकीय परीक्षण',
+        'दुर्घटना उपचार एवं स्वास्थ्य देखभाल',
+      ],
+    },
+    solar_green: {
+      title: 'स्वच्छ ऊर्जा सोलर पंप ऋण',
+      subtitle: 'सोलर कृषि पंप एवं रूफटॉप पैनल हेतु रियायती ऋण',
+      tag: 'पीएम सूर्य घर योजना अनुरूप',
+      features: [
+        'पीएम-कुसुम केंद्रीय एवं राज्य सब्सिडी के साथ एकीकृत',
+        'महंगे डीजल जनरेटर के खर्च से स्थायी मुक्ति',
+        'उपकरण वारंटी एवं व्यापक बीमा संरक्षण सहित',
+      ],
+      presets: [
+        'सोलर सिंचाई सबमर्सिबल पंप (3HP / 5HP)',
+        'डेयरी फार्म हेतु सोलर रूफटॉप पैनल',
+        'सोलर आटा चक्की एवं सौर कोल्ड स्टोरेज',
+      ],
+    },
+    artisan_micro: {
+      title: 'ग्रामीण कारीगर एवं हथकरघा ऋण',
+      subtitle: 'कारीगरों व बुनकरों हेतु कच्चा माल व कार्यशील पूंजी',
+      tag: 'पीएम विश्वकर्मा रियायती दर',
+      features: [
+        'सूक्ष्म उद्यम मंत्रालय द्वारा समर्थित 8% रियायती ब्याज दर',
+        'टूल-किट एवं आधुनिक उपकरण प्रोत्साहन पात्रता',
+        'मंडी एवं शिल्प मेले हेतु अग्रिम ऋण सुविधा',
+      ],
+      presets: [
+        'रेशम एवं सूती धागा थोक खरीद',
+        'मिट्टी बर्तन व टेराकोटा प्रसंस्करण भट्टी',
+        'बढ़ईगीरी व काष्ठशिल्प आधुनिक औजार',
+      ],
+    },
+    standard: {
+      title: 'मानक सूक्ष्म ऋण सुविधा',
+      subtitle: 'सामान्य आजीविका एवं आय सृजन हेतु सावधि ऋण',
+      tag: 'आरबीआई उचित व्यवहार संहिता अनुरूप',
+      features: [
+        'पारदर्शी घटते मूलधन पर ब्याज गणना',
+        'शून्य गुप्त प्रभार, शून्य पूर्व-भुगतान शुल्क',
+        'स्थानीय भाषा में द्विभाषी ऋण स्वीकृति पत्र',
+      ],
+      presets: [
+        'पशु आहार एवं चारा थोक खरीद',
+        'छोटे वाणिज्यिक वाहन डाउनपेमेंट',
+        'मौसमी इन्वेंटरी कार्यशील पूंजी',
+      ],
+    },
+  },
+  mr: {
+    kisan_agri: {
+      title: 'किसान कृषी व पीक कर्ज सुविधा',
+      subtitle: 'पीक लागवड, संकरित बियाणे, खते व शेती अवजारे',
+      tag: '3% व्याज सवलतीस पात्र',
+      features: [
+        'रब्बी व खरीप पीक काढणी व बाजार समिती विक्रीशी सुसंगत परतफेड',
+        'नाबार्ड व किसान क्रेडिट कार्ड मार्गदर्शक तत्त्वानुसार',
+        'नैसर्गिक आपत्ती काळात विशेष सवलत व शून्य मुदतपूर्व शुल्क',
+      ],
+      presets: [
+        'खरीप संकरित बियाणे व खते खरेदी',
+        'सूक्ष्म ठिबक सिंचन पाईप व साहित्य',
+        'ट्रॅक्टर व मळणी यंत्र भाडे सेवा',
+        'बोअरवेल सबमर्सिबल पंप दुरुस्ती',
+      ],
+    },
+    pm_mudra: {
+      title: 'पीएम मुद्रा व्यवसाय कर्ज',
+      subtitle: 'लहान बिगर-शेती उद्योगांसाठी खेळते भांडवल व यंत्रसामग्री',
+      tag: 'विनातारण मुद्रा हमी',
+      features: [
+        'शिशू व किशोर श्रेणीसाठी कोणतीही तारण हमी आवश्यक नाही',
+        'नियमित व्यावसायिक खरेदीसाठी विशेष मुद्रा रुपे कार्ड',
+        'उत्पादन व दुकानांसाठी विशेष व्याज अनुदान',
+      ],
+      presets: [
+        'किराणा दुकान माल भरणा व विस्तार',
+        'पिठाची गिरणी व मसाला यंत्रसामग्री',
+        'तयार कपडे व कापड दुकान साठा',
+        'हातमाग व हस्तकला कच्चा माल खरेदी',
+      ],
+    },
+    mahila_shakti: {
+      title: 'महिला शक्ती बचत गट व्यवसाय कर्ज',
+      subtitle: 'महिला उपजीविकेसाठी संयुक्त हमी भांडवल',
+      tag: 'बचत गट हमी कर्ज',
+      features: [
+        'बचत गटातील सदस्यांच्या परस्पर सामाजिक हमीवर आधारित',
+        'वेळेवर परतफेड केल्यास १.५% व्याज परतावा सवलत',
+        'व्यावसायिक प्रशिक्षण व गट मार्गदर्शन',
+      ],
+      presets: [
+        'दुभती गाय व पशुधन खरेदी',
+        'शिलाई व कपडे निर्मिती केंद्र',
+        'मसाले व लोणचे गृहउद्योग युनिट',
+        'ग्रामीण किराणा दुकान भांडवल',
+      ],
+    },
+    pm_svanidhi: {
+      title: 'पीएम स्वनिधी फेरीवाला पतपुरवठा',
+      subtitle: 'फेरीवाले व हातगाडी चालकांसाठी खेळते भांडवल',
+      tag: '7% थेट व्याज अनुदान',
+      features: [
+        'डिजिटल व्यवहारांवर दरमहा ₹१०० पर्यंत थेट कॅशबॅक',
+        'वेळेवर परतफेडीनंतर वाढीव कर्ज मर्यादा उपलब्ध',
+        'कागदपत्रांशिवाय जलद मंजुरी प्रक्रिया',
+      ],
+      presets: [
+        'फळ व भाजीपाला हातगाडी भांडवल',
+        'चहा व अल्पोपहार स्टॉल साहित्य',
+        'तयार कपडे व किरकोळ पथविक्री',
+      ],
+    },
+    emergency_health: {
+      title: 'आपत्कालीन वैद्यकीय व आरोग्य उचल',
+      subtitle: 'वैद्यकीय उपचारांसाठी तात्काळ विनातारण मदत',
+      tag: 'तात्काळ मंजुरी सुविधा',
+      features: [
+        'रुग्णालय भरती व आपत्कालीन स्थितीत तात्काळ वितरण',
+        'कौटुंबिक आपत्ती काळात कोणताही दंड आकारला जात नाही',
+        'सुलभ मासिक किंवा तिमाही हप्ते परतफेड पर्याय',
+      ],
+      presets: [
+        'तातडीचे रुग्णालय उपचार व शस्त्रक्रिया',
+        'औषधे व वैद्यकीय तपासणी खर्च',
+        'अपघात उपचार व आरोग्य सेवा',
+      ],
+    },
+    solar_green: {
+      title: 'सौर ऊर्जा व कृषी पंप कर्ज',
+      subtitle: 'सौर कृषी पंप व छतावरील सौर पॅनेलसाठी सवलतीचे कर्ज',
+      tag: 'पीएम सूर्य घर योजना अनुरूप',
+      features: [
+        'पीएम-कुसुम केंद्रीय व राज्य अनुदानाशी थेट जोडलेले',
+        'महागड्या डिझेल पंपाच्या खर्चातून कायमची मुक्ती',
+        'यंत्रसामग्री वॉरंटी व सर्वसमावेशक विमा संरक्षणासह',
+      ],
+      presets: [
+        'सौर सिंचन सबमर्सिबल पंप (३ एचपी / ५ एचपी)',
+        'डेअरी फार्मसाठी छतावरील सौर ऊर्जा प्रकल्प',
+        'सौर पिठाची गिरणी व शीतगृह युनिट',
+      ],
+    },
+    artisan_micro: {
+      title: 'ग्रामीण कारागीर व हातमाग कर्ज',
+      subtitle: 'कारागीर व विणकरांसाठी कच्चा माल व खेळते भांडवल',
+      tag: 'पीएम विश्वकर्मा सवलतीचा दर',
+      features: [
+        'सूक्ष्म उद्योग मंत्रालयामार्फत ८% सवलतीचा व्याजदर',
+        'टूल-किट व आधुनिक उपकरणांसाठी अनुदान पात्रता',
+        'बाजारपेठ व प्रदर्शन विक्रीसाठी आगाऊ पतपुरवठा',
+      ],
+      presets: [
+        'रेशीम व सुती धागा घाऊक खरेदी',
+        'मातीची भांडी व टेराकोटा भट्टी युनिट',
+        'सुतारकाम व लाकूडकाम आधुनिक अवजारे',
+      ],
+    },
+    standard: {
+      title: 'मानक सूक्ष्म वित्त कर्ज',
+      subtitle: 'सामान्य उपजीविका व उत्पन्न वाढीसाठी मुदत कर्ज',
+      tag: 'आरबीआय सुयोग्य व्यवहार संहिता अनुरूप',
+      features: [
+        'कमी होणाऱ्या मुद्दलावर पारदर्शक व्याज आकारणी',
+        'कोणतेही लपविलेले शुल्क नाही, मुदतपूर्व परतफेडीवर शून्य दंड',
+        'स्थानिक भाषेत द्वैभाषिक कर्ज करारनामा',
+      ],
+      presets: [
+        'पशुखाद्य व चारा घाऊक खरेदी',
+        'लहान व्यावसायिक वाहन डाऊनपेमेंट',
+        'हंगामी व्यवसाय खेळते भांडवल',
+      ],
+    },
+  },
+}
+
 export function mergeServerProducts(serverProducts, lang = 'en') {
+  const loc = LOCALIZED_PRODUCT_DATA[lang] || {}
   if (!serverProducts || !Array.isArray(serverProducts) || serverProducts.length === 0) {
-    return Object.entries(PRODUCT_METADATA).map(([code, meta]) => ({
-      id: code,
-      ...meta,
-      docs: (meta.features || []).map((_, i) => ['doc_' + i, 'Document Proof ' + (i + 1)]),
-      allowed_schedule_types: ['monthly'],
-    }))
+    return Object.entries(PRODUCT_METADATA).map(([code, meta]) => {
+      const l = loc[code] || {}
+      return {
+        id: code,
+        ...meta,
+        title: l.title || meta.title,
+        subtitle: l.subtitle || meta.subtitle,
+        tag: l.tag || meta.tag,
+        features: l.features || meta.features,
+        presets: l.presets || meta.presets,
+        docs: (meta.features || []).map((_, i) => ['doc_' + i, 'Document Proof ' + (i + 1)]),
+        allowed_schedule_types: ['monthly'],
+      }
+    })
   }
   return serverProducts.map((sp) => {
     const meta = PRODUCT_METADATA[sp.code] || {}
-    const title = lang === 'hi' && sp.name_hi ? sp.name_hi : lang === 'mr' && sp.name_mr ? sp.name_mr : (sp.name || meta.title || 'Microcredit Facility')
+    const l = loc[sp.code] || {}
+    const title = lang === 'hi' && sp.name_hi ? sp.name_hi : lang === 'mr' && sp.name_mr ? sp.name_mr : (l.title || sp.name || meta.title || 'Microcredit Facility')
+    const subtitle = l.subtitle || sp.eligibility_notes || meta.subtitle || ''
+    const tag = l.tag || meta.tag || `${sp.annual_rate}% APR`
+    const features = l.features || meta.features || [sp.eligibility_notes]
+    const presets = l.presets || meta.presets || ['General Livelihood Purpose']
     const tenures = meta.tenures || [sp.min_tenure, sp.max_tenure]
     const docs = (sp.required_documents && sp.required_documents.length > 0)
-      ? sp.required_documents.map((d) => [d, formatDocLabel(d)])
-      : [['aadhaar', 'Aadhaar / Voter ID Proof']]
+      ? sp.required_documents.map((d) => [d, formatDocLabel(d, lang)])
+      : [['aadhaar', formatDocLabel('aadhaar', lang)]]
     return {
       id: sp.code,
       productId: sp.id,
       title,
-      subtitle: sp.eligibility_notes || meta.subtitle || '',
+      subtitle,
       category: meta.category || 'custom',
       icon: meta.icon || <IconCreditCard size={22} />,
-      tag: meta.tag || `${sp.annual_rate}% APR`,
+      tag,
       apr: sp.annual_rate,
       defaultAmount: meta.defaultAmount || Math.round((sp.min_amount + sp.max_amount) / 2 / 1000) * 1000,
       minAmount: sp.min_amount,
       maxAmount: sp.max_amount,
       tenures,
       defaultTenure: meta.defaultTenure || sp.min_tenure,
-      features: meta.features || [sp.eligibility_notes],
-      presets: meta.presets || ['General Livelihood Purpose'],
+      features,
+      presets,
       docs,
       allowed_schedule_types: sp.allowed_schedule_types || ['monthly'],
     }
@@ -345,9 +613,9 @@ export function LoanList() {
       {/* Page Header */}
       <div className="page-header-row">
         <div>
-          <h2>Loans & Credit Facilities</h2>
+          <h2>{t("loans_page_title")}</h2>
           <p className="page-subtitle">
-            Regulated institutional microcredit, livelihood financing, live EMI appraisal, and automated underwriting
+            {t("loans_page_sub")}
           </p>
         </div>
         {!staff && (
@@ -356,7 +624,7 @@ export function LoanList() {
             to="/loans/new"
             style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
           >
-            <IconPlus size={16} /> New Loan Application
+            <IconPlus size={16} /> {t("btn_new_loan")}
           </Link>
         )}
       </div>
@@ -368,21 +636,21 @@ export function LoanList() {
           className={`tab-btn ${activeTab === 'marketplace' ? 'active' : ''}`}
           onClick={() => setActiveTab('marketplace')}
         >
-          Loan Facilities ({products.length})
+          {t("tab_facilities_count")} ({products.length})
         </button>
         <button
           type="button"
           className={`tab-btn ${activeTab === 'calculator' ? 'active' : ''}`}
           onClick={() => setActiveTab('calculator')}
         >
-          Interactive EMI Calculator
+          {t("tab_calculator_title")}
         </button>
         <button
           type="button"
           className={`tab-btn ${activeTab === 'portfolio' ? 'active' : ''}`}
           onClick={() => setActiveTab('portfolio')}
         >
-          {staff ? 'Applications Portfolio' : 'My Active Loans'} ({loans.length})
+          {staff ? t('tab_portfolio_staff') : t('tab_portfolio_user')} ({loans.length})
         </button>
       </div>
 
@@ -408,19 +676,19 @@ export function LoanList() {
 
                 <div className="product-metrics-bar">
                   <div className="product-metric-item">
-                    <span className="metric-label">Annual APR</span>
+                    <span className="metric-label">{t("label_annual_apr")}</span>
                     <span className="metric-val text-emerald">{p.apr}% p.a.</span>
                   </div>
                   <div className="product-metric-item">
-                    <span className="metric-label">Max Limit</span>
+                    <span className="metric-label">{t("label_max_limit")}</span>
                     <span className="metric-val">{money(p.maxAmount)}</span>
                   </div>
                   <div className="product-metric-item">
-                    <span className="metric-label">Tenure Range</span>
-                    <span className="metric-val">{p.tenures[0]} - {p.tenures[p.tenures.length - 1]} Months</span>
+                    <span className="metric-label">{t("label_tenure_range")}</span>
+                    <span className="metric-val">{p.tenures[0]} - {p.tenures[p.tenures.length - 1]} {t("months_unit")}</span>
                   </div>
                   <div className="product-metric-item">
-                    <span className="metric-label">Starter Value</span>
+                    <span className="metric-label">{t("label_starter_value")}</span>
                     <span className="metric-val">{money(p.defaultAmount)}</span>
                   </div>
                 </div>
@@ -438,7 +706,7 @@ export function LoanList() {
                   to={`/loans/new?product=${p.id}`}
                   className="btn product-apply-btn"
                 >
-                  Apply for This Facility <IconArrowRight size={14} />
+                  {t("apply_now")} <IconArrowRight size={14} />
                 </Link>
               </div>
             ))}
@@ -446,20 +714,20 @@ export function LoanList() {
         </div>
       )}
 
-      {/* TAB 2: Interactive EMI Calculator */}
+      {/* TAB 2: {t("tab_calculator_title")} */}
       {activeTab === 'calculator' && (
         <div className="two-col" style={{ alignItems: 'start' }}>
           {/* Controls Card */}
           <div className="card">
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
               <IconCalculator size={22} className="text-emerald" />
-              <h3 style={{ margin: 0 }}>Interactive Loan EMI Calculator</h3>
+              <h3 style={{ margin: 0 }}>{t("calc_title")}</h3>
             </div>
 
             {/* Slider 1: Principal Amount */}
             <div style={{ marginBottom: '1.5rem' }}>
               <div className="row between" style={{ marginBottom: '0.4rem' }}>
-                <span className="slider-label">Loan Principal Amount:</span>
+                <span className="slider-label">{t("label_loan_amount")}:</span>
                 <span className="slider-value">₹{calcAmount.toLocaleString('en-IN')}</span>
               </div>
               <input
@@ -489,7 +757,7 @@ export function LoanList() {
             {/* Slider 2: Interest Rate */}
             <div style={{ marginBottom: '1.5rem' }}>
               <div className="row between" style={{ marginBottom: '0.4rem' }}>
-                <span className="slider-label">Annual Interest Rate (APR):</span>
+                <span className="slider-label">{t("label_interest_rate")}:</span>
                 <span className="slider-value text-emerald">{calcRate}% p.a.</span>
               </div>
               <input
@@ -524,7 +792,7 @@ export function LoanList() {
             {/* Slider 3: Tenure Months */}
             <div style={{ marginBottom: '1.25rem' }}>
               <div className="row between" style={{ marginBottom: '0.4rem' }}>
-                <span className="slider-label">Repayment Tenure:</span>
+                <span className="slider-label">{t("label_tenure_months")}:</span>
                 <span className="slider-value">{calcTenure} Months ({calcTenure / 12 >= 1 ? `${(calcTenure / 12).toFixed(1)} yr` : 'Micro'})</span>
               </div>
               <input
@@ -555,7 +823,7 @@ export function LoanList() {
           {/* Results Summary Card */}
           <div className="card calc-summary-card">
             <span className="muted small" style={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Estimated Monthly Obligation
+              {t("est_monthly_emi")}
             </span>
             <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--slate-900)', margin: '0.2rem 0' }}>
               ₹{calcResult.emi.toLocaleString('en-IN')}
@@ -564,15 +832,15 @@ export function LoanList() {
 
             <div style={{ background: 'var(--card-bg-subtle)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1rem', margin: '1rem 0' }}>
               <div className="row between" style={{ padding: '0.35rem 0', borderBottom: '1px solid var(--border-color)' }}>
-                <span className="muted small">Principal Borrowed:</span>
+                <span className="muted small">{t("principal_sum")}:</span>
                 <b>₹{calcAmount.toLocaleString('en-IN')}</b>
               </div>
               <div className="row between" style={{ padding: '0.35rem 0', borderBottom: '1px solid var(--border-color)' }}>
-                <span className="muted small">Total Interest Accrued:</span>
+                <span className="muted small">{t("interest_charges")}:</span>
                 <b className="text-emerald">+₹{calcResult.totalInterest.toLocaleString('en-IN')}</b>
               </div>
               <div className="row between" style={{ padding: '0.5rem 0 0 0' }}>
-                <span style={{ fontWeight: 600 }}>Total Repayment Outflow:</span>
+                <span style={{ fontWeight: 600 }}>{t("total_payable")}:</span>
                 <span style={{ fontSize: '1.1rem', fontWeight: 800 }}>₹{calcResult.totalPayment.toLocaleString('en-IN')}</span>
               </div>
             </div>
@@ -588,7 +856,7 @@ export function LoanList() {
               onClick={handleApplyWithCalc}
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', padding: '10px' }}
             >
-              Apply for ₹{calcAmount.toLocaleString('en-IN')} Facility <IconArrowRight size={15} />
+              {t("apply_with_calc")} <IconArrowRight size={15} />
             </button>
           </div>
         </div>
@@ -623,7 +891,7 @@ export function LoanList() {
                 onChange={(e) => setProductFilter(e.target.value)}
                 style={{ fontSize: '0.82rem', padding: '6px 8px', borderRadius: '4px' }}
               >
-                <option value="">All Loan Products</option>
+                <option value="">{t('allLoanProducts')}</option>
                 {products.map((prod) => (
                   <option key={prod.id} value={prod.id}>
                     {prod.title}
@@ -632,7 +900,7 @@ export function LoanList() {
               </select>
 
               <input
-                placeholder="Search loan #, borrower..."
+                placeholder={t('search') + "..."}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 style={{ fontSize: '0.82rem', padding: '6px 10px', width: '220px' }}
@@ -649,15 +917,15 @@ export function LoanList() {
               <table>
                 <thead>
                   <tr>
-                    <th>Loan Reference</th>
-                    <th>Product Facility</th>
-                    {(staff || user.role === 'shg_leader') && <th>Borrower</th>}
-                    <th>Principal</th>
-                    <th>Monthly EMI</th>
-                    <th>Tenure</th>
-                    <th>Affordability</th>
-                    <th>Status</th>
-                    <th>Action</th>
+                    <th>{t('loanReference')}</th>
+                    <th>{t('productFacility')}</th>
+                    {(staff || user.role === 'shg_leader') && <th>{t('borrower')}</th>}
+                    <th>{t('principal')}</th>
+                    <th>{t('monthlyEmi')}</th>
+                    <th>{t('tenure')}</th>
+                    <th>{t('affordability')}</th>
+                    <th>{t('status')}</th>
+                    <th>{t('action')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -835,9 +1103,9 @@ export function LoanApply() {
     <div className="page-container">
       <div className="page-header-row">
         <div>
-          <h2>Submit Loan Proposal</h2>
+          <h2>{t("loan_apply_title")}</h2>
           <p className="page-subtitle">
-            3-Step institutional microcredit submission with automated AI credit affordability underwriting
+            {t("loan_apply_sub")}
           </p>
         </div>
       </div>
@@ -860,7 +1128,7 @@ export function LoanApply() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
           <span style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--emerald-600)', color: '#fff', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: '0.85rem' }}>1</span>
           <div>
-            <div style={{ fontWeight: 600, fontSize: '0.82rem' }}>Step 1: Facility & Amount</div>
+            <div style={{ fontWeight: 600, fontSize: '0.82rem' }}>{t("stepper_purpose")}</div>
             <div className="muted small" style={{ fontSize: '0.72rem' }}>{selectedProduct.title}</div>
           </div>
         </div>
@@ -868,7 +1136,7 @@ export function LoanApply() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
           <span style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--emerald-600)', color: '#fff', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: '0.85rem' }}>2</span>
           <div>
-            <div style={{ fontWeight: 600, fontSize: '0.82rem' }}>Step 2: Term & Purpose</div>
+            <div style={{ fontWeight: 600, fontSize: '0.82rem' }}>{t("stepper_cashflow")}</div>
             <div className="muted small" style={{ fontSize: '0.72rem' }}>₹{Number(f.amount).toLocaleString('en-IN')} • {f.tenure_months} mo</div>
           </div>
         </div>
@@ -876,8 +1144,8 @@ export function LoanApply() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
           <span style={{ width: '28px', height: '28px', borderRadius: '50%', background: f.documents.length > 0 ? 'var(--emerald-600)' : 'var(--slate-200)', color: f.documents.length > 0 ? '#fff' : 'var(--slate-600)', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: '0.85rem' }}>3</span>
           <div>
-            <div style={{ fontWeight: 600, fontSize: '0.82rem' }}>Step 3: KYC & Underwriting</div>
-            <div className="muted small" style={{ fontSize: '0.72rem' }}>{f.documents.length} KYC Documents Attached</div>
+            <div style={{ fontWeight: 600, fontSize: '0.82rem' }}>{t("stepper_docs")}</div>
+            <div className="muted small" style={{ fontSize: '0.72rem' }}>{f.documents.length} {lang === 'hi' ? 'दस्तावेज़ संलग्न' : lang === 'mr' ? 'कागदपत्रे जोडली' : 'KYC Documents Attached'}</div>
           </div>
         </div>
       </div>
@@ -891,7 +1159,7 @@ export function LoanApply() {
       {/* Product Selection Bar */}
       <div className="card" style={{ marginBottom: '1.25rem', padding: '1rem' }}>
         <span className="muted small" style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600 }}>
-          Select Credit Program:
+          {lang === 'hi' ? 'ऋण योजना चुनें:' : lang === 'mr' ? 'कर्ज योजना निवडा:' : 'Select Credit Program:'}
         </span>
         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
           {products.map((prod) => (
@@ -909,7 +1177,7 @@ export function LoanApply() {
       </div>
 
       <div className="two-col">
-        <Card title={`Application Form: ${selectedProduct.title}`}>
+        <Card title={`${lang === 'hi' ? 'आवेदन प्रपत्र:' : lang === 'mr' ? 'अर्ज प्रपत्र:' : 'Application Form:'} ${selectedProduct.title}`}>
           <div
             style={{
               background: 'var(--slate-50)',
@@ -940,7 +1208,7 @@ export function LoanApply() {
 
             <div style={{ marginBottom: '1rem' }}>
               <span className="muted small" style={{ display: 'block', marginBottom: '0.35rem' }}>
-                Tenure Options:
+                {lang === 'hi' ? 'अवधि विकल्प:' : lang === 'mr' ? 'कालावधी पर्याय:' : 'Tenure Options:'}
               </span>
               <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                 {selectedProduct.tenures.map((m) => (
@@ -994,7 +1262,7 @@ export function LoanApply() {
 
             <div style={{ marginBottom: '1rem' }}>
               <span className="muted small" style={{ display: 'block', marginBottom: '0.3rem' }}>
-                Preset Livelihood Purposes:
+                {t("recommended_presets")}
               </span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
                 {selectedProduct.presets.map((p, i) => (
@@ -1030,8 +1298,8 @@ export function LoanApply() {
                   onChange={(e) => setF({ ...f, group_loan: e.target.checked })}
                 />
                 <div>
-                  <span style={{ fontWeight: 600 }}>Joint Liability Group (SHG) Guarantee</span>
-                  <div className="muted small">Pledged with peer guarantee from your Self-Help Group</div>
+                  <span style={{ fontWeight: 600 }}>{lang === 'hi' ? 'संयुक्त देयता समूह (एसएचजी) गारंटी' : lang === 'mr' ? 'बचत गट संयुक्त हमी' : 'Joint Liability Group (SHG) Guarantee'}</span>
+                  <div className="muted small">{lang === 'hi' ? 'आपके स्वयं सहायता समूह के सदस्यों द्वारा सामाजिक सामूहिक समर्थन' : lang === 'mr' ? 'तुमच्या महिला बचत गटाच्या सदस्यांची सामूहिक हमी' : 'Pledged with peer guarantee from your Self-Help Group'}</div>
                 </div>
               </label>
             )}
@@ -1039,7 +1307,7 @@ export function LoanApply() {
             {selectedProduct.id === 'kisan_agri' && (
               <div style={{ marginBottom: '1rem', background: 'var(--slate-50)', padding: '0.75rem', borderRadius: '6px' }}>
                 <span className="muted small" style={{ display: 'block', marginBottom: '0.35rem', fontWeight: 600 }}>
-                  Agricultural Repayment Structure:
+                  {lang === 'hi' ? 'कृषि चुकौती संरचना:' : lang === 'mr' ? 'कृषी परतफेड पद्धत:' : 'Agricultural Repayment Structure:'}
                 </span>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                   <button
@@ -1048,8 +1316,8 @@ export function LoanApply() {
                     style={{ textAlign: 'left', padding: '6px 8px', height: 'auto', display: 'flex', flexDirection: 'column', gap: '2px' }}
                     onClick={() => setF({ ...f, schedule_type: 'monthly' })}
                   >
-                    <span style={{ fontWeight: 700, fontSize: '0.78rem' }}>Standard Monthly EMI</span>
-                    <span style={{ fontSize: '0.68rem', opacity: 0.85 }}>Equal monthly installments</span>
+                    <span style={{ fontWeight: 700, fontSize: '0.78rem' }}>{lang === 'hi' ? 'नियमित मासिक किस्त (ईएमआई)' : lang === 'mr' ? 'नियमित मासिक हप्ता (ईएमआई)' : 'Standard Monthly EMI'}</span>
+                    <span style={{ fontSize: '0.68rem', opacity: 0.85 }}>{lang === 'hi' ? 'समान मासिक किस्तें' : lang === 'mr' ? 'समान मासिक हप्ते' : 'Equal monthly installments'}</span>
                   </button>
                   <button
                     type="button"
@@ -1057,8 +1325,8 @@ export function LoanApply() {
                     style={{ textAlign: 'left', padding: '6px 8px', height: 'auto', display: 'flex', flexDirection: 'column', gap: '2px' }}
                     onClick={() => setF({ ...f, schedule_type: 'harvest_bullet' })}
                   >
-                    <span style={{ fontWeight: 700, fontSize: '0.78rem' }}>🌾 Harvest Bullet Schedule</span>
-                    <span style={{ fontSize: '0.68rem', opacity: 0.85 }}>Maintenance in growth, lumpsum at mandi sale</span>
+                    <span style={{ fontWeight: 700, fontSize: '0.78rem' }}>{`🌾 ${lang === 'hi' ? 'फसल कटाई बिक्री एकमुश्त भुगतान' : lang === 'mr' ? 'पीक काढणी एकरकमी परतफेड' : 'Harvest Bullet Schedule'}`}</span>
+                    <span style={{ fontSize: '0.68rem', opacity: 0.85 }}>{lang === 'hi' ? 'फसल वृद्धि में रखरखाव, मंडी बिक्री पर एकमुश्त चुकौती' : lang === 'mr' ? 'पीक वाढीदरम्यान देखरेख, विक्री झाल्यावर एकरकमी परतफेड' : 'Maintenance in growth, lumpsum at mandi sale'}</span>
                   </button>
                 </div>
               </div>
@@ -1067,7 +1335,7 @@ export function LoanApply() {
             <div style={{ marginTop: '0.75rem', marginBottom: '1.25rem' }}>
               <div className="row between" style={{ alignItems: 'center', marginBottom: '0.5rem' }}>
                 <p className="muted small" style={{ fontWeight: 600, margin: 0 }}>
-                  Statutory KYC & Income Verification Documents:
+                  {t("step_docs_heading")}
                 </p>
                 <button
                   type="button"
@@ -1078,7 +1346,7 @@ export function LoanApply() {
                     setF({ ...f, documents: allKeys })
                   }}
                 >
-                  + Attach All Verified KYC
+                  {lang === 'hi' ? '+ सभी आवश्यक दस्तावेज़ संलग्न करें' : lang === 'mr' ? '+ सर्व आवश्यक कागदपत्रे जोडा' : '+ Attach All Verified KYC'}
                 </button>
               </div>
 
@@ -1136,13 +1404,13 @@ export function LoanApply() {
               disabled={busy || !hasProfile}
               style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', padding: '10px' }}
             >
-              <IconShield size={16} /> Submit Loan Application for Sanction
+              <IconShield size={16} /> {t("btn_submit_application")}
             </button>
           </form>
         </Card>
 
         {/* Live AI Underwriting Check */}
-        <Card title="Live AI Affordability Evaluation">
+        <Card title={lang === "hi" ? "साथी लाइव आय-व्यय मूल्यांकन" : lang === "mr" ? "साथी थेट कर्ज क्षमता मूल्यांकन" : "Live AI Affordability Evaluation"}>
           {!preview ? (
             <p className="muted">{hasProfile ? 'Evaluating repayment capacity…' : t('fillProfile')}</p>
           ) : (
@@ -1157,25 +1425,25 @@ export function LoanApply() {
                 }}
               >
                 <div className="row between" style={{ marginBottom: '0.5rem' }}>
-                  <span className="muted small">AI Underwriting Readiness</span>
+                  <span className="muted small">{lang === 'hi' ? 'ऋण पात्रता तत्परता' : lang === 'mr' ? 'कर्ज पात्रता स्थिती' : 'AI Underwriting Readiness'}</span>
                   <Badge tone={preview.band}>{t(preview.band)}</Badge>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
                   <span style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--slate-900)' }}>
                     {preview.score != null ? Math.round(preview.score <= 1.0 ? preview.score * 100 : preview.score) : '—'}
                   </span>
-                  <span className="muted small">/ 100 Safe Underwriting Score</span>
+                  <span className="muted small">{lang === 'hi' ? '/ 100 सुरक्षित वित्तीय स्कोर' : lang === 'mr' ? '/ १०० सुरक्षित आर्थिक गुण' : '/ 100 Safe Underwriting Score'}</span>
                 </div>
               </div>
 
               <div className="grid" style={{ marginBottom: '1rem' }}>
-                <Stat label="Estimated EMI" value={money(preview.emi)} />
-                <Stat label="Safe Threshold" value={money(preview.safe_emi)} />
+                <Stat label={t("est_monthly_emi")} value={money(preview.emi)} />
+                <Stat label={lang === "hi" ? "सुरक्षित किस्त सीमा" : lang === "mr" ? "सुरक्षित हप्ता मर्यादा" : "Safe Threshold"} value={money(preview.safe_emi)} />
               </div>
 
               <div style={{ marginBottom: '1rem' }}>
                 <div className="row between small" style={{ marginBottom: '0.35rem' }}>
-                  <span>Safe Headroom Utilization</span>
+                  <span>{lang === 'hi' ? 'किस्त क्षमता उपयोग' : lang === 'mr' ? 'हप्ता क्षमता वापर' : 'Safe Headroom Utilization'}</span>
                   <span style={{ fontWeight: 600 }}>
                     {preview.safe_emi > 0 ? `${Math.round((preview.emi / preview.safe_emi) * 100)}%` : 'N/A'}
                   </span>
@@ -1183,7 +1451,7 @@ export function LoanApply() {
                 <Progress pct={preview.safe_emi > 0 ? Math.min(100, (preview.emi / preview.safe_emi) * 100) : 50} />
               </div>
 
-              <h4 style={{ fontSize: '0.88rem', margin: '1rem 0 0.5rem 0' }}>Underwriting Rationale:</h4>
+              <h4 style={{ fontSize: '0.88rem', margin: '1rem 0 0.5rem 0' }}>{t('underwritingRationale')}</h4>
               <Factors factors={preview.factors} />
 
               <div
@@ -1196,7 +1464,7 @@ export function LoanApply() {
                 }}
               >
                 <div className="small">
-                  <b>Maximum Recommended Principal:</b> {money(preview.safe_loan_amount)}
+                  <b>{lang === "hi" ? "अधिकतम अनुशंसित ऋण राशि:" : lang === "mr" ? "कमाल शिफारस केलेली कर्ज रक्कम:" : "Maximum Recommended Principal:"}</b> {money(preview.safe_loan_amount)}
                 </div>
                 <p className="muted small" style={{ margin: '0.25rem 0 0 0' }}>
                   {preview.disclaimer}
@@ -1398,7 +1666,7 @@ export function LoanDetail() {
             {productInfo.title}
           </span>
           <Badge>{l.status}</Badge>
-          {l.shg_id && <Badge tone="pending">SHG Joint Liability</Badge>}
+          {l.shg_id && <Badge tone="pending">{t('shgJointLiability')}</Badge>}
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           {['approved', 'disbursed'].includes(l.status) && remainingAmount > 0 && (
@@ -1408,7 +1676,7 @@ export function LoanDetail() {
               onClick={openForeclose}
               style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: '#059669', color: '#fff' }}
             >
-              <IconCheck size={15} /> Foreclose Early (0% Fee)
+              <IconCheck size={15} /> {t('earlyForeclosure')}
             </button>
           )}
           {l.status === 'pending' && (!staff || user.id === l.user_id) && (
@@ -1445,11 +1713,11 @@ export function LoanDetail() {
       <Alert kind={msg.kind}>{msg.text}</Alert>
 
       <div className="grid" style={{ marginBottom: '1.25rem' }}>
-        <Stat label="Principal Sanction" value={money(l.amount)} sub="Total microcredit" />
-        <Stat label="Monthly EMI" value={money(l.emi)} sub={`${l.tenure_months} mo @ ${l.annual_rate}% APR`} />
-        <Stat label="Borrower Name" value={l.borrower_name} sub={l.purpose || 'General Purpose'} />
+        <Stat label={t('principal')} value={money(l.amount)} sub="Total microcredit" />
+        <Stat label={t('monthlyEmi')} value={money(l.emi)} sub={`${l.tenure_months} mo @ ${l.annual_rate}% APR`} />
+        <Stat label={t('borrower')} value={l.borrower_name} sub={l.purpose || 'General Purpose'} />
         <Stat
-          label="AI Credit Health"
+          label={t('creditHealth')}
           value={l.ai_score ? `${l.ai_score} / 100` : 'Assessed'}
           sub={`Band: ${t(l.ai_band)}`}
         />
@@ -1471,13 +1739,13 @@ export function LoanDetail() {
                 <IconUsers size={24} />
               </div>
               <div>
-                <div style={{ fontWeight: 600 }}>SHG Peer Endorsement Active</div>
+                <div style={{ fontWeight: 600 }}>{t('shgPeerEndorsementActive')}</div>
                 <div className="muted small">
                   Backed by Self-Help Group #{l.shg_id} mutual guarantee resolution and social collateral under NRLM guidelines.
                 </div>
               </div>
             </div>
-            <Badge tone="approved">Verified SHG Backed</Badge>
+            <Badge tone="approved">{t('verifiedShgBacked')}</Badge>
           </div>
         </Card>
       )}
@@ -1486,16 +1754,16 @@ export function LoanDetail() {
         <Card title="Repayment Amortization Progress" style={{ marginBottom: '1.25rem' }}>
           <div className="row between small" style={{ marginBottom: '0.4rem' }}>
             <span>
-              <b>Collected:</b> {money(totalPaidAmount)} ({repaymentPct}%)
+              <b>{t('collectedLabel')}</b> {money(totalPaidAmount)} ({repaymentPct}%)
             </span>
             <span>
-              <b>Remaining Balance:</b> {money(remainingAmount)}
+              <b>{t('remainingBalanceLabel')}</b> {money(remainingAmount)}
             </span>
           </div>
           <Progress pct={repaymentPct} />
           <div className="row between small muted" style={{ marginTop: '0.4rem' }}>
             <span>{paidCount} of {installments.length} installments settled</span>
-            <span>Interest Structure: Reducing Balance Rate</span>
+            <span>{t('reducingBalanceRate')}</span>
           </div>
         </Card>
       )}
@@ -1543,13 +1811,13 @@ export function LoanDetail() {
                     </div>
                     <div>
                       {d.verified ? (
-                        <Badge tone="approved">Verified</Badge>
+                        <Badge tone="approved">{t('docVerified')}</Badge>
                       ) : d.status === 'rejected' ? (
-                        <Badge tone="danger">Rejected</Badge>
+                        <Badge tone="danger">{t('docRejected')}</Badge>
                       ) : d.file_path ? (
-                        <Badge tone="pending">Uploaded (Pending Check)</Badge>
+                        <Badge tone="pending">{t('docUploadedPending')}</Badge>
                       ) : (
-                        <Badge tone="neutral">Missing Upload</Badge>
+                        <Badge tone="neutral">{t('docMissingUpload')}</Badge>
                       )}
                     </div>
                   </div>
@@ -1656,14 +1924,14 @@ export function LoanDetail() {
               <table>
                 <thead>
                   <tr>
-                    <th>Instalment #</th>
-                    <th>Due Date</th>
-                    <th>Phase / Type</th>
-                    <th>Instalment Amount</th>
-                    <th>Principal Share</th>
-                    <th>Interest Share</th>
-                    <th>Status</th>
-                    <th>Payment Action</th>
+                    <th>{t('installmentNum')}</th>
+                    <th>{t('dueDate')}</th>
+                    <th>{t('phaseType')}</th>
+                    <th>{t('installmentAmount')}</th>
+                    <th>{t('principalShare')}</th>
+                    <th>{t('interestShare')}</th>
+                    <th>{t('status')}</th>
+                    <th>{t('paymentAction')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1737,15 +2005,15 @@ export function LoanDetail() {
 
             <div style={{ background: 'var(--slate-50)', padding: '0.85rem', borderRadius: '6px', marginBottom: '1rem' }}>
               <div className="row between small" style={{ marginBottom: '0.3rem' }}>
-                <span>Due Date:</span>
+                <span>{t('dueDate')}:</span>
                 <b>{paymentModal.due_date}</b>
               </div>
               <div className="row between small" style={{ marginBottom: '0.3rem' }}>
-                <span>Scheduled Amount:</span>
+                <span>{t('scheduledAmount')}</span>
                 <b>{money(paymentModal.amount)}</b>
               </div>
               <div className="row between small">
-                <span>Principal Component:</span>
+                <span>{t('principalComponent')}</span>
                 <span>{money(paymentModal.principal_part)}</span>
               </div>
             </div>
@@ -1818,7 +2086,7 @@ export function LoanDetail() {
         <div className="modal-overlay" onClick={() => setShowForecloseModal(false)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
             <div className="row between" style={{ marginBottom: '1rem', alignItems: 'center' }}>
-              <h3 style={{ margin: 0 }}>Early Loan Foreclosure & Settlement</h3>
+              <h3 style={{ margin: 0 }}>{t('earlyForeclosure')}</h3>
               <button type="button" className="icon-btn" onClick={() => setShowForecloseModal(false)}>✕</button>
             </div>
 
@@ -1828,25 +2096,25 @@ export function LoanDetail() {
 
             <div style={{ background: 'var(--slate-50)', padding: '0.85rem', borderRadius: '6px', marginBottom: '1rem', fontSize: '0.85rem' }}>
               <div className="row between" style={{ marginBottom: '0.4rem' }}>
-                <span className="muted">Outstanding Principal:</span>
+                <span className="muted">{t('outstandingPrincipal')}</span>
                 <b>{money(forecloseQuote.outstanding_principal)}</b>
               </div>
               <div className="row between" style={{ marginBottom: '0.4rem' }}>
-                <span className="muted">Accrued Month Interest:</span>
+                <span className="muted">{t('accruedMonthInterest')}</span>
                 <b>{money(forecloseQuote.accrued_interest)}</b>
               </div>
               <div className="row between" style={{ marginBottom: '0.4rem' }}>
-                <span className="muted">Foreclosure Penalty Fee:</span>
+                <span className="muted">{t('foreclosurePenaltyFee')}</span>
                 <span style={{ color: '#059669', fontWeight: 700 }}>₹0.00 (Zero Penalty)</span>
               </div>
               <div className="row between" style={{ borderTop: '1px dashed var(--border-color)', paddingTop: '0.4rem', fontSize: '1rem' }}>
-                <span><b>Total Settlement Due:</b></span>
+                <span><b>{t('totalSettlementDue')}</b></span>
                 <b style={{ color: 'var(--emerald-700)' }}>{money(forecloseQuote.total_settlement_amount)}</b>
               </div>
             </div>
 
             <div style={{ fontSize: '0.82rem', color: '#475569', marginBottom: '1rem' }}>
-              <span>Available Wallet Balance: <b>{money(user?.savings_balance || 0)}</b></span>
+              <span>{t('availableWalletBalance')} <b>{money(user?.savings_balance || 0)}</b></span>
               {(user?.savings_balance || 0) < forecloseQuote.total_settlement_amount && (
                 <p style={{ color: '#dc2626', marginTop: '0.3rem', fontWeight: 600 }}>
                   ⚠️ Your wallet balance is less than the settlement amount. Please deposit funds into your wallet to complete early closure.
@@ -1893,7 +2161,7 @@ export function LoanDetail() {
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <span className="badge approved" style={{ fontWeight: 700 }}>SANCTION ORDER</span>
+                <span className="badge approved" style={{ fontWeight: 700 }}>{t('sanctionOrder')}</span>
                 <div className="muted small" style={{ fontSize: '0.72rem', marginTop: '4px' }}>
                   Ref: FS/SANCTION/2026/{String(l.id).padStart(4, '0')}
                 </div>
@@ -1904,13 +2172,13 @@ export function LoanDetail() {
             <div style={{ marginBottom: '1.25rem' }}>
               <div className="row between small" style={{ marginBottom: '0.75rem', background: 'var(--slate-50)', padding: '0.65rem 0.85rem', borderRadius: '6px' }}>
                 <div>
-                  <span className="muted">Sanction Date:</span> <b>{l.decided_at ? new Date(l.decided_at + 'Z').toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN')}</b>
+                  <span className="muted">{t('sanctionDate')}</span> <b>{l.decided_at ? new Date(l.decided_at + 'Z').toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN')}</b>
                 </div>
                 <div>
-                  <span className="muted">Borrower:</span> <b>{l.borrower_name} (#{l.user_id})</b>
+                  <span className="muted">{t('borrower')}:</span> <b>{l.borrower_name} (#{l.user_id})</b>
                 </div>
                 <div>
-                  <span className="muted">SHG Affiliation:</span> <b>{l.shg_id ? `SHG #${l.shg_id}` : 'Direct Account'}</b>
+                  <span className="muted">{t('shgAffiliation')}</span> <b>{l.shg_id ? `SHG #${l.shg_id}` : 'Direct Account'}</b>
                 </div>
               </div>
 
@@ -1921,36 +2189,36 @@ export function LoanDetail() {
               {/* Terms Table */}
               <div style={{ border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden', marginBottom: '1rem', fontSize: '0.82rem' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '1px solid var(--border-color)' }}>
-                  <div style={{ padding: '0.5rem 0.75rem', background: 'var(--slate-50)', fontWeight: 600 }}>Sanctioned Principal:</div>
+                  <div style={{ padding: '0.5rem 0.75rem', background: 'var(--slate-50)', fontWeight: 600 }}>{t('sanctionedPrincipal')}</div>
                   <div style={{ padding: '0.5rem 0.75rem', fontWeight: 800, color: 'var(--emerald-700)' }}>{money(l.amount)}</div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '1px solid var(--border-color)' }}>
-                  <div style={{ padding: '0.5rem 0.75rem', background: 'var(--slate-50)', fontWeight: 600 }}>Annual Interest Rate (APR):</div>
+                  <div style={{ padding: '0.5rem 0.75rem', background: 'var(--slate-50)', fontWeight: 600 }}>{t('annualInterestRateApr')}</div>
                   <div style={{ padding: '0.5rem 0.75rem' }}>{l.annual_rate}% p.a. (Reducing Balance Method)</div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '1px solid var(--border-color)' }}>
-                  <div style={{ padding: '0.5rem 0.75rem', background: 'var(--slate-50)', fontWeight: 600 }}>Repayment Tenure:</div>
+                  <div style={{ padding: '0.5rem 0.75rem', background: 'var(--slate-50)', fontWeight: 600 }}>{t('repaymentTenure')}</div>
                   <div style={{ padding: '0.5rem 0.75rem' }}>{l.tenure_months} Months</div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '1px solid var(--border-color)' }}>
-                  <div style={{ padding: '0.5rem 0.75rem', background: 'var(--slate-50)', fontWeight: 600 }}>Amortization Protocol:</div>
+                  <div style={{ padding: '0.5rem 0.75rem', background: 'var(--slate-50)', fontWeight: 600 }}>{t('amortizationProtocol')}</div>
                   <div style={{ padding: '0.5rem 0.75rem' }}>
                     {l.schedule_type === 'harvest_bullet' ? '🌾 Harvest-Aligned Bullet (Gestation Maintenance + Post-Harvest Bullets)' : 'Equated Monthly Installment (EMI)'}
                   </div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '1px solid var(--border-color)' }}>
-                  <div style={{ padding: '0.5rem 0.75rem', background: 'var(--slate-50)', fontWeight: 600 }}>Stated Livelihood Purpose:</div>
+                  <div style={{ padding: '0.5rem 0.75rem', background: 'var(--slate-50)', fontWeight: 600 }}>{t('statedPurpose')}</div>
                   <div style={{ padding: '0.5rem 0.75rem' }}>{l.purpose || 'Agricultural / Livelihood Facility'}</div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
-                  <div style={{ padding: '0.5rem 0.75rem', background: 'var(--slate-50)', fontWeight: 600 }}>Foreclosure / Prepayment Penalty:</div>
-                  <div style={{ padding: '0.5rem 0.75rem', color: 'var(--emerald-600)', fontWeight: 600 }}>NIL (0% per RBI Fair Practice Code)</div>
+                  <div style={{ padding: '0.5rem 0.75rem', background: 'var(--slate-50)', fontWeight: 600 }}>{t('prepaymentPenalty')}</div>
+                  <div style={{ padding: '0.5rem 0.75rem', color: 'var(--emerald-600)', fontWeight: 600 }}>{t('nilRbiPolicy')}</div>
                 </div>
               </div>
 
               {/* Statutory Fair Practice Code Seal */}
               <div style={{ background: 'var(--card-bg-subtle)', padding: '0.75rem 0.85rem', borderRadius: '6px', borderLeft: '3px solid var(--emerald-600)', fontSize: '0.76rem', color: '#475569', marginBottom: '1.25rem' }}>
-                <b>Statutory Fair Practices Declaration:</b> Issued under the RBI Fair Practices Code for Microfinance Institutions. The borrower is entitled to an itemized passbook, transparent reducing-rate calculation, and zero foreclosure penalties.
+                <b>{t('statutoryFairPracticesDecl')}</b> Issued under the RBI Fair Practices Code for Microfinance Institutions. The borrower is entitled to an itemized passbook, transparent reducing-rate calculation, and zero foreclosure penalties.
               </div>
 
               {/* Digital Officer Seal */}
@@ -1960,15 +2228,15 @@ export function LoanDetail() {
                     <IconAward size={20} />
                   </div>
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: '0.78rem' }}>AUTHORIZED SANCTION DESK</div>
-                    <div className="muted small" style={{ fontSize: '0.7rem' }}>FinanceSaathi Automated Underwriting</div>
+                    <div style={{ fontWeight: 700, fontSize: '0.78rem' }}>{t('authorizedSanctionDesk')}</div>
+                    <div className="muted small" style={{ fontSize: '0.7rem' }}>{t("underwritingDesk")}</div>
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <span className={`badge ${l.status === 'approved' || l.status === 'disbursed' ? 'approved' : 'pending'}`} style={{ fontSize: '0.7rem' }}>
                     {l.status === 'approved' || l.status === 'disbursed' ? '✓ Institutional Sanction Confirmed' : 'PENDING UNDERWRITING REVIEW'}
                   </span>
-                  <div className="muted small" style={{ fontSize: '0.68rem', marginTop: '2px' }}>DPDP-2023 Verified</div>
+                  <div className="muted small" style={{ fontSize: '0.68rem', marginTop: '2px' }}>{t('dpdpVerified')}</div>
                 </div>
               </div>
             </div>

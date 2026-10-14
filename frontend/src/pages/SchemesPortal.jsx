@@ -18,6 +18,110 @@ import {
   IconAward,
 } from '../icons'
 
+
+const LOCALIZED_SCHEME_METADATA = {
+  hi: {
+    pm_kisan: {
+      nodalMinistry: 'कृषि एवं किसान कल्याण मंत्रालय, भारत सरकार',
+      tag: '100% केंद्रीय प्रत्यक्ष लाभ अंतरण (DBT)',
+      documents: ['आधार कार्ड (अनिवार्य)', 'कृषि भूमि रिकॉर्ड (7/12 खतौनी / खसरा)', 'बैंक खाता पासबुक आईएफएससी कोड सहित'],
+      applicationSteps: 'आधिकारिक पीएम-किसान पोर्टल अथवा नजदीकी सामान्य सेवा केंद्र (सीएससी) पर पंजीकरण करें। राज्य नोडल अधिकारी भूमि अभिलेखों का सत्यापन करते हैं।',
+    },
+    pm_mudra: {
+      nodalMinistry: 'वित्त मंत्रालय / वित्तीय सेवा विभाग',
+      tag: 'बिना गारंटी मुद्रा एमएसएमई ऋण',
+      documents: ['पहचान एवं निवास प्रमाण (आधार / मतदाता पत्र)', 'दुकान लाइसेंस / उद्यम आधार प्रमाण पत्र', 'मशीनरी / सामग्री खरीद कोटेशन'],
+      applicationSteps: 'उद्यम मित्र पोर्टल पर ऑनलाइन आवेदन करें अथवा किसी भी वाणिज्यिक, ग्रामीण या सहकारी बैंक शाखा में सीधे प्रस्ताव जमा करें।',
+    },
+    pm_svanidhi: {
+      nodalMinistry: 'आवासन और शहरी कार्य मंत्रालय',
+      tag: '7% प्रत्यक्ष ब्याज सब्सिडी',
+      documents: ['मोबाइल लिंक्ड आधार कार्ड', 'स्ट्रीट वेंडिंग प्रमाणपत्र (CoVR) अथवा नगर निकाय अनुशंसा पत्र', 'बैंक पासबुक / यूपीआई क्यूआर मर्चेंट प्रमाण'],
+      applicationSteps: 'पीएम-स्वनिधि पोर्टल अथवा स्थानीय नगर निकाय (ULB) नोडल अधिकारी के माध्यम से आवेदन करें।',
+    },
+    day_nrlm: {
+      nodalMinistry: 'ग्रामीण विकास मंत्रालय',
+      tag: 'बचत गट बैंक लिंकेज एवं ब्याज सब्सिडी',
+      documents: ['बचत गट सदस्य पासबुक व बैठक प्रस्ताव पुस्तिका', 'सदस्य का आधार कार्ड', 'बचत गट बैंक खाता विवरण'],
+      applicationSteps: 'राज्य ग्रामीण आजीविका मिशन (SRLM) के अंतर्गत गांव में स्वयं सहायता समूह में शामिल हों अथवा बनाएं।',
+    },
+    pmjdy: {
+      nodalMinistry: 'वित्तीय सेवा विभाग, वित्त मंत्रालय',
+      tag: 'सार्वभौमिक शून्य-शेष बैंक खाता',
+      documents: ['आधार कार्ड (अथवा कोई आधिकारिक वैध पहचान पत्र)', 'पासपोर्ट आकार का फोटो'],
+      applicationSteps: 'आधार कार्ड लेकर किसी भी बैंक शाखा अथवा बैंक मित्र / ग्राहक सेवा केंद्र पर तुरंत जन धन खाता खुलवाएं।',
+    },
+    pm_kusum: {
+      nodalMinistry: 'नवीन और नवीकरणीय ऊर्जा मंत्रालय (MNRE)',
+      tag: '60% तक सोलर पंप सब्सिडी',
+      documents: ['कृषि भूमि 7/12 खतौनी अभिलेख', 'आधार कार्ड एवं बैंक पासबुक', 'जल स्रोत प्रमाण पत्र / भूजल अनापत्ति प्रमाण'],
+      applicationSteps: 'राज्य अक्षय ऊर्जा विकास एजेंसी पोर्टल (जैसे MEDA / डिस्कॉम) के माध्यम से आवेदन करें। 10-40% किसान अंशदान जमा करें।',
+    },
+    pm_awas: {
+      nodalMinistry: 'ग्रामीण विकास मंत्रालय',
+      tag: 'पक्का आवास प्रत्यक्ष निर्माण अनुदान',
+      documents: ['परिवार के सभी वयस्क सदस्यों का आधार कार्ड', 'मनरेगा जॉब कार्ड', 'आधार लिंक्ड बैंक खाता पासबुक'],
+      applicationSteps: 'ग्राम सभा सामाजिक-आर्थिक जाति जनगणना (SECC) सूची से पात्र लाभार्थियों का चयन करती है। निर्माण चरणों के सत्यापन उपरांत सीधी सहायता मिलती है।',
+    },
+    sukanya: {
+      nodalMinistry: 'वित्त मंत्रालय / राष्ट्रीय बचत संस्थान',
+      tag: '8.2% संप्रभु चक्रवृद्धि ब्याज दर',
+      documents: ['बालिका का जन्म प्रमाण पत्र', 'माता-पिता/अभिभावक का पहचान प्रमाण (आधार / पैन)', 'अभिभावक का निवास प्रमाण पत्र'],
+      applicationSteps: 'मात्र ₹250 की शुरुआती जमा राशि से किसी भी डाकघर अथवा अधिकृत वाणिज्यिक बैंक शाखा में खाता खुलवाएं।',
+    },
+  },
+  mr: {
+    pm_kisan: {
+      nodalMinistry: 'कृषी व शेतकरी कल्याण मंत्रालय, भारत सरकार',
+      tag: '१००% थेट बँक खात्यात अनुदान (DBT)',
+      documents: ['आधार कार्ड (अनिवार्य)', 'शेती जमीन मालकी नोंद (७/१२ उतारा व ८-अ)', 'बँक खाते पासबुक आयएफएससी कोडसह'],
+      applicationSteps: 'अधिकृत पीएम-किसान पोर्टलवर किंवा जवळच्या महा-ई-सेवा केंद्रावर नोंदणी करा. तालुका कृषी अधिकारी शेतजमीन नोंदींची पडताळणी करतात.',
+    },
+    pm_mudra: {
+      nodalMinistry: 'वित्त मंत्रालय, भारत सरकार',
+      tag: 'विनातारण मुद्रा व्यवसाय कर्ज',
+      documents: ['ओळख व पत्त्याचा पुरावा (आधार / मतदार ओळखपत्र)', 'दुकान परवाना / उद्यम आधार नोंदणी प्रमाणपत्र', 'यंत्रसामग्री व माल खरेदी कोटेशन बिल'],
+      applicationSteps: 'उद्यम मित्र पोर्टलवर ऑनलाइन अर्ज करा किंवा कोणत्याही राष्ट्रीयीकृत, ग्रामीण अथवा सहकारी बँकेत थेट अर्ज सादर करा.',
+    },
+    pm_svanidhi: {
+      nodalMinistry: 'गृहनिर्माण व नगरविकास मंत्रालय',
+      tag: '७% थेट व्याज सवलत अनुदान',
+      documents: ['मोबाईल जोडलेले आधार कार्ड', 'फेरीवाला प्रमाणपत्र (CoVR) किंवा नगरपरिषद शिफारस पत्र', 'बँक पासबुक / डिजिटल यूपीआय क्युआर कोड पुरावा'],
+      applicationSteps: 'पीएम-स्वनिधी पोर्टलवर किंवा स्थानिक नगरपरिषद / महानगरपालिका कक्षात थेट अर्ज सादर करा.',
+    },
+    day_nrlm: {
+      nodalMinistry: 'ग्रामीण विकास मंत्रालय',
+      tag: 'बचत गट बँक जोडणी व व्याज सवलत',
+      documents: ['बचत गट सदस्य पासबुक व बैठक ठराव वही', 'सदस्याचे आधार कार्ड', 'बचत गट अधिकृत बँक खाते तपशील'],
+      applicationSteps: 'उमेद महाराष्ट्र राज्य ग्रामीण जीवनोन्नती अभियानांतर्गत (MSRLM) गावात महिला बचत गट स्थापन करा अथवा जोडले जा.',
+    },
+    pmjdy: {
+      nodalMinistry: 'वित्तीय सेवा विभाग, वित्त मंत्रालय',
+      tag: 'शून्य शिल्लक जन धन बँक खाते',
+      documents: ['आधार कार्ड (किंवा अधिकृत वैध ओळख पुरावा)', 'पासपोर्ट आकाराचे छायाचित्र'],
+      applicationSteps: 'कोणत्याही बँक शाखेत किंवा बँक प्रतिनिधी / सीएससी केंद्रावर जाऊन आधार कार्डद्वारे शून्य शिल्लक जन धन खाते उघडा.',
+    },
+    pm_kusum: {
+      nodalMinistry: 'नवीन व नवीकरणीय ऊर्जा मंत्रालय (MNRE)',
+      tag: '६०% पर्यंत सौर कृषी पंप अनुदान',
+      documents: ['शेती जमीन ७/१२ उतारा व ८-अ नोंद', 'आधार कार्ड व बँक पासबुक प्रत', 'पाणी स्रोत उपलब्धता दाखला / भूजल विभाग मंजुरी'],
+      applicationSteps: 'महाऊर्जा (MEDA) पोर्टलवर किंवा महावितरण संकेतस्थळावर सौर कृषी पंपासाठी ऑनलाइन नोंदणी करा.',
+    },
+    pm_awas: {
+      nodalMinistry: 'ग्रामीण विकास मंत्रालय',
+      tag: 'थेट पक्के घर बांधकाम अनुदान',
+      documents: ['कुटुंबातील सर्व सज्ञान सदस्यांचे आधार कार्ड', 'मनरेगा जॉब कार्ड', 'आधार जोडलेले बँक खाते पासबुक'],
+      applicationSteps: 'ग्रामसभेमार्फत प्रधानमंत्री आवास योजनेच्या प्रतीक्षा यादीतून लाभार्थी निवडले जातात. जिओटॅगिंगनुसार हप्त्यांमध्ये रक्कम जमा होते.',
+    },
+    sukanya: {
+      nodalMinistry: 'वित्त मंत्रालय / राष्ट्रीय अल्पबचत संस्था',
+      tag: '८.२% सर्वोच्च चक्रवाढ व्याजदर',
+      documents: ['मुलीचा अधिकृत जन्म दाखला', 'पालकांचे आधार कार्ड व पॅन कार्ड', 'पालकांचा रहिवासी दाखला'],
+      applicationSteps: 'फक्त ₹२५० भरून कोणत्याही पोस्ट ऑफिसमध्ये किंवा अधिकृत बँकेच्या शाखेत सुकन्या समृद्धी खाते उघडा.',
+    },
+  },
+}
+
 // UI Metadata enriching server schemes with nodal ministry and application steps
 const SCHEME_METADATA = {
   pm_kisan: {
@@ -272,9 +376,9 @@ export default function SchemesPortal() {
       {/* Header */}
       <div className="page-header-row">
         <div>
-          <h2>Government Welfare & Subsidy Schemes</h2>
+          <h2>{t("schemes_header_title")}</h2>
           <p className="page-subtitle">
-            Central & State flagship financial assistance, direct DBT grants, credit subsidies, and social protection
+            {t("schemes_header_sub")}
           </p>
         </div>
       </div>
@@ -283,34 +387,34 @@ export default function SchemesPortal() {
       <div className="card eligibility-finder-card">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.85rem' }}>
           <IconAward size={22} className="text-emerald" />
-          <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Smart Scheme Eligibility Matcher</h3>
+          <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{t("matcher_title")}</h3>
           {user && (
             <span className="badge" style={{ fontSize: '0.72rem', background: 'var(--emerald-50)', color: 'var(--emerald-700)', border: '1px solid var(--emerald-200)' }}>
-              Auto-matched to your profile
+              {t("matcher_auto_matched")}
             </span>
           )}
         </div>
         <p className="muted small" style={{ marginBottom: '1.25rem' }}>
-          Adjust your household parameters to calculate the exact government grants and subsidized capital available to you.
+          {t("matcher_sub")}
         </p>
 
         <div className="finder-inputs-grid">
           <div className="field" style={{ margin: 0 }}>
-            <span>Primary Livelihood</span>
+            <span>{t("label_primary_livelihood")}</span>
             <select
               value={finderOccupation}
               onChange={(e) => setFinderOccupation(e.target.value)}
             >
-              <option value="farmer">Farmer / Crop Cultivator</option>
-              <option value="vendor">Street Vendor / Kirana Trader</option>
-              <option value="dairy">Dairy & Livestock Rearer</option>
-              <option value="artisan">Rural Artisan / Handloom</option>
-              <option value="general">General Micro-Enterprise / Service</option>
+              <option value="farmer">{t("occ_farmer")}</option>
+              <option value="vendor">{t("occ_vendor")}</option>
+              <option value="dairy">{t("occ_dairy")}</option>
+              <option value="artisan">{t("occ_artisan")}</option>
+              <option value="general">{t("occ_general")}</option>
             </select>
           </div>
 
           <div className="field" style={{ margin: 0 }}>
-            <span>Annual Household Income (₹)</span>
+            <span>{t("label_annual_income")}</span>
             <input
               type="number"
               step="10000"
@@ -328,7 +432,7 @@ export default function SchemesPortal() {
                 checked={finderHasLand}
                 onChange={(e) => setFinderHasLand(e.target.checked)}
               />
-              <span>Owns Agricultural Land (7/12 Extract)</span>
+              <span>{t("check_has_land")}</span>
             </label>
             <label className="check">
               <input
@@ -336,7 +440,7 @@ export default function SchemesPortal() {
                 checked={finderIsShg}
                 onChange={(e) => setFinderIsShg(e.target.checked)}
               />
-              <span>Active Self-Help Group (SHG) Member</span>
+              <span>{t("check_is_shg")}</span>
             </label>
           </div>
 
@@ -347,7 +451,7 @@ export default function SchemesPortal() {
                 checked={finderIsWoman}
                 onChange={(e) => setFinderIsWoman(e.target.checked)}
               />
-              <span>Woman Borrower / Woman Co-Applicant</span>
+              <span>{t("check_is_woman")}</span>
             </label>
             <button
               type="button"
@@ -355,7 +459,7 @@ export default function SchemesPortal() {
               onClick={() => setShowOnlyEligible(!showOnlyEligible)}
               style={{ marginTop: '0.2rem' }}
             >
-              {showOnlyEligible ? '✓ Showing Matched Only' : 'Filter by My Match'}
+              {showOnlyEligible ? t("btn_showing_matched") : t("btn_filter_match")}
             </button>
           </div>
         </div>
@@ -363,14 +467,14 @@ export default function SchemesPortal() {
         {/* Calculated Match Banner */}
         <div className="finder-results-bar">
           <div>
-            <span className="results-label">TOTAL GOVERNMENT ASSISTANCE UNLOCKED</span>
+            <span className="results-label">{t("unlocked_assistance")}</span>
             <div className="results-amount">
-              Up to {money(totalEligibleValue)} in Direct Grants & Concessions
+              {t("up_to")} {money(totalEligibleValue)} {t("in_grants")}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
             <span className="badge approved" style={{ fontSize: '0.85rem', padding: '6px 12px' }}>
-              ✓ {eligibleSchemes.length} of {schemesList.length} Flagship Schemes Matched
+              ✓ {eligibleSchemes.length} of {schemesList.length} {t("schemes_matched_badge")}
             </span>
           </div>
         </div>
@@ -401,7 +505,7 @@ export default function SchemesPortal() {
 
         <div style={{ width: '260px' }}>
           <input
-            placeholder="Search scheme name, ministry..."
+            placeholder={lang === "hi" ? "योजना का नाम, मंत्रालय खोजें..." : lang === "mr" ? "योजनेचे नाव, मंत्रालय शोधा..." : "Search scheme name, ministry..."}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{ fontSize: '0.84rem', padding: '6px 10px' }}
@@ -426,7 +530,7 @@ export default function SchemesPortal() {
                   </span>
                   {matched && (
                     <span className="badge approved" style={{ fontSize: '0.7rem' }}>
-                      ✓ Eligible
+                      {lang === "hi" ? "✓ पात्र" : lang === "mr" ? "✓ पात्र" : "✓ Eligible"}
                     </span>
                   )}
                 </div>
@@ -436,7 +540,7 @@ export default function SchemesPortal() {
               <p className="scheme-ministry">{s.nodalMinistry}</p>
 
               <div className="scheme-highlight-box">
-                <span className="highlight-label">KEY BENEFIT</span>
+                <span className="highlight-label">{lang === "hi" ? "प्रमुख लाभ" : lang === "mr" ? "मुख्य लाभ" : "KEY BENEFIT"}</span>
                 <span className="highlight-text">{s.benefitHighlight}</span>
               </div>
 
@@ -448,7 +552,7 @@ export default function SchemesPortal() {
                   className="btn small ghost"
                   onClick={() => setSelectedScheme(s)}
                 >
-                  View Details & KYC
+                  {t("btn_view_details")}
                 </button>
                 <a
                   href={s.portalUrl}
@@ -457,7 +561,7 @@ export default function SchemesPortal() {
                   className="btn small"
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
                 >
-                  Official Portal <IconArrowRight size={13} />
+                  {t("official_portal_link")}
                 </a>
               </div>
             </div>
@@ -467,7 +571,7 @@ export default function SchemesPortal() {
 
       {displayedSchemes.length === 0 && (
         <div className="card" style={{ textAlign: 'center', padding: '3rem 0', marginTop: '1rem' }}>
-          <p className="muted">No schemes found matching the selected filters.</p>
+          <p className="muted">{lang === "hi" ? "चयनित फ़िल्टर से मेल खाती कोई योजना नहीं मिली।" : lang === "mr" ? "निवडलेल्या फिल्टरनुसार कोणतीही योजना आढळली नाही." : "No schemes found matching the selected filters."}</p>
           <button
             type="button"
             className="btn small ghost"
@@ -477,7 +581,7 @@ export default function SchemesPortal() {
               setShowOnlyEligible(false)
             }}
           >
-            Clear Filters
+            {lang === "hi" ? "फ़िल्टर हटाएं" : lang === "mr" ? "फिल्टर काढा" : "Clear Filters"}
           </button>
         </div>
       )}
@@ -500,7 +604,7 @@ export default function SchemesPortal() {
 
             <div style={{ background: 'var(--card-bg-subtle)', padding: '0.85rem', borderRadius: '6px', margin: '0.85rem 0', border: '1px solid var(--border-color)' }}>
               <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--emerald-600)', textTransform: 'uppercase' }}>
-                Flagship Benefit
+                {lang === "hi" ? "प्रमुख वित्तीय लाभ" : lang === "mr" ? "प्रमुख शासकीय लाभ" : "Flagship Benefit"}
               </div>
               <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--slate-900)' }}>
                 {selectedScheme.benefitHighlight}

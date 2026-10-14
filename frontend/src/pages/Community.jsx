@@ -143,7 +143,7 @@ export function Savings() {
         </form>
 
         <div style={{ marginTop: '0.6rem' }}>
-          <span className="muted small" style={{ marginRight: '0.5rem' }}>Quick presets:</span>
+          <span className="muted small" style={{ marginRight: '0.5rem' }}>{t("quickPresets")}</span>
           {PRESET_GOALS.map((p, i) => (
             <button
               key={i}
@@ -181,7 +181,7 @@ export function Savings() {
                   </div>
                   <div>
                     {isCompleted ? (
-                      <Badge tone="approved">Completed</Badge>
+                      <Badge tone="approved">{t("completed")}</Badge>
                     ) : g.progress_pct >= 50 ? (
                       <Badge tone="pending">Over 50%</Badge>
                     ) : (
@@ -566,14 +566,14 @@ export function SHG() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                 <IconShield size={22} className="text-emerald" />
                 <h3 style={{ margin: 0 }}>{summary.data.name}</h3>
-                <Badge tone="approved">Active SHG</Badge>
+                <Badge tone="approved">{t("activeShg")}</Badge>
               </div>
               <p className="muted small" style={{ margin: '0.3rem 0 0 0' }}>
                 {summary.data.village ? `Village: ${summary.data.village}` : 'Village Registered'} · SHG ID: #{summary.data.id} · NRLM Linkage Status: Verified
               </p>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <span className="muted small">Monthly Thrift Rate</span>
+              <span className="muted small">{t("monthlyThriftRate")}</span>
               <div style={{ fontWeight: 700, color: 'var(--emerald-action)' }}>
                 {money(summary.data.monthly_thrift_amount || 500)} / member
               </div>
@@ -597,7 +597,7 @@ export function SHG() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginBottom: '0.85rem' }}>
                 <div className="row between small">
                   <div>
-                    <span className="muted">Quorum Status:</span>{' '}
+                    <span className="muted">{t("quorumStatus")}</span>{' '}
                     <b>{quorumPct}% ({presentCount}/{membersList.length})</b>
                   </div>
                   <Badge tone={quorumPct >= 50 ? 'approved' : 'pending'}>
@@ -608,7 +608,7 @@ export function SHG() {
 
               <div style={{ border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden', marginBottom: '0.85rem' }}>
                 <div style={{ background: 'var(--slate-50)', padding: '0.45rem 0.65rem', fontWeight: 600, fontSize: '0.78rem', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Member Roll</span>
+                  <span>{t("memberRoll")}</span>
                   <span>Present: {presentCount} of {membersList.length}</span>
                 </div>
                 {membersList.map((m) => {
@@ -642,7 +642,7 @@ export function SHG() {
               <form onSubmit={handleRecordMeeting} style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                 <div className="row" style={{ gap: '0.5rem' }}>
                   <div style={{ flex: 1 }}>
-                    <span className="small muted">Meeting Date</span>
+                    <span className="small muted">{t("meetingDate")}</span>
                     <input
                       type="date"
                       value={meetingDate}
@@ -651,7 +651,7 @@ export function SHG() {
                     />
                   </div>
                   <div style={{ flex: 2 }}>
-                    <span className="small muted">Agenda</span>
+                    <span className="small muted">{t("agenda")}</span>
                     <input
                       value={meetingAgenda}
                       onChange={(e) => setMeetingAgenda(e.target.value)}
@@ -661,7 +661,7 @@ export function SHG() {
                   </div>
                 </div>
                 <div>
-                  <span className="small muted">Meeting Minutes / Decisions</span>
+                  <span className="small muted">{t("meetingMinutesDecisions")}</span>
                   <input
                     value={meetingMinutes}
                     onChange={(e) => setMeetingMinutes(e.target.value)}
@@ -675,7 +675,7 @@ export function SHG() {
 
               {meetings.data && meetings.data.length > 0 && (
                 <div style={{ marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>
-                  <div style={{ fontWeight: 600, fontSize: '0.82rem', marginBottom: '0.4rem' }}>Recent Assemblies Log</div>
+                  <div style={{ fontWeight: 600, fontSize: '0.82rem', marginBottom: '0.4rem' }}>{t("recentAssembliesLog")}</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', maxHeight: '160px', overflowY: 'auto' }}>
                     {meetings.data.slice(0, 5).map((mt) => (
                       <div key={mt.id} className="small" style={{ padding: '0.4rem 0.6rem', background: '#f9fafb', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
@@ -700,7 +700,7 @@ export function SHG() {
                 <form onSubmit={handlePayThrift} style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                   <div className="row" style={{ gap: '0.5rem' }}>
                     <div style={{ flex: 1 }}>
-                      <span className="small muted">Month (YYYY-MM)</span>
+                      <span className="small muted">{t("monthFormat")}</span>
                       <input
                         type="month"
                         value={payMonth}
@@ -709,7 +709,7 @@ export function SHG() {
                       />
                     </div>
                     <div style={{ flex: 1 }}>
-                      <span className="small muted">Thrift Amount (Rs)</span>
+                      <span className="small muted">{t("thriftAmountRs")}</span>
                       <input
                         type="number"
                         min="100"
@@ -745,7 +745,7 @@ export function SHG() {
 
                 {thrift.data && thrift.data.length > 0 && (
                   <div style={{ marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.82rem', marginBottom: '0.4rem' }}>Recent Thrift Contributions</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.82rem', marginBottom: '0.4rem' }}>{t("recentThriftContributions")}</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', maxHeight: '130px', overflowY: 'auto' }}>
                       {thrift.data.slice(0, 5).map((tItem) => (
                         <div key={tItem.id} className="small row between" style={{ padding: '0.3rem 0.5rem', background: '#f9fafb', borderRadius: '4px' }}>
@@ -777,7 +777,7 @@ export function SHG() {
                 </form>
 
                 <div style={{ background: 'var(--slate-50)', padding: '0.75rem', borderRadius: '6px' }}>
-                  <span style={{ fontWeight: 600, fontSize: '0.84rem' }}>Joint Liability Terms:</span>
+                  <span style={{ fontWeight: 600, fontSize: '0.84rem' }}>{t("jointLiabilityTerms")}</span>
                   <p className="muted small" style={{ margin: '0.2rem 0 0 0', fontSize: '0.74rem' }}>
                     All members mutually guarantee loans extended to the group under NABARD SHG-Bank Linkage guidelines.
                   </p>
@@ -790,11 +790,11 @@ export function SHG() {
           <Card title="SHG Internal Lending Common Corpus" style={{ marginBottom: '1.25rem' }}>
             <div className="row between" style={{ alignItems: 'center', marginBottom: '1rem' }}>
               <div>
-                <span className="muted small">Accumulated Group Common Fund:</span>
+                <span className="muted small">{t("accumulatedGroupFund")}</span>
                 <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--slate-900)' }}>
                   {money(corpus)}
                 </div>
-                <span className="muted small">Liquid micro-reserves available for peer emergency inter-lending</span>
+                <span className="muted small">{t("liquidReservesAvailable")}</span>
               </div>
               <button
                 type="button"
@@ -810,14 +810,14 @@ export function SHG() {
               <table>
                 <thead>
                   <tr>
-                    <th>Loan Ref</th>
-                    <th>Borrower Member</th>
-                    <th>Sanction Amount</th>
-                    <th>Tenure</th>
-                    <th>Emergency Purpose</th>
-                    <th>Repaid</th>
-                    <th>Status</th>
-                    <th>Actions</th>
+                    <th>{t("loanReference")}</th>
+                    <th>{t("borrower")}</th>
+                    <th>{t("sanctionAmount")}</th>
+                    <th>{t("tenure")}</th>
+                    <th>{t("emergencyPurpose")}</th>
+                    <th>{t("repaidLabel")}</th>
+                    <th>{t("status")}</th>
+                    <th>{t("action")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -868,7 +868,7 @@ export function SHG() {
                             Repay
                           </button>
                         )}
-                        {l.status === 'closed' && <span className="small muted">Fully Settled</span>}
+                        {l.status === 'closed' && <span className="small muted">{t("fullySettled")}</span>}
                       </td>
                     </tr>
                   ))}
@@ -890,11 +890,11 @@ export function SHG() {
               <table>
                 <thead>
                   <tr>
-                    <th>Member ID</th>
-                    <th>Full Name</th>
-                    <th>Designation</th>
-                    <th>Individual Savings Balance</th>
-                    <th>Status</th>
+                    <th>{t("memberId")}</th>
+                    <th>{t("legalName")}</th>
+                    <th>{t("groupDesignation")}</th>
+                    <th>{t("individualSavingsBalance")}</th>
+                    <th>{t("status")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -930,7 +930,7 @@ export function SHG() {
             <div className="modal-overlay" onClick={() => setShowInterLoanModal(false)}>
               <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
                 <div className="modal-header">
-                  <h3>Request Peer Emergency Loan</h3>
+                  <h3>{t("requestPeerEmergencyLoan")}</h3>
                   <button className="icon-btn" onClick={() => setShowInterLoanModal(false)}>✕</button>
                 </div>
                 <p className="muted small" style={{ marginBottom: '1rem' }}>
@@ -939,12 +939,12 @@ export function SHG() {
 
                 <form onSubmit={handleRequestInternalLoan}>
                   <div className="field">
-                    <span>Borrower</span>
+                    <span>{t("borrower")}</span>
                     <input disabled value={user.name} />
                   </div>
 
                   <div className="field">
-                    <span>Requested Amount (Rs)</span>
+                    <span>{t("amount")}</span>
                     <input
                       type="number"
                       min="500"
@@ -957,7 +957,7 @@ export function SHG() {
                   </div>
 
                   <div className="field">
-                    <span>Tenure (Months)</span>
+                    <span>{t("tenure")}</span>
                     <select
                       value={interLoanForm.tenure_months}
                       onChange={(e) => setInterLoanForm({ ...interLoanForm, tenure_months: Number(e.target.value) })}
@@ -969,7 +969,7 @@ export function SHG() {
                   </div>
 
                   <div className="field">
-                    <span>Emergency Purpose</span>
+                    <span>{t("emergencyPurpose")}</span>
                     <input
                       required
                       placeholder="e.g. Seed purchase, hospital visit"
@@ -1005,7 +1005,7 @@ export function SHG() {
                 </div>
                 <form onSubmit={handleRepayInternalLoan}>
                   <div className="field">
-                    <span>Repayment Amount (Rs)</span>
+                    <span>{t("repaymentAmountRs")}</span>
                     <input
                       type="number"
                       min="100"

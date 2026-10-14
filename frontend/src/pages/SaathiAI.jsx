@@ -575,7 +575,7 @@ export default function SaathiAI({ isWidget = false, onClose }) {
         </form>
         <div className="saathi-privacy-footer">
           <IconLock size={13} />
-          <span>Your microfinance data stays private and safe</span>
+          <span>{t("saathiDataSafe")}</span>
         </div>
       </div>
     </div>

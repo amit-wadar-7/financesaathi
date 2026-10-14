@@ -267,8 +267,6 @@ def seed_demo(db: Session):
         ("Kavita Rao", "leader@financesaathi.in", "Leader#2025!", "shg_leader", "+91 97654 32100", 22000.0, 11000.0, 34800.0),
         ("Asha Verma", "borrower@financesaathi.in", "Borrower#2025!", "user", "+91 94231 88201", 18000.0, 8500.0, 14500.0),
         ("Vikas Sharma", "farmer@financesaathi.in", "Farmer#2025!", "user", "+91 98220 14829", 20000.0, 9300.0, 24500.0),
-        # Platform developer / admin account
-        ("AMIT WADAR", "amit.govind.wadar@gmail.com", "Admin#2025!", "admin", "+91 98200 00000", 50000.0, 20000.0, 60000.0),
         # Legacy .org aliases
         ("Rajesh Sharma", "admin@financesaathi.org", "AdminSecure#2026", "admin", "+91 98200 11001", 45000.0, 22000.0, 52000.0),
         ("Ramesh Deshmukh", "officer@financesaathi.org", "OfficerSecure#2026", "officer", "+91 98200 22002", 38000.0, 19000.0, 41000.0),

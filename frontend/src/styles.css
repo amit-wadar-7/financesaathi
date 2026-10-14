@@ -1056,7 +1056,7 @@ tr:hover td { background: #fafafa; }
 /* Loan Catalog Grid */
 .loan-catalog-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
   gap: 1.2rem;
 }
 
@@ -1167,7 +1167,7 @@ tr:hover td { background: #fafafa; }
 /* Schemes Catalog Grid */
 .schemes-catalog-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
   gap: 1.25rem;
   margin-top: 1rem;
 }
@@ -1899,6 +1899,77 @@ tr:hover td { background: #fafafa; }
   border-color: #334155 !important;
   color: #f8fafc !important;
 }
+
+[data-theme="dark"] .floating-saathi-trigger {
+  background: #059669 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.45) !important;
+}
+
+[data-theme="dark"] .floating-saathi-trigger:hover {
+  background: #047857 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .floating-saathi-trigger .floating-label,
+[data-theme="dark"] .floating-saathi-trigger .floating-robot {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .floating-saathi-drawer {
+  background: #111827 !important;
+  border-color: #1f2937 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .table-wrap {
+  background: #111827 !important;
+  border-color: #1f2937 !important;
+}
+
+[data-theme="dark"] table {
+  background: #111827 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] th {
+  background: #1e293b !important;
+  color: #94a3b8 !important;
+  border-bottom-color: #1f2937 !important;
+}
+
+[data-theme="dark"] td {
+  border-bottom-color: #1f2937 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] tr:hover td {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+[data-theme="dark"] td.muted,
+[data-theme="dark"] .table td.muted {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .eligibility-finder-card {
+  background: #111827 !important;
+  border-color: #1f2937 !important;
+  border-left-color: #059669 !important;
+}
+
+[data-theme="dark"] .quick-pill {
+  background: #1e293b !important;
+  color: #cbd5e1 !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .quick-pill.active {
+  background: #059669 !important;
+  color: #ffffff !important;
+  border-color: #059669 !important;
+}
+
 
 
 /* Print Optimization for Sanction Letters and Account Statements */
@@ -3988,6 +4059,115 @@ tr:hover td { background: #fafafa; }
     gap: 0.3rem !important;
   }
 }
+
+/* Hardening for small mobile screens (<= 480px and 360px) to prevent horizontal scroll */
+@media (max-width: 480px) {
+  html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+
+  .desktop-shell,
+  .desktop-main-wrapper,
+  .desktop-page-content {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+  }
+
+  .page-container {
+    padding: 0.75rem 0.65rem !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  .loan-catalog-grid,
+  .schemes-catalog-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.85rem !important;
+    width: 100% !important;
+  }
+
+  .loan-product-card,
+  .scheme-card,
+  .card,
+  .dashboard-card-box {
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .tab-bar-card {
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    padding: 4px !important;
+  }
+
+  .tab-btn {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    font-size: 0.76rem !important;
+    padding: 6px 8px !important;
+    text-align: center !important;
+  }
+
+  .filter-bar-card {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.65rem !important;
+  }
+
+  .filter-bar-card > div {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .finder-inputs-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .product-metrics-bar {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.4rem !important;
+    padding: 0.5rem !important;
+  }
+
+  .product-metric-item {
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .table-wrap {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 360px) {
+  .page-container {
+    padding: 0.5rem 0.4rem !important;
+  }
+
+  .loan-product-card,
+  .scheme-card,
+  .card {
+    padding: 0.85rem !important;
+  }
+
+  .hero-action-btn {
+    font-size: 0.72rem !important;
+    padding: 0.45rem 0.35rem !important;
+  }
+
+  .top-avatar {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 0.7rem !important;
+  }
+}
+
 
 
 

@@ -455,5 +455,3 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = 540 }) {
     </div>
   )
 }
-
-export const CibilSpeedometer = FinancialHealthScoreDial;

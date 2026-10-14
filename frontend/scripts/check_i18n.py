@@ -1,4 +1,4 @@
-"""Checks completeness of translation keys across en.json, hi.json, mr.json and JSX calls."""
+"""Checks completeness of translation keys across en.json, hi.json, mr.json and JSX calls, and audits JSX text literals."""
 import json
 import os
 import re
@@ -63,8 +63,22 @@ for jf in jsx_files:
         called_key = match.group(1)
         # Check against en_keys and legacy dictionary keys in i18n.jsx
         if called_key not in all_keys and not any(k.lower() == called_key.lower() for k in all_keys):
-            # check if legacy
-            legacy_keys = {'dashboard', 'loans', 'calculators', 'learn', 'schemes', 'savings', 'profile', 'shg', 'atRisk', 'admin', 'notifications', 'logout', 'login', 'register', 'email', 'password', 'name', 'phone', 'language', 'newLoan', 'amount', 'rate', 'months', 'purpose', 'apply', 'status', 'emi', 'outstanding', 'nextInstallment', 'totalSaved', 'coursesDone', 'activeLoans', 'pendingLoans', 'healthScore', 'save', 'income', 'expenses', 'existingEmi', 'savingsBalance', 'welcome', 'pay', 'approve', 'reject', 'submit', 'start', 'back', 'ready', 'caution', 'not_ready', 'fillProfile', 'noAccount', 'haveAccount', 'saathiAi', 'quickActions', 'depositShg', 'payEmi', 'askSaathi', 'emergencyCalc', 'totalSavingsAssets', 'monthlySpend', 'targetGoal', 'viewLedger', 'payUpi', 'allGoals', 'startLesson', 'kisanAgri', 'pmMudra', 'mahilaShakti', 'pmSvanidhi', 'emergencyHealth', 'solarGreen', 'reducingBalance', 'gestation', 'harvestBullet', 'subvention', 'foreclosure', 'tenure', 'principal', 'interest', 'simulatedDemoMode', 'noRealMoney', 'soa', 'taxCert', 'creditHealth', 'shgAudit', 'rbiAudit', 'grievances', 'lodgeGrievance', 'ombudsman'}
+            legacy_keys = {
+                'dashboard', 'loans', 'calculators', 'learn', 'schemes', 'savings', 'profile',
+                'shg', 'atRisk', 'admin', 'notifications', 'logout', 'login', 'register',
+                'email', 'password', 'name', 'phone', 'language', 'newLoan', 'amount', 'rate',
+                'months', 'purpose', 'apply', 'status', 'emi', 'outstanding', 'nextInstallment',
+                'totalSaved', 'coursesDone', 'activeLoans', 'pendingLoans', 'healthScore', 'save',
+                'income', 'expenses', 'existingEmi', 'savingsBalance', 'welcome', 'pay', 'approve',
+                'reject', 'submit', 'start', 'back', 'ready', 'caution', 'not_ready', 'fillProfile',
+                'noAccount', 'haveAccount', 'saathiAi', 'quickActions', 'depositShg', 'payEmi',
+                'askSaathi', 'emergencyCalc', 'totalSavingsAssets', 'monthlySpend', 'targetGoal',
+                'viewLedger', 'payUpi', 'allGoals', 'startLesson', 'kisanAgri', 'pmMudra',
+                'mahilaShakti', 'pmSvanidhi', 'emergencyHealth', 'solarGreen', 'reducingBalance',
+                'gestation', 'harvestBullet', 'subvention', 'foreclosure', 'tenure', 'principal',
+                'interest', 'simulatedDemoMode', 'noRealMoney', 'soa', 'taxCert', 'creditHealth',
+                'shgAudit', 'rbiAudit', 'grievances', 'lodgeGrievance', 'ombudsman'
+            }
             if called_key not in legacy_keys:
                 missing_in_locales.add(f"{os.path.basename(jf)}: t('{called_key}') not found in locales")
 
@@ -72,12 +86,38 @@ if missing_in_locales:
     for m in missing_in_locales:
         errors.append(m)
 
+# 4. Check for unlocalized JSX text literals in src/pages
+pages_dir = os.path.join(base_dir, 'src', 'pages')
+jsx_literal_pattern = re.compile(r'>\s*([A-Za-z]{4,}(?:\s+[A-Za-z]+)*)\s*<')
+ignored_terms = {
+    'FinanceSaathi', 'Hindi', 'Marathi', 'English', 'ADMIN', 'USER', 'OFFICER', 'SHG_LEADER',
+    'JSON', 'HTML', 'True', 'False', 'POST', 'GET', 'PATCH', 'DELETE', 'NRLM', 'NABARD', 'RBI',
+    'INR', 'DPDP', 'DPDP-2023', 'HTTPS', 'HTTP', 'UUID', 'VITE', 'Legal', 'Panchasutra'
+}
+
+for root, _, files in os.walk(pages_dir):
+    for f in files:
+        if not f.endswith('.jsx') or f in ('Legal.jsx',):
+            continue
+        filepath = os.path.join(root, f)
+        with open(filepath, 'r', encoding='utf-8', errors='ignore') as jf:
+            lines = jf.readlines()
+        for lno, line in enumerate(lines, 1):
+            sline = line.strip()
+            if sline.startswith('//') or sline.startswith('{/*'):
+                continue
+            for match in jsx_literal_pattern.finditer(sline):
+                txt = match.group(1).strip()
+                if txt not in ignored_terms and not any(k.lower() == txt.lower() for k in ignored_terms):
+                    # Flag unlocalized text literals
+                    errors.append(f"{f}:{lno}: Unlocalized JSX text literal '{txt}'")
+
 print(f"Total verified locale keys: {len(en_keys)}")
 if errors:
     print(f"FAILED: Found {len(errors)} i18n issue(s):")
-    for err in errors[:20]:
+    for err in errors[:25]:
         print("  -", err)
     sys.exit(1)
 else:
-    print("SUCCESS: All i18n translation keys are complete and validated across EN, HI, MR!")
+    print("SUCCESS: All i18n translation keys and JSX literals are complete and validated across EN, HI, MR!")
     sys.exit(0)

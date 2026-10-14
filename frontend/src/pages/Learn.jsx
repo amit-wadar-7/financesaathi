@@ -31,28 +31,28 @@ export function Learn() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.2rem' }}>
               <IconAcademic size={24} className="text-emerald" />
-              <h2 style={{ fontSize: '1.4rem', color: 'var(--slate-900)' }}>{t('learn')} — Financial Academy</h2>
+              <h2 style={{ fontSize: '1.4rem', color: 'var(--slate-900)' }}>{t('learn')} — {t('financialAcademy')}</h2>
             </div>
             <p className="muted small">
-              Practical, bite-sized lessons designed for SHG leaders and microfinance borrowers.
+              {t('academyHeroSubtitle')}
             </p>
           </div>
           <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <span className="badge approved" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 8px' }}>
-              <IconCheck size={14} /> {completedCount} of {totalCourses} Completed
+              <IconCheck size={14} /> {completedCount} / {totalCourses} {t('completed')}
             </span>
             {completedCount > 0 ? (
               <>
                 <span className="badge" style={{ background: 'var(--emerald-50)', color: 'var(--emerald-700)', border: '1px solid var(--emerald-200)', padding: '4px 8px' }}>
-                  +{Math.round(totalScore)} Quiz Score
+                  +{Math.round(totalScore)} {t('quizScore')}
                 </span>
                 <span className="badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 8px' }}>
-                  <IconAward size={14} /> {completedCount} Module{completedCount > 1 ? 's' : ''} Certified
+                  <IconAward size={14} /> {completedCount} {t('modulesCertified')}
                 </span>
               </>
             ) : (
               <span className="badge" style={{ padding: '4px 8px', color: 'var(--slate-500)' }}>
-                0 Score • Start First Lesson
+                {t('zeroScoreStartLesson')}
               </span>
             )}
           </div>
@@ -65,14 +65,26 @@ export function Learn() {
         <div className="grid wide">
           {courses.data.map((c) => {
             const p = done[c.slug]
+            const catLabel = c.slug.includes('fraud')
+              ? t('catCyberSafety')
+              : c.slug.includes('loan') || c.slug.includes('emi')
+              ? t('catCreditBorrowing')
+              : c.slug.includes('shg')
+              ? t('catShgGov')
+              : c.slug.includes('kisan')
+              ? t('catAgriCredit')
+              : c.slug.includes('gov')
+              ? t('catWelfare')
+              : t('catHouseholdSavings')
+
             return (
               <Card key={c.id} className="course-card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
                   <span className="badge" style={{ textTransform: 'uppercase', fontSize: '0.7rem' }}>
-                    {c.slug.includes('fraud') ? 'Cyber Safety & UPI' : c.slug.includes('loan') || c.slug.includes('emi') ? 'Credit & Borrowing' : c.slug.includes('shg') ? 'SHG Governance' : c.slug.includes('kisan') ? 'Agri Credit' : c.slug.includes('gov') ? 'Welfare & Insurance' : 'Household Savings'}
+                    {catLabel}
                   </span>
                   <span className="muted small" style={{ fontSize: '0.74rem' }}>
-                    4 min read • Audio
+                    {t('readTimeAudio')}
                   </span>
                 </div>
 
@@ -84,17 +96,17 @@ export function Learn() {
                     <div>
                       {p.completed ? (
                         <span className="badge approved" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          <IconCheck size={13} /> Completed ({p.best_score}%)
+                          <IconCheck size={13} /> {t('completed')} ({p.best_score}%)
                         </span>
                       ) : (
-                        <span className="badge pending">In Progress ({p.best_score}%)</span>
+                        <span className="badge pending">{t('inProgress')} ({p.best_score}%)</span>
                       )}
                     </div>
                   ) : (
-                    <span className="muted small">Not Started</span>
+                    <span className="muted small">{t('notStarted')}</span>
                   )}
                   <Link className="btn small" to={'/learn/' + c.id}>
-                    {p?.completed ? 'Review Module' : t('start') + ' Module'}
+                    {p?.completed ? t('reviewModule') : t('startModule')}
                   </Link>
                 </div>
               </Card>
@@ -173,7 +185,7 @@ export function CourseView() {
     <div className="course-view-page" style={{ maxWidth: '880px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <Link to="/learn" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
-          ← {t('back')} to Academy
+          ← {t('backToAcademy')}
         </Link>
         <button
           className={`btn small ${speaking ? 'active' : 'ghost'}`}
@@ -181,21 +193,21 @@ export function CourseView() {
           style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
         >
           <IconVolume2 size={16} />
-          <span>{speaking ? 'Stop Reading' : 'Listen Aloud (Audio)'}</span>
+          <span>{speaking ? t('stopReading') : t('listenAloud')}</span>
         </button>
       </div>
 
       <Card style={{ padding: '2rem' }}>
         <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.8rem', marginBottom: '1.2rem' }}>
-          <span className="badge" style={{ marginBottom: '0.4rem' }}>Interactive Learning Module</span>
+          <span className="badge" style={{ marginBottom: '0.4rem' }}>{t('interactiveModule')}</span>
           <h2 style={{ fontSize: '1.6rem', color: 'var(--slate-900)' }}>{course.data.title}</h2>
         </div>
         <Rich text={course.data.content} />
       </Card>
 
-      <Card title="Knowledge Verification Quiz" style={{ marginTop: '1.2rem', padding: '1.8rem' }}>
+      <Card title={t('knowledgeQuiz')} style={{ marginTop: '1.2rem', padding: '1.8rem' }}>
         <p className="muted small" style={{ marginBottom: '1rem' }}>
-          Test your comprehension to earn your Saathi Academy badge and improve your Financial Health Score.
+          {t('quizDesc')}
         </p>
 
         {(quiz.data || []).map((q, qi) => (
@@ -238,7 +250,7 @@ export function CourseView() {
                   fontWeight: 500
                 }}
               >
-                {result.results[qi].correct ? '✓ Correct! ' : '✗ Incorrect. '}
+                {result.results[qi].correct ? `✓ ${t('correctMark')} ` : `✗ ${t('incorrectMark')} `}
                 {result.results[qi].explanation}
               </p>
             )}
@@ -259,17 +271,17 @@ export function CourseView() {
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ fontWeight: 700, fontSize: '1rem', color: result.passed ? 'var(--emerald-700)' : 'var(--amber-700)' }}>
-                Your Score: {result.score}%
+                {t('yourScore')}: {result.score}%
               </span>
               <Badge tone={result.passed ? 'approved' : 'caution'}>
-                {result.passed ? 'Passed with Distinction' : 'Needs Review (Retake Quiz)'}
+                {result.passed ? t('passedDistinction') : t('needsReview')}
               </Badge>
             </div>
           </div>
         )}
 
         <button className="btn" onClick={submit} disabled={!user}>
-          {t('submit')} Quiz Answers
+          {t('submitQuiz')}
         </button>
       </Card>
     </div>

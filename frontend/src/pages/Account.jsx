@@ -179,7 +179,7 @@ export function Profile() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div style={{ background: 'var(--canvas-bg)', padding: '1rem', borderRadius: '8px' }}>
               <div className="row between small" style={{ marginBottom: '0.35rem' }}>
-                <span style={{ fontWeight: 600 }}>Debt Service Burden (FOIR)</span>
+                <span style={{ fontWeight: 600 }}>{t("debtServiceBurden")}</span>
                 <span>{foirPct}% of Income</span>
               </div>
               <Progress pct={Math.min(100, foirPct)} />
@@ -192,7 +192,7 @@ export function Profile() {
 
             <div style={{ background: 'var(--canvas-bg)', padding: '1rem', borderRadius: '8px' }}>
               <div className="row between small" style={{ marginBottom: '0.35rem' }}>
-                <span style={{ fontWeight: 600 }}>Emergency Cushion Coverage</span>
+                <span style={{ fontWeight: 600 }}>{t("emergencyCushion")}</span>
                 <span>{emergencyMonths} Months</span>
               </div>
               <Progress pct={Math.min(100, (Number(emergencyMonths) / 3) * 100)} />
@@ -213,7 +213,7 @@ export function Profile() {
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                 <IconShield size={18} className="text-emerald" />
-                <h4 style={{ margin: 0, fontSize: '0.88rem' }}>DPDP Act 2023 Consent & Confidentiality</h4>
+                <h4 style={{ margin: 0, fontSize: '0.88rem' }}>{t("dpdpConsentConfidentiality")}</h4>
               </div>
               <p className="muted small" style={{ margin: 0, lineHeight: 1.5 }}>
                 Your financial figures are processed exclusively for credit risk analysis in compliance with the Digital Personal Data Protection Act, 2023. We do not sell or monetize personal credit metrics.
@@ -355,6 +355,7 @@ export function Notifications() {
 }
 
 export function AtRisk() {
+  const { t } = useLang()
   const r = useLoad(() => api('/officer/at-risk'))
   const atRiskList = r.data || []
 
@@ -384,12 +385,12 @@ export function AtRisk() {
           <table>
             <thead>
               <tr>
-                <th>Loan Reference</th>
-                <th>Borrower</th>
-                <th>Overdue Instalments</th>
+                <th>{t("loanReference")}</th>
+                <th>{t("borrower")}</th>
+                <th>{t("overdueInstalments")}</th>
                 <th>AI Risk Score</th>
-                <th>Underwriting Anomaly Rationale</th>
-                <th>Action</th>
+                <th>{t("underwritingAnomaly")}</th>
+                <th>{t("action")}</th>
               </tr>
             </thead>
             <tbody>
@@ -554,7 +555,7 @@ export function Admin() {
     <>
       <div className="row between" style={{ marginBottom: '1.25rem', alignItems: 'flex-start' }}>
         <div>
-          <h2>System Administration & Content Governance</h2>
+          <h2>{t("sysAdminGovernance")}</h2>
           <p className="muted" style={{ margin: '0.2rem 0 0 0' }}>
             Authoritative microfinance catalog CMS, welfare scheme registry, statutory audit trail, and user roles
           </p>
@@ -608,7 +609,7 @@ export function Admin() {
           <Card title="Batch Execution Services" style={{ marginBottom: '1.25rem' }}>
             <div className="row between" style={{ alignItems: 'center' }}>
               <div>
-                <h4 style={{ margin: 0 }}>Automated EMI Due Reminders</h4>
+                <h4 style={{ margin: 0 }}>{t("automatedEmiReminders")}</h4>
                 <p className="muted small" style={{ margin: '0.2rem 0 0 0' }}>
                   Scans all active repayment schedules for upcoming maturities and triggers notices.
                 </p>
@@ -627,10 +628,10 @@ export function Admin() {
                 <table>
                   <thead>
                     <tr>
-                      <th>User ID</th>
-                      <th>Legal Name</th>
-                      <th>Email Credential</th>
-                      <th>Privilege Role</th>
+                      <th>{t("userId")}</th>
+                      <th>{t("legalName")}</th>
+                      <th>{t("emailCredential")}</th>
+                      <th>{t("privilegeRole")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -668,11 +669,11 @@ export function Admin() {
                 <table>
                   <thead>
                     <tr>
-                      <th>Timestamp</th>
-                      <th>Actor ID</th>
-                      <th>Action</th>
-                      <th>Target Entity</th>
-                      <th>Operational Details</th>
+                      <th>{t("timeLabel")}</th>
+                      <th>{t("actorId")}</th>
+                      <th>{t("action")}</th>
+                      <th>{t("targetEntity")}</th>
+                      <th>{t("operationDetails")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -708,13 +709,13 @@ export function Admin() {
             <table>
               <thead>
                 <tr>
-                  <th>Product Code</th>
-                  <th>Facility Name</th>
-                  <th>Authoritative APR</th>
-                  <th>Principal Range</th>
-                  <th>Tenure Range</th>
-                  <th>Status</th>
-                  <th>Action</th>
+                  <th>{t("productCode")}</th>
+                  <th>{t("facilityName")}</th>
+                  <th>{t("authoritativeApr")}</th>
+                  <th>{t("principalRange")}</th>
+                  <th>{t("tenureRange")}</th>
+                  <th>{t("status")}</th>
+                  <th>{t("action")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -769,12 +770,12 @@ export function Admin() {
             <table>
               <thead>
                 <tr>
-                  <th>Scheme Code</th>
-                  <th>Scheme Name</th>
-                  <th>Category</th>
-                  <th>Direct Grant Value</th>
-                  <th>Verified As Of</th>
-                  <th>Action</th>
+                  <th>{t("schemeCode")}</th>
+                  <th>{t("schemeName")}</th>
+                  <th>{t("category")}</th>
+                  <th>{t("directGrantValue")}</th>
+                  <th>{t("verifiedAsOf")}</th>
+                  <th>{t("action")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -822,10 +823,10 @@ export function Admin() {
             <table>
               <thead>
                 <tr>
-                  <th>Slug Reference</th>
-                  <th>Course Title</th>
-                  <th>Summary</th>
-                  <th>Language</th>
+                  <th>{t("slugReference")}</th>
+                  <th>{t("courseTitle")}</th>
+                  <th>{t("summary")}</th>
+                  <th>{t("language")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -936,7 +937,7 @@ export function Admin() {
                 checked={editingProduct.active}
                 onChange={(e) => setEditingProduct({ ...editingProduct, active: e.target.checked })}
               />
-              <span>Product Active in Marketplace</span>
+              <span>{t("productActiveMarketplace")}</span>
             </label>
 
             <div className="modal-actions" style={{ marginTop: '0.5rem' }}>

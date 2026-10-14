@@ -101,5 +101,5 @@ def compute_financial_health_score(
         "savings_cover_months": round(savings_cover, 1),
         "recommended_course": recommended_course,
         "factors": factors,
-        "disclaimer": "The Saathi Financial Health Score is an educational diagnostic based on cashflow and platform performance. It is NOT an official credit score from CIBIL, Experian, or CRIF.",
+        "disclaimer": "The Saathi Financial Health Score is an educational diagnostic based on cashflow and platform performance. It is NOT an official credit score from external commercial credit bureaus.",
     }

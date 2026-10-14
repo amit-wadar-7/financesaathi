@@ -481,7 +481,7 @@ def get_report_data(
         return {
             "title": "Saathi Financial Health Diagnostic (0-100)",
             "model_type": "Rule-based Financial Health Model",
-            "bureau_disclaimer": "This diagnostic is an educational assessment based on declared cashflow and platform loan performance. It is NOT an official credit score pull from CIBIL, Experian, CRIF High Mark, or Equifax.",
+            "bureau_disclaimer": "This diagnostic is an educational assessment based on declared cashflow and platform loan performance. It is a Saathi Financial Health Score and NOT an official credit score pull from external commercial bureaus.",
             "borrower_name": target_user.name,
             "as_of_date": today.strftime("%d %B %Y"),
             "health_score": round(score / 8.5, 1),

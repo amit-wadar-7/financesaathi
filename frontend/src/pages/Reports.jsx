@@ -35,11 +35,11 @@ export default function Reports() {
   const reports = catalogData?.catalog || []
 
   const categories = [
-    { id: 'all', label: 'All Reports' },
-    { id: 'lending', label: 'Lending & Portfolio' },
-    { id: 'borrower', label: 'Borrower Statements' },
-    { id: 'shg', label: 'SHG & Community' },
-    { id: 'compliance', label: 'Regulatory & RBI' },
+    { id: 'all', label: t('repAll') },
+    { id: 'lending', label: t('repLending') },
+    { id: 'borrower', label: t('repBorrower') },
+    { id: 'shg', label: t('repShg') },
+    { id: 'compliance', label: t('repCompliance') },
   ]
 
   const filteredReports = reports.filter((r) => {
@@ -79,9 +79,9 @@ export default function Reports() {
       <div className="account-hero-header">
         <div className="hero-text-col">
           <div className="hero-badge">
-            <span className="live-dot" /> Institutional Reporting & Statements
+            <span className="live-dot" /> {t("instReporting")}
           </div>
-          <h2 className="hero-greeting">Financial Statements & Audit Reports</h2>
+          <h2 className="hero-greeting">{t("financialStatementsAudit")}</h2>
           <p className="hero-subtext">
             Generate and export real-time statements, delinquency aging analytics, tax interest certificates,
             SHG joint liability records, and RBI Fair Practice statutory audits.
@@ -92,13 +92,13 @@ export default function Reports() {
             className="btn ghost small"
             onClick={() => setActiveReportSlug('loan-statement')}
           >
-            <IconFileText size={15} /> My Statement (SOA)
+            <IconFileText size={15} /> {t("myStatementSoa")}
           </button>
           <button
             className="btn small"
             onClick={() => setActiveReportSlug('tax-certificate')}
           >
-            <IconDownload size={15} /> Tax Certificate ({fyStr})
+            <IconDownload size={15} /> {t("taxCertFy")} ({fyStr})
           </button>
         </div>
       </div>
@@ -452,10 +452,10 @@ function ReportViewerModal({ slug, onClose }) {
                 }}
               >
                 <div>
-                  <span>FinanceSaathi Platform • System-generated cryptographic record. Valid without physical signature.</span>
+                  <span>{t("cryptoRecordValid")}</span>
                 </div>
                 <div style={{ textAlign: 'right', fontWeight: 600 }}>
-                  <span>Verified by Institutional Credit Bureau Desk</span>
+                  <span>{t("verifiedByUnderwriting")}</span>
                 </div>
               </div>
             </div>
@@ -471,49 +471,50 @@ function ReportViewerModal({ slug, onClose }) {
    ------------------------------------------------------------------------- */
 
 function ParAgingView({ data }) {
+  const { t } = useLang()
   return (
     <div>
       <div style={{ marginBottom: '1.25rem' }}>
         <h3 style={{ margin: '0 0 0.5rem', color: 'var(--slate-900)' }}>{data.title}</h3>
-        <p className="muted small">Delinquency aging buckets across total active microfinance loan facilities.</p>
+        <p className="muted small">{t("delinquencyAgingDesc")}</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
         <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
-          <span className="muted small">Total Loan Portfolio</span>
+          <span className="muted small">{t("totalLoanPortfolio")}</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0', color: 'var(--slate-900)' }}>
             ₹{data.total_portfolio?.toLocaleString()}
           </h4>
         </div>
         <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
-          <span className="muted small">Capital at Risk</span>
+          <span className="muted small">{t("capitalAtRisk")}</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0', color: 'var(--rose-600)' }}>
             ₹{data.at_risk_capital?.toLocaleString()}
           </h4>
         </div>
         <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
-          <span className="muted small">PAR Ratio</span>
+          <span className="muted small">{t("parRatio")}</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0', color: data.par_percentage > 5 ? 'var(--rose-600)' : 'var(--emerald-600)' }}>
             {data.par_percentage}%
           </h4>
         </div>
         <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
-          <span className="muted small">NPA (90+ DPD)</span>
+          <span className="muted small">{t("npa90Dpd")}</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0', color: 'var(--slate-700)' }}>
             {data.npa_percentage}%
           </h4>
         </div>
       </div>
 
-      <h4 style={{ marginBottom: '0.6rem', fontSize: '0.95rem' }}>Delinquency Aging Buckets</h4>
+      <h4 style={{ marginBottom: '0.6rem', fontSize: '0.95rem' }}>{t("delinquencyAgingBuckets")}</h4>
       <div style={{ overflowX: 'auto', marginBottom: '1.5rem' }}>
         <table className="table" style={{ width: '100%', fontSize: '0.82rem' }}>
           <thead>
             <tr>
-              <th>Bucket Classification</th>
-              <th>Facilities Count</th>
-              <th>Principal Exposure</th>
-              <th>Risk Classification</th>
+              <th>{t("bucketClassification")}</th>
+              <th>{t("facilitiesCount")}</th>
+              <th>{t("principalExposure")}</th>
+              <th>{t("riskClassification")}</th>
             </tr>
           </thead>
           <tbody>
@@ -544,17 +545,17 @@ function ParAgingView({ data }) {
 
       {data.watchlist_loans?.length > 0 && (
         <>
-          <h4 style={{ marginBottom: '0.6rem', fontSize: '0.95rem' }}>Priority Delinquency Watchlist</h4>
+          <h4 style={{ marginBottom: '0.6rem', fontSize: '0.95rem' }}>{t("priorityWatchlist")}</h4>
           <div style={{ overflowX: 'auto' }}>
             <table className="table" style={{ width: '100%', fontSize: '0.8rem' }}>
               <thead>
                 <tr>
-                  <th>Loan ID</th>
-                  <th>Borrower</th>
-                  <th>Product</th>
-                  <th>Overdue Amount</th>
-                  <th>Days Overdue</th>
-                  <th>Aging Bucket</th>
+                  <th>{t("loanId")}</th>
+                  <th>{t("borrower")}</th>
+                  <th>{t("product")}</th>
+                  <th>{t("overdueAmount")}</th>
+                  <th>{t("daysOverdue")}</th>
+                  <th>{t("agingBucket")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -578,23 +579,24 @@ function ParAgingView({ data }) {
 }
 
 function ProductPerformanceView({ data }) {
+  const { t } = useLang()
   return (
     <div>
       <div style={{ marginBottom: '1.25rem' }}>
         <h3 style={{ margin: '0 0 0.5rem', color: 'var(--slate-900)' }}>{data.title}</h3>
-        <p className="muted small">Volume, approval percentage, and capital deployment across all 7 loan facilities.</p>
+        <p className="muted small">{t("volumeApprovalDesc")}</p>
       </div>
 
       <div style={{ overflowX: 'auto' }}>
         <table className="table" style={{ width: '100%', fontSize: '0.82rem' }}>
           <thead>
             <tr>
-              <th>Loan Product Facility</th>
-              <th>Applications</th>
-              <th>Sanctioned</th>
-              <th>Disbursed Capital</th>
-              <th>Avg Ticket Size</th>
-              <th>Approval Rate</th>
+              <th>{t("productFacility")}</th>
+              <th>{t("applications")}</th>
+              <th>{t("sanctioned")}</th>
+              <th>{t("disbursedCapital")}</th>
+              <th>{t("avgTicketSize")}</th>
+              <th>{t("approvalRate")}</th>
             </tr>
           </thead>
           <tbody>
@@ -623,6 +625,7 @@ function ProductPerformanceView({ data }) {
 }
 
 function CollectionEfficiencyView({ data }) {
+  const { t } = useLang()
   return (
     <div>
       <div style={{ marginBottom: '1.25rem' }}>
@@ -632,30 +635,30 @@ function CollectionEfficiencyView({ data }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
         <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
-          <span className="muted small">Billed Demand</span>
+          <span className="muted small">{t("billedDemand")}</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0' }}>₹{data.total_demand?.toLocaleString()}</h4>
         </div>
         <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
-          <span className="muted small">Total Recovered</span>
+          <span className="muted small">{t("totalRecovered")}</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0', color: 'var(--emerald-600)' }}>
             ₹{data.total_collected?.toLocaleString()}
           </h4>
         </div>
         <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
-          <span className="muted small">Overdue Receivables</span>
+          <span className="muted small">{t("overdueReceivables")}</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0', color: 'var(--rose-600)' }}>
             ₹{data.overdue_receivables?.toLocaleString()}
           </h4>
         </div>
         <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
-          <span className="muted small">Collection Efficiency</span>
+          <span className="muted small">{t("collectionEfficiency")}</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0', color: 'var(--emerald-700)' }}>
             {data.collection_efficiency_pct}%
           </h4>
         </div>
       </div>
 
-      <h4 style={{ marginBottom: '0.6rem', fontSize: '0.95rem' }}>Collection Channels Split</h4>
+      <h4 style={{ marginBottom: '0.6rem', fontSize: '0.95rem' }}>{t("collectionChannelsSplit")}</h4>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
         {data.channel_breakdown?.map((ch, idx) => (
           <div key={idx} className="card" style={{ padding: '0.85rem' }}>
@@ -668,15 +671,15 @@ function CollectionEfficiencyView({ data }) {
         ))}
       </div>
 
-      <h4 style={{ marginBottom: '0.6rem', fontSize: '0.95rem' }}>Monthly Recovery Trend</h4>
+      <h4 style={{ marginBottom: '0.6rem', fontSize: '0.95rem' }}>{t("monthlyRecoveryTrend")}</h4>
       <div style={{ overflowX: 'auto' }}>
         <table className="table" style={{ width: '100%', fontSize: '0.82rem' }}>
           <thead>
             <tr>
-              <th>Month</th>
-              <th>Demand</th>
-              <th>Collected</th>
-              <th>Efficiency</th>
+              <th>{t("monthFormat")}</th>
+              <th>{t("demand")}</th>
+              <th>{t("collected")}</th>
+              <th>{t("efficiency")}</th>
             </tr>
           </thead>
           <tbody>
@@ -700,6 +703,7 @@ function CollectionEfficiencyView({ data }) {
 }
 
 function LoanStatementView({ data }) {
+  const { t } = useLang()
   if (!data.has_loan) {
     return (
       <div style={{ padding: '2rem 0', textAlign: 'center' }}>
@@ -717,19 +721,19 @@ function LoanStatementView({ data }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
         <div style={{ fontSize: '0.82rem' }}>
-          <span className="muted">Borrower Name:</span>
+          <span className="muted">{t("borrowerName")}</span>
           <div style={{ fontWeight: 600, color: 'var(--slate-900)' }}>{data.borrower_name}</div>
           <div className="muted small">{data.borrower_phone}</div>
         </div>
         <div style={{ fontSize: '0.82rem' }}>
-          <span className="muted">Sanctioned Amount:</span>
+          <span className="muted">{t("sanctionedAmount")}</span>
           <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--slate-900)' }}>
             ₹{data.sanctioned_amount?.toLocaleString()}
           </div>
           <div className="muted small">{data.tenure_months} Months @ {data.interest_rate}% APR</div>
         </div>
         <div style={{ fontSize: '0.82rem' }}>
-          <span className="muted">Outstanding Principal:</span>
+          <span className="muted">{t("outstandingPrincipal")}</span>
           <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--emerald-700)' }}>
             ₹{data.outstanding_balance?.toLocaleString()}
           </div>
@@ -737,20 +741,20 @@ function LoanStatementView({ data }) {
         </div>
       </div>
 
-      <h4 style={{ marginBottom: '0.6rem', fontSize: '0.95rem' }}>Installment Repayment Schedule & Ledger</h4>
+      <h4 style={{ marginBottom: '0.6rem', fontSize: '0.95rem' }}>{t("installmentScheduleLedger")}</h4>
       <div style={{ overflowX: 'auto' }}>
         <table className="table" style={{ width: '100%', fontSize: '0.8rem' }}>
           <thead>
             <tr>
               <th>#</th>
-              <th>Due Date</th>
-              <th>Installment (EMI)</th>
-              <th>Principal Part</th>
-              <th>Interest Part</th>
-              <th>Paid Amount</th>
-              <th>Paid On</th>
-              <th>Balance Principal</th>
-              <th>Status</th>
+              <th>{t("dueDate")}</th>
+              <th>{t("installmentEmi")}</th>
+              <th>{t("principalPart")}</th>
+              <th>{t("interestPart")}</th>
+              <th>{t("paidAmount")}</th>
+              <th>{t("paidOn")}</th>
+              <th>{t("balancePrincipal")}</th>
+              <th>{t("status")}</th>
             </tr>
           </thead>
           <tbody>
@@ -790,6 +794,7 @@ function LoanStatementView({ data }) {
 }
 
 function TaxCertificateView({ data }) {
+  const { t } = useLang()
   return (
     <div>
       <div style={{ textAlign: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
@@ -801,40 +806,40 @@ function TaxCertificateView({ data }) {
       <div className="card" style={{ background: 'var(--card-bg-subtle)', padding: '1.25rem', marginBottom: '1.5rem' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '0.85rem' }}>
           <div>
-            <span className="muted">Borrower Name:</span>
+            <span className="muted">{t("borrowerName")}</span>
             <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--slate-900)' }}>{data.borrower_name}</div>
           </div>
           <div>
-            <span className="muted">PAN / Aadhaar Ref:</span>
+            <span className="muted">{t("panAadhaarRef")}</span>
             <div style={{ fontWeight: 600 }}>{data.borrower_pan_aadhaar}</div>
           </div>
         </div>
       </div>
 
-      <h4 style={{ marginBottom: '0.6rem', fontSize: '0.95rem' }}>Fiscal Summary of Repayments</h4>
+      <h4 style={{ marginBottom: '0.6rem', fontSize: '0.95rem' }}>{t("fiscalSummaryRepayments")}</h4>
       <div style={{ overflowX: 'auto', marginBottom: '1.5rem' }}>
         <table className="table" style={{ width: '100%', fontSize: '0.85rem' }}>
           <thead>
             <tr>
-              <th>Particulars</th>
-              <th>Statutory Category</th>
-              <th>Amount Cleared (INR)</th>
+              <th>{t("particulars")}</th>
+              <th>{t("statutoryCategory")}</th>
+              <th>{t("amountClearedInr")}</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td style={{ fontWeight: 600 }}>Principal Repaid</td>
-              <td className="muted small">Microfinance Capital Recovery</td>
+              <td style={{ fontWeight: 600 }}>{t("principalRepaid")}</td>
+              <td className="muted small">{t("microfinanceCapRecovery")}</td>
               <td style={{ fontWeight: 700 }}>₹{data.principal_repaid?.toLocaleString()}</td>
             </tr>
             <tr>
-              <td style={{ fontWeight: 600 }}>Interest Paid</td>
-              <td className="muted small">Fiscal Year Finance Charges</td>
+              <td style={{ fontWeight: 600 }}>{t("interestPaid")}</td>
+              <td className="muted small">{t("fiscalFinanceCharges")}</td>
               <td style={{ fontWeight: 700 }}>₹{data.interest_paid?.toLocaleString()}</td>
             </tr>
             <tr style={{ background: 'var(--card-bg-subtle)' }}>
-              <td style={{ fontWeight: 700, color: 'var(--slate-900)' }}>Total Repayment Service</td>
-              <td className="muted small">Total Cashflow Outflow</td>
+              <td style={{ fontWeight: 700, color: 'var(--slate-900)' }}>{t("totalRepaymentService")}</td>
+              <td className="muted small">{t("totalCashflowOutflow")}</td>
               <td style={{ fontWeight: 800, color: 'var(--slate-900)' }}>₹{data.total_repaid?.toLocaleString()}</td>
             </tr>
           </tbody>
@@ -842,7 +847,7 @@ function TaxCertificateView({ data }) {
       </div>
 
       <div className="card" style={{ padding: '1rem', background: 'var(--emerald-50)', border: '1px solid var(--emerald-200)' }}>
-        <h5 style={{ margin: '0 0 0.3rem', color: 'var(--emerald-900)' }}>Government Interest Subvention Eligibility</h5>
+        <h5 style={{ margin: '0 0 0.3rem', color: 'var(--emerald-900)' }}>{t("interestSubventionElig")}</h5>
         <p className="small" style={{ margin: 0, color: 'var(--emerald-800)' }}>
           Eligible for prompt repayment incentive & 2% Central Subvention benefit: <strong>₹{data.subvention_eligible?.toLocaleString()}</strong>
         </p>
@@ -856,6 +861,7 @@ function TaxCertificateView({ data }) {
 }
 
 function CreditHealthView({ data }) {
+  const { t } = useLang()
   return (
     <div>
       <div style={{ marginBottom: '1.25rem' }}>
@@ -865,25 +871,25 @@ function CreditHealthView({ data }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
         <div className="card center" style={{ padding: '1rem', background: 'var(--card-bg-subtle)', textAlign: 'center' }}>
-          <span className="muted small">Credit Bureau Score</span>
+          <span className="muted small">{t('healthScore')}</span>
           <h2 style={{ fontSize: '2rem', margin: '0.2rem 0', color: 'var(--emerald-700)' }}>{data.bureau_score}</h2>
           <span className="badge success">{data.score_band}</span>
         </div>
         <div className="card" style={{ padding: '1rem', background: 'var(--card-bg-subtle)' }}>
-          <span className="muted small">Debt-to-Income (FOIR)</span>
+          <span className="muted small">{t("debtToIncomeFoir")}</span>
           <h3 style={{ margin: '0.3rem 0', fontSize: '1.3rem' }}>{data.foir_percentage}%</h3>
           <span className="muted small">Existing EMIs: ₹{data.existing_debt_service} / mo</span>
         </div>
         <div className="card" style={{ padding: '1rem', background: 'var(--card-bg-subtle)' }}>
-          <span className="muted small">Safe Borrowing Headroom</span>
+          <span className="muted small">{t("safeBorrowingHeadroom")}</span>
           <h3 style={{ margin: '0.3rem 0', fontSize: '1.3rem', color: 'var(--emerald-700)' }}>
             ₹{data.capacity_headroom?.toLocaleString()}
           </h3>
-          <span className="muted small">Monthly Capacity Buffer</span>
+          <span className="muted small">{t("monthlyCapacityBuffer")}</span>
         </div>
       </div>
 
-      <h4 style={{ marginBottom: '0.6rem', fontSize: '0.95rem' }}>Bureau Assessment Factors</h4>
+      <h4 style={{ marginBottom: '0.6rem', fontSize: '0.95rem' }}>{t("healthAssessmentFactors")}</h4>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }}>
         {data.factors?.map((f, idx) => (
           <div key={idx} className="card" style={{ padding: '0.85rem' }}>
@@ -896,7 +902,7 @@ function CreditHealthView({ data }) {
         ))}
       </div>
 
-      <h4 style={{ marginBottom: '0.6rem', fontSize: '0.95rem' }}>Advisory Guidance for Score Growth</h4>
+      <h4 style={{ marginBottom: '0.6rem', fontSize: '0.95rem' }}>{t("advisoryScoreGrowth")}</h4>
       <ul style={{ paddingLeft: '1.2rem', margin: 0, fontSize: '0.82rem', lineHeight: 1.6, color: 'var(--slate-700)' }}>
         {data.recommendations?.map((r, idx) => (
           <li key={idx} style={{ marginBottom: '0.3rem' }}>{r}</li>
@@ -907,6 +913,7 @@ function CreditHealthView({ data }) {
 }
 
 function ShgAuditView({ data }) {
+  const { t } = useLang()
   return (
     <div>
       <div style={{ marginBottom: '1.25rem' }}>
@@ -916,37 +923,37 @@ function ShgAuditView({ data }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
         <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
-          <span className="muted small">Enrolled Members</span>
+          <span className="muted small">{t("enrolledMembers")}</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0' }}>{data.total_members} Members</h4>
         </div>
         <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
-          <span className="muted small">Group Savings Fund</span>
+          <span className="muted small">{t("groupSavingsFund")}</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0', color: 'var(--emerald-600)' }}>
             {data.accumulated_group_savings}
           </h4>
         </div>
         <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
-          <span className="muted small">Bank Credit Linkage</span>
+          <span className="muted small">{t("bankCreditLinkage")}</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0' }}>{data.active_credit_linkage}</h4>
         </div>
         <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
-          <span className="muted small">Compliance Rating</span>
+          <span className="muted small">{t("complianceRating")}</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0', color: 'var(--emerald-700)' }}>
             {data.joint_liability_compliance}
           </h4>
         </div>
       </div>
 
-      <h4 style={{ marginBottom: '0.6rem', fontSize: '0.95rem' }}>Sample Member Contribution & Audit Matrix</h4>
+      <h4 style={{ marginBottom: '0.6rem', fontSize: '0.95rem' }}>{t("memberContributionMatrix")}</h4>
       <div style={{ overflowX: 'auto' }}>
         <table className="table" style={{ width: '100%', fontSize: '0.82rem' }}>
           <thead>
             <tr>
-              <th>Member Name</th>
-              <th>Group Designation</th>
-              <th>Monthly Savings Deposit</th>
-              <th>Internal Loan Status</th>
-              <th>Meeting Attendance</th>
+              <th>{t("memberName")}</th>
+              <th>{t("groupDesignation")}</th>
+              <th>{t("monthlySavingsDeposit")}</th>
+              <th>{t("internalLoanStatus")}</th>
+              <th>{t("meetingAttendance")}</th>
             </tr>
           </thead>
           <tbody>
@@ -967,6 +974,7 @@ function ShgAuditView({ data }) {
 }
 
 function RbiComplianceView({ data }) {
+  const { t } = useLang()
   return (
     <div>
       <div style={{ marginBottom: '1.25rem' }}>
@@ -976,32 +984,32 @@ function RbiComplianceView({ data }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
         <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
-          <span className="muted small">Statutory PSL Target</span>
+          <span className="muted small">{t("statutoryPslTarget")}</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0' }}>{data.psl_target_pct}% of Book</h4>
         </div>
         <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
-          <span className="muted small">Actual PSL Achieved</span>
+          <span className="muted small">{t("actualPslAchieved")}</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0', color: 'var(--emerald-700)' }}>
             {data.psl_achieved_pct}%
           </h4>
         </div>
         <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
-          <span className="muted small">Compliance Status</span>
+          <span className="muted small">{t("complianceStatus")}</span>
           <h4 style={{ fontSize: '1.1rem', margin: '0.3rem 0 0', color: 'var(--emerald-700)' }}>
             {data.psl_status}
           </h4>
         </div>
       </div>
 
-      <h4 style={{ marginBottom: '0.6rem', fontSize: '0.95rem' }}>Statutory RBI Directives Audit Checklist</h4>
+      <h4 style={{ marginBottom: '0.6rem', fontSize: '0.95rem' }}>{t("rbiChecklist")}</h4>
       <div style={{ overflowX: 'auto', marginBottom: '1.5rem' }}>
         <table className="table" style={{ width: '100%', fontSize: '0.82rem' }}>
           <thead>
             <tr>
-              <th>Regulatory Parameter</th>
-              <th>Statutory Norm (RBI 2022)</th>
-              <th>Platform Performance</th>
-              <th>Audit Result</th>
+              <th>{t("regulatoryParam")}</th>
+              <th>{t("statutoryNormRbi")}</th>
+              <th>{t("platformPerf")}</th>
+              <th>{t("auditResult")}</th>
             </tr>
           </thead>
           <tbody>
