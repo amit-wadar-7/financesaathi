@@ -1,10 +1,21 @@
 import os
 
 APP_ENV = os.environ.get("APP_ENV", os.environ.get("ENVIRONMENT", "dev")).lower()
-DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./financesaathi.db")
-# Fallback to syra.db if financesaathi.db does not exist but syra.db exists (smooth local upgrade)
-if DATABASE_URL.endswith("financesaathi.db") and not os.path.exists("financesaathi.db") and os.path.exists("syra.db"):
-    DATABASE_URL = "sqlite:///./syra.db"
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if not DATABASE_URL:
+    root_db = os.path.join(ROOT_DIR, "financesaathi.db")
+    backend_db = os.path.join(BACKEND_DIR, "financesaathi.db")
+    if os.path.exists(root_db):
+        DATABASE_URL = f"sqlite:///{root_db.replace('\\', '/')}"
+    elif os.path.exists(backend_db):
+        DATABASE_URL = f"sqlite:///{backend_db.replace('\\', '/')}"
+    elif os.path.exists(os.path.join(ROOT_DIR, "syra.db")):
+        DATABASE_URL = f"sqlite:///{os.path.join(ROOT_DIR, 'syra.db').replace('\\', '/')}"
+    else:
+        DATABASE_URL = f"sqlite:///{root_db.replace('\\', '/')}"
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-change-me-at-least-32-chars-long")
 ACCESS_TOKEN_MINUTES = int(os.environ.get("ACCESS_TOKEN_MINUTES", "30"))
