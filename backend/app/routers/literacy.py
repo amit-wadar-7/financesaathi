@@ -67,5 +67,18 @@ def my_progress(user=Depends(get_current_user), db: Session = Depends(get_db)):
 @router.get("/schemes")
 def schemes(language: str = "en", db: Session = Depends(get_db)):
     ss = db.scalars(select(models.Scheme).where(models.Scheme.language == language)).all()
-    return [{"id": s.id, "name": s.name, "description": s.description, "eligibility": s.eligibility, "url": s.url}
-            for s in ss]
+    return [{
+        "id": s.id,
+        "code": s.code,
+        "name": s.name,
+        "language": s.language,
+        "category": s.category,
+        "benefit_summary": s.benefit_summary,
+        "benefit_value": s.benefit_value,
+        "description": s.description,
+        "eligibility": s.eligibility,
+        "eligibility_rules": s.eligibility_rules or {},
+        "url": s.url,
+        "last_verified": s.last_verified or "2026-10-01",
+    } for s in ss]
+

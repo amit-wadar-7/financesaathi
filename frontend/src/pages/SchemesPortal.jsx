@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { api, money } from '../api'
+import { useAuth } from '../auth'
 import { useLang } from '../i18n'
 import { Badge, Card, Loading, useLoad } from '../ui'
 import {
@@ -17,323 +18,180 @@ import {
   IconAward,
 } from '../icons'
 
-export const GOVERNMENT_SCHEMES = [
-  {
-    id: 'pm_kisan',
-    code: 'PM-KISAN',
-    name: 'Pradhan Mantri Kisan Samman Nidhi',
+// UI Metadata enriching server schemes with nodal ministry and application steps
+const SCHEME_METADATA = {
+  pm_kisan: {
     nodalMinistry: 'Ministry of Agriculture & Farmers Welfare',
-    category: 'agri',
     tag: '100% Central DBT Grant',
-    valueNum: 6000,
-    benefitHighlight: '₹6,000 / Year Direct Bank Transfer in 3 tranches of ₹2,000',
-    summary:
-      'Direct income support scheme providing guaranteed financial assistance to small and marginal agricultural landholder families across India with zero intermediary fees.',
-    eligibilityCriteria: [
-      'Small and marginal farmer families holding cultivable land',
-      'Name recorded in state land revenue records (7/12 extract / Khasra)',
-      'Bank account must be Aadhaar-seeded for direct DBT credit',
-    ],
-    documents: [
-      'Aadhaar Card (Mandatory)',
-      'Landownership Records (7/12 / Khasra Document)',
-      'Active Bank Account Passbook with IFSC',
-    ],
-    applicationSteps:
-      'Register on official PM-KISAN portal or via Common Service Centre (CSC). State nodal officer verifies landholding records.',
-    portalUrl: 'https://pmkisan.gov.in',
-    matchCriteria: {
-      occupations: ['farmer'],
-      requiresLand: true,
-      maxIncome: 800000,
-    },
+    documents: ['Aadhaar Card (Mandatory)', 'Landownership Records (7/12 / Khasra Document)', 'Bank Account Passbook with IFSC'],
+    applicationSteps: 'Register on official PM-KISAN portal or via Common Service Centre (CSC). State nodal officer verifies landholding records.',
+    defaultUrl: 'https://pmkisan.gov.in',
   },
-  {
-    id: 'pm_mudra',
-    code: 'PMMY',
-    name: 'Pradhan Mantri MUDRA Yojana',
+  pm_mudra: {
     nodalMinistry: 'Ministry of Finance / Dept of Financial Services',
-    category: 'msme',
     tag: 'Collateral-Free MSME Credit',
-    valueNum: 1000000,
-    benefitHighlight: 'Collateral-free loans up to ₹10 Lakh across Shishu, Kishore & Tarun',
-    summary:
-      'Provides institutional credit to micro and small non-farm enterprises for trading, manufacturing, and retail expansion with zero collateral requirement and concessional rates.',
-    eligibilityCriteria: [
-      'Indian citizens running micro enterprises, shopkeeping, or trading units',
-      'Manufacturing, trading, processing, and allied agricultural service businesses',
-      'Clean repayment record with no bank defaults',
-    ],
-    documents: [
-      'Identity & Address Proof (Aadhaar / Voter ID)',
-      'Business Registration / Shop Establishment Certificate',
-      'Quotations for machinery / stock inventory procurement',
-    ],
-    applicationSteps:
-      'Apply online on Udyam Mitra portal or submit proposal directly at any commercial, rural, or cooperative bank branch.',
-    portalUrl: 'https://www.mudra.org.in',
-    matchCriteria: {
-      occupations: ['vendor', 'artisan', 'dairy', 'general'],
-      requiresLand: false,
-      maxIncome: 1200000,
-    },
+    documents: ['Identity & Address Proof (Aadhaar / Voter ID)', 'Business Registration / Shop Establishment Certificate', 'Quotations for machinery / inventory'],
+    applicationSteps: 'Apply online on Udyam Mitra portal or submit proposal directly at any commercial, rural, or cooperative bank branch.',
+    defaultUrl: 'https://www.mudra.org.in',
   },
-  {
-    id: 'pm_svanidhi',
-    code: 'PM-SVANidhi',
-    name: "PM Street Vendor's AtmaNirbhar Nidhi",
+  pm_svanidhi: {
     nodalMinistry: 'Ministry of Housing and Urban Affairs',
-    category: 'msme',
     tag: '7% Direct Interest Rebate',
-    valueNum: 50000,
-    benefitHighlight: '₹10,000 → ₹20,000 → ₹50,000 working capital + 7% interest rebate',
-    summary:
-      'Dedicated micro-credit facility empowering urban and peri-urban street vendors and hawkers to resume and expand daily livelihoods with digital cashback rewards.',
-    eligibilityCriteria: [
-      'Urban and semi-urban street vendors, cart pullers, and hawkers',
-      'Vendors holding Certificate of Vending or ULB Letter of Recommendation (LoR)',
-      'Prompt repayment unlocks higher credit tiers automatically',
-    ],
-    documents: [
-      'Aadhaar Card with linked mobile number',
-      'Certificate of Vending (CoVR) or Urban Local Body (ULB) Recommendation',
-      'Bank Passbook / UPI QR Merchant Proof',
-    ],
-    applicationSteps:
-      'Submit online application via PM SVANidhi portal or nearest Municipal Ward Office with Aadhaar OTP authentication.',
-    portalUrl: 'https://pmsvanidhi.mohua.gov.in',
-    matchCriteria: {
-      occupations: ['vendor'],
-      requiresLand: false,
-      maxIncome: 400000,
-    },
+    documents: ['Aadhaar Card with linked mobile number', 'Certificate of Vending (CoVR) or ULB Recommendation', 'Bank Passbook / UPI QR Merchant Proof'],
+    applicationSteps: 'Apply via PM-SVANidhi portal or through ULB nodal officer. Vending certificate/recommendation letter required.',
+    defaultUrl: 'https://pmsvanidhi.mohua.gov.in',
   },
-  {
-    id: 'pm_kusum',
-    code: 'PM-KUSUM',
-    name: 'Pradhan Mantri Kisan Urja Suraksha (PM-KUSUM)',
-    nodalMinistry: 'Ministry of New and Renewable Energy',
-    category: 'solar',
-    tag: 'Up to 60% Capital Subsidy',
-    valueNum: 150000,
-    benefitHighlight: '60% Combined Capital Subsidy on Standalone Solar Irrigation Pumps',
-    summary:
-      'De-diesels the agricultural sector by subsidizing off-grid and grid-connected solar water irrigation pumps (3HP to 7.5HP) and rural decentralized renewable power.',
-    eligibilityCriteria: [
-      'Individual agricultural cultivators and farmers with water source',
-      'Farmer Producer Organizations (FPOs) and Water User Associations (WUAs)',
-      'Cultivable land suitable for solar array installation',
-    ],
-    documents: [
-      'Landownership Documentation (7/12 Extract)',
-      'Aadhaar Card and Passport Photo',
-      'Bank Account Passbook for state subsidy disbursement',
-    ],
-    applicationSteps:
-      'Register on State Renewable Energy Development Agency (SREDA) portal and pay nominal 10% farmer share after sanction.',
-    portalUrl: 'https://pmkusum.mnre.gov.in',
-    matchCriteria: {
-      occupations: ['farmer'],
-      requiresLand: true,
-      maxIncome: 1000000,
-    },
-  },
-  {
-    id: 'standup_india',
-    code: 'Stand-Up India',
-    name: 'Stand-Up India Enterprise Scheme',
-    nodalMinistry: 'Ministry of Finance / SIDBI',
-    category: 'women',
-    tag: '₹10 Lakh to ₹1 Crore Financing',
-    valueNum: 2500000,
-    benefitHighlight: 'Bank loans from ₹10 Lakh up to ₹1 Crore for greenfield enterprises',
-    summary:
-      'Promotes entrepreneurship by facilitating at least one woman or SC/ST borrower per scheduled commercial bank branch to establish new non-farm greenfield businesses.',
-    eligibilityCriteria: [
-      'Women entrepreneurs or SC/ST individuals aged 18+',
-      'Greenfield project in manufacturing, services, agri-allied, or trading',
-      'Non-individual enterprises must have 51% woman/SC/ST shareholding',
-    ],
-    documents: [
-      'Identity & Address Proof, PAN Card',
-      'Detailed Project Appraisal Report (DPR)',
-      'Proof of promoter contribution (minimum 15% equity margin)',
-    ],
-    applicationSteps:
-      'Apply online through Stand-Up Mitra portal (standupmitra.in) or walk into nearest scheduled commercial bank branch.',
-    portalUrl: 'https://www.standupmitra.in',
-    matchCriteria: {
-      occupations: ['vendor', 'dairy', 'artisan', 'general'],
-      isWomanOnly: true,
-      requiresLand: false,
-      maxIncome: 2000000,
-    },
-  },
-  {
-    id: 'pmfby',
-    code: 'PMFBY',
-    name: 'Pradhan Mantri Fasal Bima Yojana',
-    nodalMinistry: 'Ministry of Agriculture & Farmers Welfare',
-    category: 'agri',
-    tag: '1.5% to 2% Concessional Premium',
-    valueNum: 80000,
-    benefitHighlight: 'Full sum insured protection against natural drought, flood & pests',
-    summary:
-      'Comprehensive agricultural risk insurance covering pre-sowing to post-harvest crop losses due to unpreventable weather calamities with ultra-low farmer premium.',
-    eligibilityCriteria: [
-      'All farmers growing notified crops in notified areas',
-      'Both loanee farmers (via KCC) and non-loanee farmers eligible',
-      'Covers localized calamities, unseasonal rainfall, and mid-season adversity',
-    ],
-    documents: [
-      'Land Revenue Record / Land Possession Certificate',
-      'Crop Sowing Certificate issued by Patwari / Village Agriculture Officer',
-      'Aadhaar Card & Bank Passbook',
-    ],
-    applicationSteps:
-      'Enroll via nearest bank branch, Primary Agricultural Credit Society (PACS), or directly on National Crop Insurance Portal.',
-    portalUrl: 'https://pmfby.gov.in',
-    matchCriteria: {
-      occupations: ['farmer'],
-      requiresLand: true,
-      maxIncome: 1000000,
-    },
-  },
-  {
-    id: 'day_nrlm',
-    code: 'DAY-NRLM',
-    name: 'National Rural Livelihoods Mission (Aajeevika)',
+  day_nrlm: {
     nodalMinistry: 'Ministry of Rural Development',
-    category: 'women',
-    tag: 'Interest Subvention Down to 7%',
-    valueNum: 150000,
-    benefitHighlight: 'Revolving Capital Funds & subsidized bank linkage interest down to 7%',
-    summary:
-      'Mobilizes rural women into Self-Help Groups (SHGs) and federations, connecting them with formal bank credit, financial literacy training, and micro-enterprise capital.',
-    eligibilityCriteria: [
-      'Rural households with female members organized into affinity SHGs',
-      'SHG practicing Panchasutra (Regular meetings, savings, inter-loaning, timely repayment, accounting)',
-      'Subsidized interest rate down to 7% with prompt repayment rebate',
-    ],
-    documents: [
-      'SHG Resolution Register & Membership Roll',
-      'Panchasutra Compliance Grade Certificate',
-      'Group Bank Account Details',
-    ],
-    applicationSteps:
-      'Contact local Cluster Level Federation (CLF) or Block Mission Management Unit (BMMU) for SHG-Bank linkage.',
-    portalUrl: 'https://aajeevika.gov.in',
-    matchCriteria: {
-      occupations: ['farmer', 'vendor', 'dairy', 'artisan', 'general'],
-      isShgOnly: true,
-      requiresLand: false,
-      maxIncome: 600000,
-    },
+    tag: 'SHG Bank Linkage & Interest Subsidy',
+    documents: ['SHG Member Passbook & Resolution Book', 'Aadhaar Card of Member', 'SHG Bank Account Details'],
+    applicationSteps: 'Form or join village Self-Help Group (SHG) under State Rural Livelihood Mission (SRLM). Access Community Investment Fund (CIF).',
+    defaultUrl: 'https://aajeevika.gov.in',
   },
-  {
-    id: 'ab_pmjay',
-    code: 'AB-PMJAY',
-    name: 'Ayushman Bharat Pradhan Mantri Jan Arogya Yojana',
-    nodalMinistry: 'National Health Authority (NHA)',
-    category: 'social',
-    tag: '₹5 Lakh Free Hospital Coverage',
-    valueNum: 500000,
-    benefitHighlight: '₹5,00,000 / Year Cashless Hospitalization per family per year',
-    summary:
-      'World largest government-funded health assurance scheme providing complete cashless secondary and tertiary medical treatment across empaneled public & private hospitals.',
-    eligibilityCriteria: [
-      'Deprived rural and occupational urban families identified under SECC 2011',
-      'Zero cap on family size or age of members',
-      'Covers pre-existing diseases and 3-day pre / 15-day post hospitalization costs',
-    ],
-    documents: [
-      'Aadhaar Card / Ration Card',
-      'Ayushman Card (PM-JAY Golden Card)',
-      'Registered Mobile Number',
-    ],
-    applicationSteps:
-      'Check eligibility on mera.pmjay.gov.in or visit any empaneled hospital Ayushman Mitra desk for instant e-card issuance.',
-    portalUrl: 'https://pmjay.gov.in',
-    matchCriteria: {
-      occupations: ['farmer', 'vendor', 'dairy', 'artisan', 'general'],
-      requiresLand: false,
-      maxIncome: 500000,
-    },
+  pmjdy: {
+    nodalMinistry: 'Department of Financial Services, Ministry of Finance',
+    tag: 'Universal Zero-Balance Banking',
+    documents: ['Aadhaar Card (or any Officially Valid Document)', 'Passport size photograph'],
+    applicationSteps: 'Open zero-balance Jan Dhan account at any bank branch or Bank Mitra / Business Correspondent point with Aadhaar.',
+    defaultUrl: 'https://pmjdy.gov.in',
   },
-  {
-    id: 'sukanya_samriddhi',
-    code: 'SSY',
-    name: 'Sukanya Samriddhi Yojana (Beti Bachao Beti Padhao)',
+  pm_kusum: {
+    nodalMinistry: 'Ministry of New & Renewable Energy (MNRE)',
+    tag: 'Up to 60% Solar Pump Subsidy',
+    documents: ['Land Revenue 7/12 Extract', 'Aadhaar Card & Bank Account Passbook', 'Water Source Certificate / Ground Water Clearance'],
+    applicationSteps: 'Apply through State Renewable Energy Agency portal (e.g. MEDA / DISCOM). Pay farmer contribution of 10-40%.',
+    defaultUrl: 'https://pmkusum.mnre.gov.in',
+  },
+  pm_awas: {
+    nodalMinistry: 'Ministry of Rural Development',
+    tag: 'Direct House Grant + MGNREGA',
+    documents: ['Aadhaar Card of all adult family members', 'MGNREGA Job Card', 'Bank Account Passbook (Aadhaar linked)'],
+    applicationSteps: 'Gram Sabha identifies eligible beneficiaries from SECC census list. Direct DBT grant transferred in geotagged construction phases.',
+    defaultUrl: 'https://pmayg.nic.in',
+  },
+  sukanya: {
     nodalMinistry: 'Ministry of Finance / National Savings Institute',
+    tag: '8.2% Sovereign Compounding Interest',
+    documents: ['Birth Certificate of Girl Child', 'Identity Proof of Parent/Guardian (Aadhaar / PAN)', 'Address Proof of Guardian'],
+    applicationSteps: 'Open account at any Post Office or authorized commercial bank branch with starter deposit of Rs 250.',
+    defaultUrl: 'https://www.indiapost.gov.in',
+  },
+}
+
+// Fallback scheme catalog for offline resilience
+const FALLBACK_SCHEMES = [
+  {
+    code: 'pm_kisan',
+    name: 'PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)',
+    category: 'agri',
+    benefit_summary: 'Rs 6,000 / Year Direct DBT in 3 tranches of Rs 2,000',
+    benefit_value: 6000,
+    description: 'Direct income support scheme providing guaranteed financial assistance to small and marginal landholding farmer families.',
+    eligibility: 'Small and marginal farmer families holding cultivable land in state revenue records with Aadhaar-linked bank accounts.',
+    eligibility_rules: { occupations: ['farmer'], requiresLand: true, maxIncome: 800000 },
+    url: 'https://pmkisan.gov.in',
+    last_verified: '2026-10-01',
+  },
+  {
+    code: 'pm_mudra',
+    name: 'PMMY (Pradhan Mantri MUDRA Yojana)',
+    category: 'msme',
+    benefit_summary: 'Collateral-free institutional microcredit up to Rs 10 Lakh',
+    benefit_value: 1000000,
+    description: 'Provides institutional credit to micro and small non-farm enterprises for trading, manufacturing, and retail expansion.',
+    eligibility: 'Micro enterprises, retail shopkeepers, and manufacturing units with clean repayment records.',
+    eligibility_rules: { occupations: ['vendor', 'artisan', 'dairy', 'general'], requiresLand: false, maxIncome: 1200000 },
+    url: 'https://www.mudra.org.in',
+    last_verified: '2026-10-01',
+  },
+  {
+    code: 'pm_svanidhi',
+    name: 'PM-SVANidhi (Street Vendor Financial Facility)',
+    category: 'msme',
+    benefit_summary: 'Rs 10,000 to Rs 50,000 working capital + 7% interest rebate',
+    benefit_value: 50000,
+    description: 'Dedicated working capital facility empowering urban and peri-urban street vendors and hawkers with digital cashback incentives.',
+    eligibility: 'Urban and semi-urban street vendors and hawkers holding Certificate of Vending or Urban Local Body recommendation.',
+    eligibility_rules: { occupations: ['vendor', 'artisan', 'general'], requiresLand: false, maxIncome: 500000 },
+    url: 'https://pmsvanidhi.mohua.gov.in',
+    last_verified: '2026-10-01',
+  },
+  {
+    code: 'day_nrlm',
+    name: 'DAY-NRLM (Deendayal Antyodaya Yojana - Ajeevika)',
     category: 'women',
-    tag: '8.2% Sovereign Guaranteed Interest',
-    valueNum: 150000,
-    benefitHighlight: '8.2% Highest Sovereign Compounding Interest + 100% Tax Exemption',
-    summary:
-      'Small deposit savings scheme for girl child education and marriage, offering the highest government guaranteed interest rate with triple tax exemptions (EEE status).',
-    eligibilityCriteria: [
-      'Parent or legal guardian of a girl child from birth up to age 10',
-      'Maximum 2 accounts per family (one for each girl child)',
-      'Minimum deposit ₹250/year, maximum ₹1,50,000/year',
-    ],
-    documents: [
-      'Birth Certificate of Girl Child',
-      'Identity Proof of Parent/Guardian (Aadhaar / PAN)',
-      'Address Proof of Guardian',
-    ],
-    applicationSteps:
-      'Open account at any Post Office or authorized commercial bank branch with starter deposit of ₹250.',
-    portalUrl: 'https://www.indiapost.gov.in',
-    matchCriteria: {
-      occupations: ['farmer', 'vendor', 'dairy', 'artisan', 'general'],
-      requiresLand: false,
-      maxIncome: 1500000,
-    },
+    benefit_summary: 'Community Investment Support & Subsidized SHG Bank Linkage',
+    benefit_value: 250000,
+    description: 'National Rural Livelihoods Mission organizing rural women into Self-Help Groups with revolving funds and low-interest bank linkage.',
+    eligibility: 'Rural women from low-income households organized into active SHGs with regular thrift savings.',
+    eligibility_rules: { occupations: ['farmer', 'artisan', 'dairy', 'general'], isShgOnly: true, isWomanOnly: true, maxIncome: 400000 },
+    url: 'https://aajeevika.gov.in',
+    last_verified: '2026-10-01',
+  },
+  {
+    code: 'pmjdy',
+    name: 'PMJDY (Pradhan Mantri Jan Dhan Yojana)',
+    category: 'banking',
+    benefit_summary: 'Zero-balance savings account + Rs 2 Lakh accidental cover + Rs 10k OD',
+    benefit_value: 10000,
+    description: 'Universal zero-balance basic savings bank account with free RuPay debit card and overdraft facility.',
+    eligibility: 'Any unbanked Indian citizen aged 10+ with basic KYC proof.',
+    eligibility_rules: { occupations: ['farmer', 'vendor', 'artisan', 'dairy', 'general'], maxIncome: 10000000 },
+    url: 'https://pmjdy.gov.in',
+    last_verified: '2026-10-01',
+  },
+  {
+    code: 'pm_kusum',
+    name: 'PM-KUSUM (Solar Agri Pump Subsidy)',
+    category: 'solar',
+    benefit_summary: 'Up to 60% combined Central and State solar pump capital subsidy',
+    benefit_value: 200000,
+    description: 'Subsidizes standalone solar irrigation pumps up to 7.5 HP to replace expensive diesel generator sets.',
+    eligibility: 'Farmers, Farmer Producer Organizations (FPOs), and rural water user associations with farmland.',
+    eligibility_rules: { occupations: ['farmer'], requiresLand: true, maxIncome: 1500000 },
+    url: 'https://pmkusum.mnre.gov.in',
+    last_verified: '2026-10-01',
+  },
+  {
+    code: 'pm_awas',
+    name: 'PMAY-G (Pradhan Mantri Awas Yojana - Gramin)',
+    category: 'housing',
+    benefit_summary: 'Rs 1.20 Lakh direct pucca house grant + 90 days MGNREGA wages',
+    benefit_value: 120000,
+    description: 'Financial grant assistance for homeless rural households or those living in kutcha/dilapidated homes.',
+    eligibility: 'Rural homeless or kutcha house households identified via SECC census list.',
+    eligibility_rules: { occupations: ['farmer', 'vendor', 'artisan', 'dairy', 'general'], maxIncome: 300000 },
+    url: 'https://pmayg.nic.in',
+    last_verified: '2026-10-01',
+  },
+  {
+    code: 'sukanya',
+    name: 'Sukanya Samriddhi Yojana (SSY)',
+    category: 'savings',
+    benefit_summary: '8.2% Sovereign compounding interest rate with 100% tax exemption',
+    benefit_value: 150000,
+    description: 'Small deposit savings scheme for girl child education and marriage, offering guaranteed high compounding interest.',
+    eligibility: 'Parents or legal guardians of a girl child from birth up to age 10.',
+    eligibility_rules: { occupations: ['farmer', 'vendor', 'artisan', 'dairy', 'general'], isWomanOnly: true, maxIncome: 1500000 },
+    url: 'https://www.indiapost.gov.in',
+    last_verified: '2026-10-01',
   },
 ]
 
 export default function SchemesPortal() {
   const { lang, t } = useLang()
+  const { user } = useAuth()
   const [selectedCat, setSelectedCat] = useState('all')
   const [search, setSearch] = useState('')
   const [selectedScheme, setSelectedScheme] = useState(null)
 
   // Load live localized schemes from backend
   const { data: serverSchemes, loading: schemesLoading } = useLoad(
-    () => api(`/schemes?language=${lang}`),
+    () => api(`/schemes?language=${lang}`, { auth: false }),
     [lang]
   )
 
-  // Merge server schemes with frontend scheme metadata
-  const schemesList = useMemo(() => {
-    if (!serverSchemes || !Array.isArray(serverSchemes) || serverSchemes.length === 0) {
-      return GOVERNMENT_SCHEMES
-    }
-    const serverMap = {}
-    serverSchemes.forEach((ss) => {
-      const low = (ss.name || '').toLowerCase()
-      if (low.includes('kisan') || low.includes('किसान')) serverMap['pm_kisan'] = ss
-      else if (low.includes('mudra') || low.includes('मुद्रा')) serverMap['pm_mudra'] = ss
-      else if (low.includes('svanidhi') || low.includes('स्वनिधि')) serverMap['pm_svanidhi'] = ss
-      else if (low.includes('jandhan') || low.includes('pmjdy') || low.includes('जन धन')) serverMap['pmjdy'] = ss
-      else if (low.includes('nrlm') || low.includes('aajeevika') || low.includes('आजीविका')) serverMap['day_nrlm'] = ss
-      else if (low.includes('awas') || low.includes('आवास')) serverMap['pm_awas'] = ss
-    })
-
-    return GOVERNMENT_SCHEMES.map((gs) => {
-      const match = serverMap[gs.id]
-      if (match) {
-        return {
-          ...gs,
-          name: match.name || gs.name,
-          summary: match.description || gs.summary,
-        }
-      }
-      return gs
-    })
-  }, [serverSchemes])
-
-  // Eligibility Finder State
+  // Smart Eligibility Finder State (Auto-populated from User Profile)
   const [finderOccupation, setFinderOccupation] = useState('farmer')
   const [finderIncome, setFinderIncome] = useState(180000)
   const [finderIsShg, setFinderIsShg] = useState(true)
@@ -341,9 +199,50 @@ export default function SchemesPortal() {
   const [finderIsWoman, setFinderIsWoman] = useState(true)
   const [showOnlyEligible, setShowOnlyEligible] = useState(false)
 
+  // Auto-populate from logged-in user profile
+  useEffect(() => {
+    if (user) {
+      if (user.monthly_income > 0) {
+        setFinderIncome(user.monthly_income * 12)
+      }
+      if (user.shg_id) {
+        setFinderIsShg(true)
+      }
+    }
+  }, [user])
+
+  // Process server schemes with rich presentation metadata
+  const schemesList = useMemo(() => {
+    const sourceData = (serverSchemes && Array.isArray(serverSchemes) && serverSchemes.length > 0)
+      ? serverSchemes
+      : FALLBACK_SCHEMES
+
+    return sourceData.map((s) => {
+      const code = s.code || 'general'
+      const meta = SCHEME_METADATA[code] || {}
+      return {
+        id: code,
+        code: (s.code || '').toUpperCase().replace('_', '-'),
+        name: s.name,
+        category: s.category || 'general',
+        nodalMinistry: meta.nodalMinistry || 'Government of India',
+        tag: meta.tag || 'Central Welfare Scheme',
+        valueNum: Number(s.benefit_value) || 0,
+        benefitHighlight: s.benefit_summary || (s.benefit_value > 0 ? `Direct financial assistance up to ₹${Number(s.benefit_value).toLocaleString('en-IN')}` : 'Institutional Support'),
+        summary: s.description || '',
+        eligibilityCriteria: s.eligibility ? s.eligibility.split('. ').filter(Boolean) : ['Indian citizens meeting specific program criteria'],
+        documents: meta.documents || ['Aadhaar Card', 'Bank Passbook'],
+        applicationSteps: meta.applicationSteps || 'Apply at official government portal or local Common Service Centre (CSC).',
+        portalUrl: s.url || meta.defaultUrl || 'https://www.india.gov.in',
+        last_verified: s.last_verified || '2026-10-01',
+        matchCriteria: s.eligibility_rules || { occupations: ['farmer', 'vendor', 'artisan', 'dairy', 'general'] },
+      }
+    })
+  }, [serverSchemes])
+
   // Matching logic
   const isEligible = (sch) => {
-    const c = sch.matchCriteria
+    const c = sch.matchCriteria || {}
     if (c.occupations && !c.occupations.includes(finderOccupation)) return false
     if (c.requiresLand && !finderHasLand) return false
     if (c.isShgOnly && !finderIsShg) return false
@@ -385,9 +284,14 @@ export default function SchemesPortal() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.85rem' }}>
           <IconAward size={22} className="text-emerald" />
           <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Smart Scheme Eligibility Matcher</h3>
+          {user && (
+            <span className="badge" style={{ fontSize: '0.72rem', background: 'var(--emerald-50)', color: 'var(--emerald-700)', border: '1px solid var(--emerald-200)' }}>
+              Auto-matched to your profile
+            </span>
+          )}
         </div>
         <p className="muted small" style={{ marginBottom: '1.25rem' }}>
-          Answer 4 quick profile questions to calculate the exact government grants and subsidized capital available to you.
+          Adjust your household parameters to calculate the exact government grants and subsidized capital available to you.
         </p>
 
         <div className="finder-inputs-grid">
@@ -406,7 +310,7 @@ export default function SchemesPortal() {
           </div>
 
           <div className="field" style={{ margin: 0 }}>
-            <span>Annual Household Income (Rs)</span>
+            <span>Annual Household Income (₹)</span>
             <input
               type="number"
               step="10000"
@@ -466,7 +370,7 @@ export default function SchemesPortal() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
             <span className="badge approved" style={{ fontSize: '0.85rem', padding: '6px 12px' }}>
-              ✓ {eligibleSchemes.length} of {GOVERNMENT_SCHEMES.length} Flagship Schemes Matched
+              ✓ {eligibleSchemes.length} of {schemesList.length} Flagship Schemes Matched
             </span>
           </div>
         </div>
@@ -481,7 +385,8 @@ export default function SchemesPortal() {
             { id: 'msme', label: 'MSME & Vendors' },
             { id: 'women', label: 'Women & SHG' },
             { id: 'solar', label: 'Clean Energy & Solar' },
-            { id: 'social', label: 'Social & Healthcare' },
+            { id: 'housing', label: 'Housing Grants' },
+            { id: 'savings', label: 'Savings & Deposit' },
           ].map((cat) => (
             <button
               key={cat.id}
@@ -515,11 +420,16 @@ export default function SchemesPortal() {
                   <span className="scheme-code-badge">{s.code}</span>
                   <span className="scheme-tag-pill">{s.tag}</span>
                 </div>
-                {matched && (
-                  <span className="badge approved" style={{ fontSize: '0.7rem' }}>
-                    ✓ Eligible
+                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                  <span className="muted small" style={{ fontSize: '0.72rem' }}>
+                    Verified: {s.last_verified}
                   </span>
-                )}
+                  {matched && (
+                    <span className="badge approved" style={{ fontSize: '0.7rem' }}>
+                      ✓ Eligible
+                    </span>
+                  )}
+                </div>
               </div>
 
               <h3 className="scheme-title">{s.name}</h3>
@@ -580,12 +490,15 @@ export default function SchemesPortal() {
               <div>
                 <span className="badge neutral">{selectedScheme.code}</span>
                 <h3 style={{ margin: '0.3rem 0 0 0' }}>{selectedScheme.name}</h3>
-                <span className="muted small">{selectedScheme.nodalMinistry}</span>
+                <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', marginTop: '0.2rem' }}>
+                  <span className="muted small">{selectedScheme.nodalMinistry}</span>
+                  <span className="muted small">• Verified: {selectedScheme.last_verified}</span>
+                </div>
               </div>
-              <button className="icon-btn" onClick={() => setSelectedScheme(null)}>✕</button>
+              <button className="icon-btn" onClick={() => setSelectedScheme(null)} aria-label="Close modal">✕</button>
             </div>
 
-            <div style={{ background: 'var(--slate-50)', padding: '0.85rem', borderRadius: '6px', margin: '0.85rem 0' }}>
+            <div style={{ background: 'var(--card-bg-subtle)', padding: '0.85rem', borderRadius: '6px', margin: '0.85rem 0', border: '1px solid var(--border-color)' }}>
               <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--emerald-600)', textTransform: 'uppercase' }}>
                 Flagship Benefit
               </div>
@@ -595,7 +508,7 @@ export default function SchemesPortal() {
             </div>
 
             <div style={{ marginBottom: '1rem' }}>
-              <h4 style={{ fontSize: '0.88rem', marginBottom: '0.4rem' }}>Eligibility Criteria:</h4>
+              <h4 style={{ fontSize: '0.88rem', marginBottom: '0.4rem', color: 'var(--slate-900)' }}>Eligibility Criteria:</h4>
               <ul className="factors-list" style={{ paddingLeft: '1rem' }}>
                 {selectedScheme.eligibilityCriteria.map((c, i) => (
                   <li key={i}>{c}</li>
@@ -604,7 +517,7 @@ export default function SchemesPortal() {
             </div>
 
             <div style={{ marginBottom: '1rem' }}>
-              <h4 style={{ fontSize: '0.88rem', marginBottom: '0.4rem' }}>Required KYC & Application Documents:</h4>
+              <h4 style={{ fontSize: '0.88rem', marginBottom: '0.4rem', color: 'var(--slate-900)' }}>Required KYC & Application Documents:</h4>
               <ul className="factors-list" style={{ paddingLeft: '1rem' }}>
                 {selectedScheme.documents.map((d, i) => (
                   <li key={i}>{d}</li>
@@ -612,7 +525,7 @@ export default function SchemesPortal() {
               </ul>
             </div>
 
-            <div style={{ background: '#f8fafc', padding: '0.85rem', borderRadius: '6px', border: '1px solid var(--border-color)', marginBottom: '1.25rem' }}>
+            <div style={{ background: 'var(--card-bg-subtle)', padding: '0.85rem', borderRadius: '6px', border: '1px solid var(--border-color)', marginBottom: '1.25rem' }}>
               <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--slate-800)' }}>
                 Step-by-Step Application Process:
               </div>

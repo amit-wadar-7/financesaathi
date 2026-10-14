@@ -146,7 +146,7 @@ def seed_content(db: Session):
                 active=True,
             ))
 
-    # 2. Seed Courses & Quiz Questions
+    # 2. Seed Courses & Quiz Questions (Idempotent update & expansion to 8+ questions)
     for slug, lang_dict in COURSES.items():
         for lang, (title, summary, content, q_list) in lang_dict.items():
             c = db.scalar(select(models.Course).where(models.Course.slug == slug, models.Course.language == lang))
@@ -162,33 +162,78 @@ def seed_content(db: Session):
                         answer_index=ans,
                         explanation=expl,
                     ))
+            else:
+                c.title = title
+                c.summary = summary
+                c.content = content
+                if len(c.questions) < len(q_list):
+                    for old_q in list(c.questions):
+                        db.delete(old_q)
+                    db.flush()
+                    for q_text, opts, ans, expl in q_list:
+                        db.add(models.QuizQuestion(
+                            course_id=c.id,
+                            question=q_text,
+                            options=opts,
+                            answer_index=ans,
+                            explanation=expl,
+                        ))
 
-    # 3. Seed Schemes
-    scheme_codes = ["pmjdy", "nrlm", "mudra", "pm_kisan", "pm_awas"]
-    scheme_meta = [
-        ("pmjdy", "PMJDY (Jan Dhan)", "banking", 0.0, "Basic bank account with zero balance and accident insurance.", "All unbanked citizens", "https://pmjdy.gov.in"),
-        ("nrlm", "DAY-NRLM (Ajeevika)", "livelihood", 150000.0, "Women SHG promotion and low-cost interest subvention credit.", "Rural women in SHGs", "https://aajeevika.gov.in"),
-        ("mudra", "PMMY (MUDRA)", "business", 200000.0, "Collateral-free micro loans for non-farm small businesses.", "Micro entrepreneurs", "https://www.mudra.org.in"),
-        ("pm_kisan", "PM-KISAN Samman Nidhi", "agriculture", 6000.0, "Direct annual income support of Rs 6,000 in 3 equal installments.", "Smallholder farmers", "https://pmkisan.gov.in"),
-        ("pm_awas", "PMAY-G (Pradhan Mantri Awas Yojana)", "housing", 120000.0, "Pucca house construction financial subsidy with toilet assistance.", "Rural homeless / kutcha house households", "https://pmayg.nic.in"),
+    # 3. Seed Schemes (All 8 national schemes localized in EN, HI, MR)
+    scheme_definitions = [
+        ("pm_kisan", "agriculture", 6000.0),
+        ("pm_mudra", "business", 1000000.0),
+        ("pm_svanidhi", "business", 50000.0),
+        ("day_nrlm", "livelihood", 150000.0),
+        ("pmjdy", "banking", 0.0),
+        ("pm_kusum", "solar", 150000.0),
+        ("pm_awas", "housing", 120000.0),
+        ("sukanya", "savings", 150000.0),
     ]
 
-    for code, name, category, val, desc, elig, url in scheme_meta:
-        for lang in ("en", "hi", "mr"):
-            existing = db.scalar(select(models.Scheme).where(models.Scheme.code == code, models.Scheme.language == lang))
-            if not existing:
-                db.add(models.Scheme(
-                    code=code,
-                    name=name,
-                    language=lang,
-                    category=category,
-                    benefit_summary=f"Direct financial assistance up to Rs {val:,.0f}" if val > 0 else "Banking & Insurance",
-                    benefit_value=val,
-                    description=desc,
-                    eligibility=elig,
-                    url=url,
-                    last_verified="2026-10-01",
-                ))
+    scheme_rules = {
+        "pm_kisan": {"occupations": ["farmer"], "requiresLand": True, "maxIncome": 800000},
+        "pm_mudra": {"occupations": ["vendor", "artisan", "dairy", "general"], "requiresLand": False, "maxIncome": 1200000},
+        "pm_svanidhi": {"occupations": ["vendor", "artisan", "general"], "requiresLand": False, "maxIncome": 500000},
+        "day_nrlm": {"occupations": ["farmer", "artisan", "dairy", "general"], "isShgOnly": True, "isWomanOnly": True, "maxIncome": 400000},
+        "pmjdy": {"occupations": ["farmer", "vendor", "artisan", "dairy", "general"], "maxIncome": 10000000},
+        "pm_kusum": {"occupations": ["farmer"], "requiresLand": True, "maxIncome": 1500000},
+        "pm_awas": {"occupations": ["farmer", "vendor", "artisan", "dairy", "general"], "maxIncome": 300000},
+        "sukanya": {"occupations": ["farmer", "vendor", "artisan", "dairy", "general"], "isWomanOnly": True, "maxIncome": 1500000},
+    }
+
+    for lang in ("en", "hi", "mr"):
+        lang_schemes = SCHEMES.get(lang, [])
+        for idx, (code, category, val) in enumerate(scheme_definitions):
+            if idx < len(lang_schemes):
+                s_name, s_desc, s_elig, s_url = lang_schemes[idx]
+                rules = scheme_rules.get(code, {})
+                existing = db.scalar(select(models.Scheme).where(models.Scheme.code == code, models.Scheme.language == lang))
+                ben_sum = f"Direct financial assistance up to Rs {val:,.0f}" if val > 0 else "Banking & Insurance"
+                if not existing:
+                    db.add(models.Scheme(
+                        code=code,
+                        name=s_name,
+                        language=lang,
+                        category=category,
+                        benefit_summary=ben_sum,
+                        benefit_value=val,
+                        description=s_desc,
+                        eligibility=s_elig,
+                        eligibility_rules=rules,
+                        url=s_url,
+                        last_verified="2026-10-01",
+                    ))
+                else:
+                    existing.name = s_name
+                    existing.category = category
+                    existing.benefit_summary = ben_sum
+                    existing.benefit_value = val
+                    existing.description = s_desc
+                    existing.eligibility = s_elig
+                    existing.eligibility_rules = rules
+                    existing.url = s_url
+                    existing.last_verified = "2026-10-01"
 
     # 4. Bootstrap Production Admin if configured
     if ADMIN_EMAIL and ADMIN_PASSWORD:

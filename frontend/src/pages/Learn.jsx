@@ -9,14 +9,8 @@ import {
   IconVolume2,
   IconCheck,
   IconShield,
-  IconFlame,
-  IconArrowRight,
-  IconLandmark,
-  IconTarget,
-  IconZap,
-  IconCheckCircle,
-  IconCoins,
   IconAward,
+  IconCheckCircle,
 } from '../icons'
 
 export function Learn() {
@@ -26,38 +20,39 @@ export function Learn() {
   const done = Object.fromEntries((progress.data || []).map((p) => [p.course_slug, p]))
 
   const completedCount = Object.values(done).filter((p) => p.completed).length
-  const totalCourses = courses.data ? courses.data.length : 3
+  const totalCourses = courses.data ? courses.data.length : 6
+  const totalScore = (progress.data || []).reduce((acc, p) => acc + (p.best_score || 0), 0)
 
   return (
     <div className="learn-page">
       {/* Academy Hero Header & Gamified Milestone Card */}
-      <div className="card" style={{ padding: '1.4rem', marginBottom: '1.2rem', background: '#ffffff' }}>
+      <div className="card" style={{ padding: '1.4rem', marginBottom: '1.2rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.8rem' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.2rem' }}>
               <IconAcademic size={24} className="text-emerald" />
-              <h2 style={{ fontSize: '1.4rem', color: '#0f172a' }}>{t('learn')} — Financial Academy</h2>
+              <h2 style={{ fontSize: '1.4rem', color: 'var(--slate-900)' }}>{t('learn')} — Financial Academy</h2>
             </div>
             <p className="muted small">
               Practical, bite-sized lessons designed for SHG leaders and microfinance borrowers.
             </p>
           </div>
-          <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <span className="badge approved" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 8px' }}>
               <IconCheck size={14} /> {completedCount} of {totalCourses} Completed
             </span>
             {completedCount > 0 ? (
               <>
-                <span className="badge" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', padding: '4px 8px' }}>
-                  +{completedCount * 50} Saathi Pts
+                <span className="badge" style={{ background: 'var(--emerald-50)', color: 'var(--emerald-700)', border: '1px solid var(--emerald-200)', padding: '4px 8px' }}>
+                  +{Math.round(totalScore)} Quiz Score
                 </span>
                 <span className="badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 8px' }}>
-                  <IconFlame size={14} /> {Math.min(completedCount, 7)}-Day Streak
+                  <IconAward size={14} /> {completedCount} Module{completedCount > 1 ? 's' : ''} Certified
                 </span>
               </>
             ) : (
               <span className="badge" style={{ padding: '4px 8px', color: 'var(--slate-500)' }}>
-                0 Pts • Start First Lesson
+                0 Score • Start First Lesson
               </span>
             )}
           </div>
@@ -74,17 +69,17 @@ export function Learn() {
               <Card key={c.id} className="course-card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
                   <span className="badge" style={{ textTransform: 'uppercase', fontSize: '0.7rem' }}>
-                    {c.slug.includes('fraud') ? 'Cyber Safety & UPI' : c.slug.includes('loan') ? 'Credit & Borrowing' : 'Household Savings'}
+                    {c.slug.includes('fraud') ? 'Cyber Safety & UPI' : c.slug.includes('loan') || c.slug.includes('emi') ? 'Credit & Borrowing' : c.slug.includes('shg') ? 'SHG Governance' : c.slug.includes('kisan') ? 'Agri Credit' : c.slug.includes('gov') ? 'Welfare & Insurance' : 'Household Savings'}
                   </span>
                   <span className="muted small" style={{ fontSize: '0.74rem' }}>
                     4 min read • Audio
                   </span>
                 </div>
 
-                <h3 style={{ fontSize: '1.1rem', marginBottom: '0.4rem', color: '#0f172a' }}>{c.title}</h3>
+                <h3 style={{ fontSize: '1.1rem', marginBottom: '0.4rem', color: 'var(--slate-900)' }}>{c.title}</h3>
                 <p className="muted small" style={{ minHeight: '40px', marginBottom: '0.8rem' }}>{c.summary}</p>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.8rem', borderTop: '1px solid #f1f5f9' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.8rem', borderTop: '1px solid var(--border-color)' }}>
                   {p ? (
                     <div>
                       {p.completed ? (
@@ -113,10 +108,10 @@ export function Learn() {
 
 function Rich({ text }) {
   return (
-    <div className="prose" style={{ lineHeight: '1.7', color: '#334155' }}>
+    <div className="prose" style={{ lineHeight: '1.7', color: 'var(--text)' }}>
       {text.split('\n\n').map((block, i) => (
         block.startsWith('## ')
-          ? <div key={i}><h3 style={{ color: '#0f172a', margin: '1.2rem 0 0.5rem' }}>{block.split('\n')[0].slice(3)}</h3>{block.split('\n').slice(1).map((l, j) => <p key={j} style={{ margin: '0.4rem 0' }}>{l}</p>)}</div>
+          ? <div key={i}><h3 style={{ color: 'var(--slate-900)', margin: '1.2rem 0 0.5rem' }}>{block.split('\n')[0].slice(3)}</h3>{block.split('\n').slice(1).map((l, j) => <p key={j} style={{ margin: '0.4rem 0' }}>{l}</p>)}</div>
           : <p key={i} style={{ margin: '0.6rem 0' }}>{block}</p>
       ))}
     </div>
@@ -191,9 +186,9 @@ export function CourseView() {
       </div>
 
       <Card style={{ padding: '2rem' }}>
-        <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '0.8rem', marginBottom: '1.2rem' }}>
+        <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.8rem', marginBottom: '1.2rem' }}>
           <span className="badge" style={{ marginBottom: '0.4rem' }}>Interactive Learning Module</span>
-          <h2 style={{ fontSize: '1.6rem', color: '#0f172a' }}>{course.data.title}</h2>
+          <h2 style={{ fontSize: '1.6rem', color: 'var(--slate-900)' }}>{course.data.title}</h2>
         </div>
         <Rich text={course.data.content} />
       </Card>
@@ -204,8 +199,8 @@ export function CourseView() {
         </p>
 
         {(quiz.data || []).map((q, qi) => (
-          <div key={q.id} className="question" style={{ marginBottom: '1.4rem', paddingBottom: '1.2rem', borderBottom: '1px solid #f1f5f9' }}>
-            <p style={{ fontWeight: 600, color: '#0f172a', marginBottom: '0.6rem' }}>
+          <div key={q.id} className="question" style={{ marginBottom: '1.4rem', paddingBottom: '1.2rem', borderBottom: '1px solid var(--border-color)' }}>
+            <p style={{ fontWeight: 600, color: 'var(--slate-900)', marginBottom: '0.6rem' }}>
               {qi + 1}. {q.question}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
@@ -219,8 +214,8 @@ export function CourseView() {
                     gap: '0.6rem',
                     padding: '0.5rem 0.8rem',
                     borderRadius: '6px',
-                    background: answers[qi] === oi ? '#f0fdf4' : '#f8fafc',
-                    border: answers[qi] === oi ? '1px solid #a7f3d0' : '1px solid #e2e8f0',
+                    background: answers[qi] === oi ? 'var(--emerald-50)' : 'var(--card-bg-subtle)',
+                    border: answers[qi] === oi ? '1px solid var(--emerald-500)' : '1px solid var(--border-color)',
                     cursor: 'pointer'
                   }}
                 >
@@ -239,7 +234,7 @@ export function CourseView() {
                 style={{
                   marginTop: '0.6rem',
                   fontSize: '0.85rem',
-                  color: result.results[qi].correct ? '#047857' : '#b91c1c',
+                  color: result.results[qi].correct ? 'var(--emerald-600)' : 'var(--rose-600, #dc2626)',
                   fontWeight: 500
                 }}
               >
@@ -257,13 +252,13 @@ export function CourseView() {
             style={{
               padding: '1rem',
               borderRadius: '6px',
-              background: result.passed ? '#ecfdf5' : '#fef2f2',
-              border: result.passed ? '1px solid #a7f3d0' : '1px solid #fecaca',
+              background: result.passed ? 'var(--emerald-50)' : 'var(--card-bg-subtle)',
+              border: result.passed ? '1px solid var(--emerald-500)' : '1px solid var(--border-color)',
               marginBottom: '1rem'
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontWeight: 700, fontSize: '1rem', color: result.passed ? '#065f46' : '#991b1b' }}>
+              <span style={{ fontWeight: 700, fontSize: '1rem', color: result.passed ? 'var(--emerald-700)' : 'var(--amber-700)' }}>
                 Your Score: {result.score}%
               </span>
               <Badge tone={result.passed ? 'approved' : 'caution'}>
@@ -281,224 +276,4 @@ export function CourseView() {
   )
 }
 
-export function Schemes() {
-  const { lang, t } = useLang()
-  const { user } = useAuth()
-  const s = useLoad(() => api('/schemes?' + qs({ language: lang }), { auth: false }), [lang])
-
-  const [landAcres, setLandAcres] = useState(1.5)
-  const [isShg, setIsShg] = useState(true)
-  const [occupation, setOccupation] = useState('farmer')
-  const [income, setIncome] = useState(user?.monthly_income ? user.monthly_income * 12 : 75000)
-  const [gender, setGender] = useState('female')
-  const [matcher, setMatcher] = useState(null)
-
-  useEffect(() => {
-    api('/calc/scheme-match?' + qs({
-      land_acres: landAcres,
-      is_shg_member: isShg,
-      gender,
-      annual_income: income,
-      occupation,
-    }), { auth: false })
-      .then(setMatcher)
-      .catch(() => setMatcher(null))
-  }, [landAcres, isShg, gender, income, occupation])
-
-  return (
-    <div className="schemes-page">
-      <div className="card" style={{ padding: '1.4rem', marginBottom: '1.2rem', background: '#ffffff' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.3rem' }}>
-          <IconLandmark size={24} className="text-emerald" />
-          <h2 style={{ fontSize: '1.4rem', color: '#0f172a' }}>{t('schemes')} & Government Subsidies</h2>
-        </div>
-        <p className="muted small" style={{ margin: 0 }}>
-          Central & State welfare programs, Lakhpati Didi rural mission, and collateral-free microcredit facilities.
-        </p>
-      </div>
-
-      {/* Interactive Scheme Eligibility & Lakhpati Didi Finder */}
-      <Card title="Direct Benefit Transfer (DBT) & Yojana Eligibility Matcher" style={{ marginBottom: '1.5rem' }}>
-        <p className="muted small mb-2">
-          Select your household parameters to instantly compute all government grants, interest subventions, and priority sector facilities you qualify for.
-        </p>
-
-        <div className="grid wide" style={{ marginBottom: '1.2rem' }}>
-          <div>
-            <label className="field">
-              <span>Landholding (Acres)</span>
-              <input
-                type="number"
-                step="0.5"
-                min="0"
-                value={landAcres}
-                onChange={(e) => setLandAcres(Number(e.target.value))}
-              />
-            </label>
-            <div style={{ display: 'flex', gap: '0.3rem', marginTop: '0.3rem' }}>
-              {[
-                { val: 0, label: 'Landless' },
-                { val: 1.5, label: 'Marginal (1.5 ac)' },
-                { val: 3.5, label: 'Small (3.5 ac)' },
-              ].map((p) => (
-                <button
-                  key={p.val}
-                  type="button"
-                  className={`btn small ${landAcres === p.val ? '' : 'ghost'}`}
-                  style={{ fontSize: '0.72rem', padding: '3px 6px' }}
-                  onClick={() => setLandAcres(p.val)}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="field">
-              <span>Primary Rural Livelihood</span>
-              <select value={occupation} onChange={(e) => setOccupation(e.target.value)}>
-                <option value="farmer">Farmer / Crop Cultivator</option>
-                <option value="micro_vendor">Street Vendor / Kirana Trader</option>
-                <option value="dairy">Dairy & Livestock Rearer</option>
-                <option value="artisan">Rural Artisan / Handloom</option>
-              </select>
-            </label>
-          </div>
-
-          <div>
-            <label className="field">
-              <span>Annual Household Income (Rs)</span>
-              <input
-                type="number"
-                min="10000"
-                step="5000"
-                value={income}
-                onChange={(e) => setIncome(Number(e.target.value))}
-              />
-            </label>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <label className="check" style={{ marginTop: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <input
-                type="checkbox"
-                checked={isShg}
-                onChange={(e) => setIsShg(e.target.checked)}
-              />
-              <span style={{ fontWeight: 600 }}>Active Self-Help Group (SHG) Member</span>
-            </label>
-          </div>
-        </div>
-
-        {matcher && (
-          <div>
-            <div
-              style={{
-                background: 'var(--emerald-soft)',
-                border: '1px solid var(--emerald-border)',
-                borderRadius: '8px',
-                padding: '1rem',
-                marginBottom: '1.25rem',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: '0.8rem',
-              }}
-            >
-              <div>
-                <span className="small text-emerald" style={{ fontWeight: 700, textTransform: 'uppercase' }}>
-                  Total Flagship Support Unlocked
-                </span>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--emerald-brand)' }}>
-                  Up to {money(matcher.total_eligible_value)} in Grants & Subsidized Capital
-                </div>
-              </div>
-              <div>
-                <Badge tone="approved">{matcher.matched_count} Government Schemes Matched</Badge>
-              </div>
-            </div>
-
-            <div className="grid wide" style={{ marginBottom: '1rem' }}>
-              {matcher.schemes.map((sch) => (
-                <div
-                  key={sch.code}
-                  style={{
-                    background: '#ffffff',
-                    border: '1px solid var(--border-hairline)',
-                    borderRadius: '8px',
-                    padding: '1rem',
-                    boxShadow: 'var(--shadow-subtle)',
-                  }}
-                >
-                  <div className="row between" style={{ alignItems: 'flex-start', marginBottom: '0.4rem' }}>
-                    <Badge tone="approved">{sch.badge}</Badge>
-                    <span style={{ fontWeight: 700, color: 'var(--emerald-action)' }}>
-                      Max: {money(sch.max_value)}
-                    </span>
-                  </div>
-                  <h4 style={{ margin: '0.2rem 0 0.4rem 0', color: 'var(--navy-primary)' }}>{sch.name}</h4>
-                  <p className="small muted" style={{ margin: '0 0 0.6rem 0', lineHeight: 1.5 }}>
-                    {sch.description}
-                  </p>
-                  <div style={{ background: 'var(--canvas-bg)', padding: '0.5rem 0.75rem', borderRadius: '6px', fontSize: '0.8rem' }}>
-                    <b>How to Apply:</b> {sch.action_steps}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </Card>
-
-      <div style={{ marginBottom: '1rem' }}>
-        <h3 style={{ fontSize: '1.2rem', color: '#0f172a' }}>National Rural Livelihoods Scheme Directory</h3>
-        <p className="muted small">Comprehensive official portal links and nodal ministry listings.</p>
-      </div>
-
-      <Alert>{s.error}</Alert>
-
-      {s.loading ? <Loading /> : (
-        <div className="grid wide">
-          {s.data.map((x) => (
-            <Card key={x.id} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                  <span className="badge" style={{ background: '#f1f5f9', color: '#334155' }}>
-                    Government Scheme
-                  </span>
-                  <span className="badge approved">Active</span>
-                </div>
-                <h3 style={{ fontSize: '1.15rem', color: '#0f172a', marginBottom: '0.5rem' }}>{x.name}</h3>
-                <p style={{ fontSize: '0.88rem', color: '#334155', marginBottom: '0.8rem' }}>{x.description}</p>
-                <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '1rem' }}>
-                  <p className="small" style={{ margin: 0, color: '#475569' }}>
-                    <b>Eligibility & Criteria:</b> {x.eligibility}
-                  </p>
-                </div>
-              </div>
-              <div style={{ paddingTop: '0.8rem', borderTop: '1px solid #f1f5f9' }}>
-                <a
-                  href={x.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn small ghost"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                >
-                  <span>Official Government Portal</span>
-                  <IconArrowRight size={14} />
-                </a>
-              </div>
-            </Card>
-          ))}
-        </div>
-      )}
-      <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-        <p className="muted small">
-          Always verify official guidelines with your local Block Development Office (BDO) or bank branch before applying.
-        </p>
-      </div>
-    </div>
-  )
-}
+export { default as Schemes } from './SchemesPortal'

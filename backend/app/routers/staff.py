@@ -492,3 +492,163 @@ def audit_log(limit: int = 100, _=Depends(require_roles("admin")), db: Session =
     rows = db.scalars(select(models.AuditLog).order_by(models.AuditLog.id.desc()).limit(min(limit, 500))).all()
     return [{"id": r.id, "actor_id": r.actor_id, "action": r.action, "entity": r.entity,
              "entity_id": r.entity_id, "detail": r.detail, "created_at": r.created_at} for r in rows]
+
+
+# ==============================================================================
+# Admin Content Management System (Courses, Schemes, Products)
+# ==============================================================================
+
+@router.post("/admin/courses")
+def create_course(body: schemas.AdminCourseIn, user=Depends(require_roles("admin")), db: Session = Depends(get_db)):
+    c = models.Course(
+        slug=body.slug,
+        language=body.language,
+        title=body.title,
+        summary=body.summary,
+        content=body.content
+    )
+    db.add(c)
+    db.commit()
+    db.refresh(c)
+    audit(db, user, "create", "course", c.id, f"Created course {c.slug} ({c.language})")
+    return {"ok": True, "id": c.id, "slug": c.slug}
+
+
+@router.put("/admin/courses/{course_id}")
+def update_course(course_id: int, body: schemas.AdminCourseIn, user=Depends(require_roles("admin")), db: Session = Depends(get_db)):
+    c = db.get(models.Course, course_id)
+    if not c:
+        raise HTTPException(404, "Course not found")
+    c.slug = body.slug
+    c.language = body.language
+    c.title = body.title
+    c.summary = body.summary
+    c.content = body.content
+    db.commit()
+    audit(db, user, "update", "course", c.id, f"Updated course {c.slug}")
+    return {"ok": True, "id": c.id}
+
+
+@router.delete("/admin/courses/{course_id}")
+def delete_course(course_id: int, user=Depends(require_roles("admin")), db: Session = Depends(get_db)):
+    c = db.get(models.Course, course_id)
+    if not c:
+        raise HTTPException(404, "Course not found")
+    audit(db, user, "delete", "course", c.id, f"Deleted course {c.slug}")
+    db.delete(c)
+    db.commit()
+    return {"ok": True}
+
+
+@router.post("/admin/schemes")
+def create_scheme(body: schemas.AdminSchemeIn, user=Depends(require_roles("admin")), db: Session = Depends(get_db)):
+    s = models.Scheme(
+        code=body.code,
+        name=body.name,
+        language=body.language,
+        category=body.category,
+        benefit_summary=body.benefit_summary,
+        benefit_value=body.benefit_value,
+        description=body.description,
+        eligibility=body.eligibility,
+        url=body.url,
+        last_verified=date.today().isoformat()
+    )
+    db.add(s)
+    db.commit()
+    db.refresh(s)
+    audit(db, user, "create", "scheme", s.id, f"Created scheme {s.code} ({s.language})")
+    return {"ok": True, "id": s.id, "code": s.code}
+
+
+@router.put("/admin/schemes/{scheme_id}")
+def update_scheme(scheme_id: int, body: schemas.AdminSchemeIn, user=Depends(require_roles("admin")), db: Session = Depends(get_db)):
+    s = db.get(models.Scheme, scheme_id)
+    if not s:
+        raise HTTPException(404, "Scheme not found")
+    s.code = body.code
+    s.name = body.name
+    s.language = body.language
+    s.category = body.category
+    s.benefit_summary = body.benefit_summary
+    s.benefit_value = body.benefit_value
+    s.description = body.description
+    s.eligibility = body.eligibility
+    s.url = body.url
+    s.last_verified = date.today().isoformat()
+    db.commit()
+    audit(db, user, "update", "scheme", s.id, f"Updated scheme {s.code}")
+    return {"ok": True, "id": s.id}
+
+
+@router.delete("/admin/schemes/{scheme_id}")
+def delete_scheme(scheme_id: int, user=Depends(require_roles("admin")), db: Session = Depends(get_db)):
+    s = db.get(models.Scheme, scheme_id)
+    if not s:
+        raise HTTPException(404, "Scheme not found")
+    audit(db, user, "delete", "scheme", s.id, f"Deleted scheme {s.code}")
+    db.delete(s)
+    db.commit()
+    return {"ok": True}
+
+
+@router.post("/admin/loan-products")
+def create_loan_product(body: schemas.AdminLoanProductIn, user=Depends(require_roles("admin")), db: Session = Depends(get_db)):
+    existing = db.scalar(select(models.LoanProduct).where(models.LoanProduct.code == body.code))
+    if existing:
+        raise HTTPException(400, "Loan product code already exists")
+    lp = models.LoanProduct(
+        code=body.code,
+        name=body.name,
+        name_hi=body.name_hi,
+        name_mr=body.name_mr,
+        annual_rate=body.annual_rate,
+        min_amount=body.min_amount,
+        max_amount=body.max_amount,
+        min_tenure=body.min_tenure,
+        max_tenure=body.max_tenure,
+        allowed_schedule_types=body.allowed_schedule_types,
+        required_documents=body.required_documents,
+        eligibility_notes=body.eligibility_notes,
+        active=body.active
+    )
+    db.add(lp)
+    db.commit()
+    db.refresh(lp)
+    audit(db, user, "create", "loan_product", lp.id, f"Created loan product {lp.code}")
+    return {"ok": True, "id": lp.id, "code": lp.code}
+
+
+@router.put("/admin/loan-products/{product_id}")
+def update_loan_product(product_id: int, body: schemas.AdminLoanProductIn, user=Depends(require_roles("admin")), db: Session = Depends(get_db)):
+    lp = db.get(models.LoanProduct, product_id)
+    if not lp:
+        raise HTTPException(404, "Loan product not found")
+    lp.code = body.code
+    lp.name = body.name
+    lp.name_hi = body.name_hi
+    lp.name_mr = body.name_mr
+    lp.annual_rate = body.annual_rate
+    lp.min_amount = body.min_amount
+    lp.max_amount = body.max_amount
+    lp.min_tenure = body.min_tenure
+    lp.max_tenure = body.max_tenure
+    lp.allowed_schedule_types = body.allowed_schedule_types
+    lp.required_documents = body.required_documents
+    lp.eligibility_notes = body.eligibility_notes
+    lp.active = body.active
+    db.commit()
+    audit(db, user, "update", "loan_product", lp.id, f"Updated loan product {lp.code}")
+    return {"ok": True, "id": lp.id}
+
+
+@router.delete("/admin/loan-products/{product_id}")
+def delete_loan_product(product_id: int, user=Depends(require_roles("admin")), db: Session = Depends(get_db)):
+    lp = db.get(models.LoanProduct, product_id)
+    if not lp:
+        raise HTTPException(404, "Loan product not found")
+    audit(db, user, "delete", "loan_product", lp.id, f"Deleted loan product {lp.code}")
+    db.delete(lp)
+    db.commit()
+    return {"ok": True}
+

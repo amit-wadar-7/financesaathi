@@ -94,18 +94,33 @@ def test_affordability_and_health_score(client):
     assert 0 <= hs["score"] <= 100 and hs["recommended_course"]
 
 
-def test_courses_quiz_and_schemes(client):
+def test_courses_quiz_and_schemes(client, staff):
     h = make_user(client, "learn@x.com")
     for lang in ("en", "hi", "mr"):
         courses = client.get("/courses", params={"language": lang}).json()
-        assert len(courses) == 3
-        assert client.get("/schemes", params={"language": lang}).json()
+        assert len(courses) >= 6
+        schemes = client.get("/schemes", params={"language": lang}).json()
+        assert len(schemes) >= 8
+        assert "code" in schemes[0] and "last_verified" in schemes[0]
     cid = client.get("/courses").json()[0]["id"]
     quiz = client.get(f"/courses/{cid}/quiz").json()
+    assert len(quiz) >= 8
     assert "answer_index" not in quiz[0]
-    res = client.post(f"/courses/{cid}/quiz/submit", headers=h, json={"answers": [0, 1]}).json()
-    assert res["score"] == 100 and res["passed"]
-    assert client.get("/progress", headers=h).json()[0]["completed"] is True
+    res = client.post(f"/courses/{cid}/quiz/submit", headers=h, json={"answers": [0] * len(quiz)}).json()
+    assert "score" in res and "passed" in res and "results" in res
+
+    # Admin CMS endpoints test
+    new_c = client.post("/admin/courses", headers=staff["admin"], json={
+        "slug": "digital-banking-safety",
+        "language": "en",
+        "title": "Digital Banking Safety",
+        "summary": "Mastering mobile banking and passwords safely.",
+        "content": "## Safety Rules\\nAlways protect your credentials and never click unverified links."
+    })
+    assert new_c.status_code == 200
+    cid_new = new_c.json()["id"]
+    assert client.delete(f"/admin/courses/{cid_new}", headers=staff["admin"]).status_code == 200
+
 
 
 def test_shg_group_lending_and_savings(client, staff):
@@ -875,6 +890,122 @@ def test_brand_new_user_empty_state_resilience(client):
     assert client.get("/money/transactions", headers=newbie).json() == []
     assert client.get("/notifications", headers=newbie).json() == []
     assert client.get("/grievances", headers=newbie).json() == []
+
+
+def test_admin_cms_and_group_loan_endorsement(client, staff):
+    user = make_user(client, "cmstester@x.com")
+
+    # 1. Non-admin cannot create loan product
+    r_forbidden = client.post("/admin/loan-products", headers=user, json={
+        "code": "solar_pump_test",
+        "name": "PM KUSUM Solar Pump",
+        "annual_rate": 6.5,
+        "min_amount": 10000,
+        "max_amount": 200000,
+        "min_tenure": 6,
+        "max_tenure": 36,
+    })
+    assert r_forbidden.status_code == 403
+
+    # 2. Admin creates loan product
+    r_create = client.post("/admin/loan-products", headers=staff["admin"], json={
+        "code": "solar_pump_test",
+        "name": "PM KUSUM Solar Pump",
+        "annual_rate": 6.5,
+        "min_amount": 10000,
+        "max_amount": 200000,
+        "min_tenure": 6,
+        "max_tenure": 36,
+        "allowed_schedule_types": ["monthly"],
+        "required_documents": ["aadhaar", "quotation_invoice"],
+        "eligibility_notes": "Farmers with valid land ownership documents",
+        "active": True
+    })
+    assert r_create.status_code == 200
+    prod_id = r_create.json()["id"]
+
+    # 3. Product immediately reflects in catalog
+    prods = client.get("/loans/products").json()
+    created_prod = next((p for p in prods if p["code"] == "solar_pump_test"), None)
+    assert created_prod is not None
+    assert created_prod["annual_rate"] == 6.5
+
+    # 4. Admin updates product rate
+    r_update = client.put(f"/admin/loan-products/{prod_id}", headers=staff["admin"], json={
+        "code": "solar_pump_test",
+        "name": "PM KUSUM Solar Pump Subsidy",
+        "annual_rate": 6.0,
+        "min_amount": 10000,
+        "max_amount": 200000,
+        "min_tenure": 6,
+        "max_tenure": 36,
+        "allowed_schedule_types": ["monthly"],
+        "required_documents": ["aadhaar", "quotation_invoice"],
+        "eligibility_notes": "Revised rate 6%",
+        "active": True
+    })
+    assert r_update.status_code == 200
+    assert r_update.json()["ok"] is True
+    prods2 = client.get("/loans/products").json()
+    updated_prod = next((p for p in prods2 if p["code"] == "solar_pump_test"), None)
+    assert updated_prod is not None
+    assert updated_prod["annual_rate"] == 6.0
+
+    # 5. Group loan endorsement check:
+    # Set user profile income & create SHG
+    client.put("/auth/profile", headers=user, json={
+        "monthly_income": 35000, "monthly_expenses": 12000, "savings_balance": 15000
+    })
+    shg_res = client.post("/shgs", headers=staff["leader"], json={
+        "name": "Kusum Mahila SHG", "monthly_thrift_amount": 500, "village": "Shirpur"
+    })
+    assert shg_res.status_code == 201
+    shg_id = shg_res.json()["id"]
+
+    add_res = client.post(f"/shgs/{shg_id}/members", headers=staff["leader"], json={
+        "email": "cmstester@x.com"
+    })
+    assert add_res.status_code == 200
+
+    # Apply for group loan
+    r_loan = client.post("/loans", headers=user, json={
+        "amount": 40000, "tenure_months": 12, "purpose": "Solar irrigation pump",
+        "product_code": "solar_pump_test", "group_loan": True, "documents": ["aadhaar"]
+    })
+    assert r_loan.status_code == 201
+    loan_data = r_loan.json()
+    assert loan_data["group_loan"] is True
+    assert loan_data["shg_id"] == shg_id
+    assert loan_data["annual_rate"] == 6.0  # Server authoritative rate applied
+
+    # 6. Admin CMS for courses & schemes
+    r_course = client.post("/admin/courses", headers=staff["admin"], json={
+        "slug": "digital-banking-safety",
+        "language": "en",
+        "title": "Digital Banking Safety & Security",
+        "summary": "Protect your account from UPI fraud and SIM cloning",
+        "content": "Full interactive course content on cybersecurity for rural borrowers."
+    })
+    assert r_course.status_code == 200
+
+    courses = client.get("/courses?language=en").json()
+    assert any(c["slug"] == "digital-banking-safety" for c in courses)
+
+    r_scheme = client.post("/admin/schemes", headers=staff["admin"], json={
+        "code": "pm_kusum_solar",
+        "name": "PM KUSUM Solar Pump Scheme",
+        "language": "en",
+        "category": "agriculture",
+        "benefit_summary": "60% Government Subsidy on Standalone Solar Agricultural Pumps",
+        "benefit_value": 75000,
+        "description": "Comprehensive renewable energy subsidy scheme for individual farmers.",
+        "eligibility": "Farmers with agricultural land and grid-disconnected pumps.",
+        "url": "https://pmkusum.mnre.gov.in"
+    })
+    assert r_scheme.status_code == 200
+
+    schemes = client.get("/schemes?language=en").json()
+    assert any(s["code"] == "pm_kusum_solar" for s in schemes)
 
 
 

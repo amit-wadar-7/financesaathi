@@ -45,10 +45,12 @@ def get_loan_or_404(loan_id: int, user: models.User, db: Session) -> models.Loan
 
 
 @router.get("/loan-products", response_model=list[schemas.LoanProductOut])
+@router.get("/loans/products", response_model=list[schemas.LoanProductOut])
 def list_loan_products(db: Session = Depends(get_db)):
     """Authoritative server-side catalog of microfinance products."""
     products = db.scalars(select(models.LoanProduct).where(models.LoanProduct.active.is_(True))).all()
     return products
+
 
 
 @router.post("/loans", response_model=schemas.LoanOut, status_code=201)

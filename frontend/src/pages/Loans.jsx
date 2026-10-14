@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api, money } from '../api'
 import { useAuth } from '../auth'
@@ -28,9 +28,8 @@ import {
   IconUpload,
 } from '../icons'
 
-export const LOAN_PRODUCTS = [
-  {
-    id: 'kisan_agri',
+export const PRODUCT_METADATA = {
+  kisan_agri: {
     title: 'Kisan Agri & Harvest Facility',
     subtitle: 'Crop Cultivation, Hybrid Seeds, Fertilizers & Farm Implements',
     category: 'agri',
@@ -53,14 +52,8 @@ export const LOAN_PRODUCTS = [
       'Tractor & Harvester Service Rental',
       'Borewell Submersible Pump Repair',
     ],
-    docs: [
-      ['aadhaar', 'Aadhaar / Voter ID Proof'],
-      ['land_record', 'Land Revenue Record (7/12 Extract) or Cultivator Declaration'],
-      ['income_proof', 'Panchayat Agri Income Certificate'],
-    ],
   },
-  {
-    id: 'pm_mudra',
+  pm_mudra: {
     title: 'PM MUDRA MSME Business Credit',
     subtitle: 'Working Capital & Equipment for Small Non-Farm Enterprises',
     category: 'msme',
@@ -83,14 +76,8 @@ export const LOAN_PRODUCTS = [
       'Apparel & Readymade Garment Inventory',
       'Handloom & Handicraft Raw Material Purchase',
     ],
-    docs: [
-      ['aadhaar', 'Aadhaar / PAN Card Proof'],
-      ['business_proof', 'Shop License / Udyam Aadhaar Registration'],
-      ['income_proof', 'Bank Account Statement (Last 6 Months)'],
-    ],
   },
-  {
-    id: 'mahila_shakti',
+  mahila_shakti: {
     title: 'Mahila Shakti SHG Enterprise Loan',
     subtitle: 'Collateral-Free Joint Liability Credit for Women Entrepreneurs',
     category: 'shg',
@@ -113,13 +100,8 @@ export const LOAN_PRODUCTS = [
       'Spice Processing & Pickle Packaging Unit',
       'Village Grocery Store Stock Expansion',
     ],
-    docs: [
-      ['aadhaar', 'Aadhaar / Official ID Proof'],
-      ['shg_resolution', 'SHG Meeting Resolution & Peer Guarantee Letter'],
-    ],
   },
-  {
-    id: 'pm_svanidhi',
+  pm_svanidhi: {
     title: 'PM SVANidhi Micro-Vendor Credit',
     subtitle: 'Working Capital Facility for Urban & Semi-Urban Street Vendors',
     category: 'vendor',
@@ -142,13 +124,8 @@ export const LOAN_PRODUCTS = [
       'Vending Handcart Repair & Refurbishment',
       'Digital Weighing Scale & Stock Setup',
     ],
-    docs: [
-      ['aadhaar', 'Aadhaar / Official ID Proof'],
-      ['vendor_certificate', 'Street Vendor Certificate (CoVR / ULB Letter)'],
-    ],
   },
-  {
-    id: 'emergency_health',
+  emergency_health: {
     title: 'Emergency Medical & Social Relief',
     subtitle: 'Express 24-Hour Paperless Sanction for Health Contingencies',
     category: 'emergency',
@@ -171,12 +148,8 @@ export const LOAN_PRODUCTS = [
       'Diagnostic Tests, Scans & Prescriptions',
       'Travel & Caregiver Expenses for City Hospital',
     ],
-    docs: [
-      ['aadhaar', 'Aadhaar Card Proof'],
-    ],
   },
-  {
-    id: 'solar_green',
+  solar_green: {
     title: 'Clean Energy Solar Pump Financing',
     subtitle: 'Concessional Financing for Solar Pumps & Agri Clean Power',
     category: 'solar',
@@ -199,14 +172,8 @@ export const LOAN_PRODUCTS = [
       'Solar Micro Cold-Storage Unit',
       'Solar Flour Mill & Grain Dryer Installation',
     ],
-    docs: [
-      ['aadhaar', 'Aadhaar Proof'],
-      ['quotation_invoice', 'Authorized Vendor Quotation & Proforma Invoice'],
-      ['land_record', 'Agricultural Land Ownership Proof (7/12)'],
-    ],
   },
-  {
-    id: 'artisan_micro',
+  artisan_micro: {
     title: 'Rural Artisan & Handloom Microcredit',
     subtitle: 'Raw Material & Working Capital for Craftspersons & Weavers',
     category: 'artisan',
@@ -229,13 +196,8 @@ export const LOAN_PRODUCTS = [
       'Carpentry & Woodcraft Electric Precision Tools',
       'Leather Footwear & Traditional Embroidery Materials',
     ],
-    docs: [
-      ['aadhaar', 'Aadhaar Card'],
-      ['artisan_card', 'Pehchan Artisan ID Card / Vishwakarma Certificate'],
-    ],
   },
-  {
-    id: 'standard',
+  standard: {
     title: 'Standard Microfinance Term Loan',
     subtitle: 'General Purpose Livelihood & Income Generation Credit',
     category: 'custom',
@@ -258,12 +220,64 @@ export const LOAN_PRODUCTS = [
       'Solar Home Lighting System Installation',
       'Seasonal Inventory Working Capital',
     ],
-    docs: [
-      ['aadhaar', 'Aadhaar Card'],
-      ['income_proof', 'Self-Declaration of Livelihood Income'],
-    ],
   },
-]
+}
+
+export function formatDocLabel(docKey) {
+  const map = {
+    aadhaar: 'Aadhaar / Voter ID Proof',
+    pan: 'PAN Card Proof',
+    land_record: 'Land Revenue Record (7/12 Extract)',
+    income_proof: 'Panchayat Agri Income Certificate',
+    business_proof: 'Shop License / Udyam Aadhaar Registration',
+    shg_resolution: 'SHG Meeting Resolution & Peer Guarantee Letter',
+    vendor_certificate: 'Street Vendor Certificate (CoVR / ULB Letter)',
+    quotation_invoice: 'Authorized Vendor Quotation & Proforma Invoice',
+    artisan_card: 'Pehchan Artisan ID Card / Vishwakarma Certificate',
+  }
+  return map[docKey] || docKey.replace('_', ' ').toUpperCase()
+}
+
+export function mergeServerProducts(serverProducts, lang = 'en') {
+  if (!serverProducts || !Array.isArray(serverProducts) || serverProducts.length === 0) {
+    return Object.entries(PRODUCT_METADATA).map(([code, meta]) => ({
+      id: code,
+      ...meta,
+      docs: (meta.features || []).map((_, i) => ['doc_' + i, 'Document Proof ' + (i + 1)]),
+      allowed_schedule_types: ['monthly'],
+    }))
+  }
+  return serverProducts.map((sp) => {
+    const meta = PRODUCT_METADATA[sp.code] || {}
+    const title = lang === 'hi' && sp.name_hi ? sp.name_hi : lang === 'mr' && sp.name_mr ? sp.name_mr : (sp.name || meta.title || 'Microcredit Facility')
+    const tenures = meta.tenures || [sp.min_tenure, sp.max_tenure]
+    const docs = (sp.required_documents && sp.required_documents.length > 0)
+      ? sp.required_documents.map((d) => [d, formatDocLabel(d)])
+      : [['aadhaar', 'Aadhaar / Voter ID Proof']]
+    return {
+      id: sp.code,
+      productId: sp.id,
+      title,
+      subtitle: sp.eligibility_notes || meta.subtitle || '',
+      category: meta.category || 'custom',
+      icon: meta.icon || <IconCreditCard size={22} />,
+      tag: meta.tag || `${sp.annual_rate}% APR`,
+      apr: sp.annual_rate,
+      defaultAmount: meta.defaultAmount || Math.round((sp.min_amount + sp.max_amount) / 2 / 1000) * 1000,
+      minAmount: sp.min_amount,
+      maxAmount: sp.max_amount,
+      tenures,
+      defaultTenure: meta.defaultTenure || sp.min_tenure,
+      features: meta.features || [sp.eligibility_notes],
+      presets: meta.presets || ['General Livelihood Purpose'],
+      docs,
+      allowed_schedule_types: sp.allowed_schedule_types || ['monthly'],
+    }
+  })
+}
+
+export const FALLBACK_LOAN_PRODUCTS = mergeServerProducts([])
+export const LOAN_PRODUCTS = FALLBACK_LOAN_PRODUCTS
 
 // Pure EMI formula calculation
 function calculateEmi(principal, annualRate, tenureMonths) {
@@ -284,13 +298,15 @@ function calculateEmi(principal, annualRate, tenureMonths) {
 
 export function LoanList() {
   const { user } = useAuth()
-  const { t } = useLang()
+  const { lang, t } = useLang()
   const nav = useNavigate()
   const [activeTab, setActiveTab] = useState('marketplace') // 'marketplace', 'calculator', 'portfolio'
   const [status, setStatus] = useState('')
   const [productFilter, setProductFilter] = useState('')
   const [search, setSearch] = useState('')
   const { data, error, loading } = useLoad(() => api('/loans' + (status ? '?status=' + status : '')), [status])
+  const serverProds = useLoad(() => api('/loans/products', { auth: false }), [])
+  const products = useMemo(() => mergeServerProducts(serverProds.data, lang), [serverProds.data, lang])
   const staff = user.role === 'officer' || user.role === 'admin'
 
   // EMI Calculator State
@@ -316,7 +332,7 @@ export function LoanList() {
   })
 
   const getProductTitle = (type) => {
-    const p = LOAN_PRODUCTS.find((x) => x.id === type)
+    const p = products.find((x) => x.id === type)
     return p ? p.title : 'Standard Facility'
   }
 
@@ -352,7 +368,7 @@ export function LoanList() {
           className={`tab-btn ${activeTab === 'marketplace' ? 'active' : ''}`}
           onClick={() => setActiveTab('marketplace')}
         >
-          Loan Facilities ({LOAN_PRODUCTS.length})
+          Loan Facilities ({products.length})
         </button>
         <button
           type="button"
@@ -374,7 +390,7 @@ export function LoanList() {
       {activeTab === 'marketplace' && (
         <div>
           <div className="loan-catalog-grid">
-            {LOAN_PRODUCTS.map((p) => (
+            {products.map((p) => (
               <div key={p.id} className={`loan-product-card ${p.id === 'kisan_agri' ? 'featured' : ''}`}>
                 <div className="product-card-top">
                   <div className={`product-icon-box ${p.category}`}>
@@ -537,7 +553,7 @@ export function LoanList() {
           </div>
 
           {/* Results Summary Card */}
-          <div className="card" style={{ background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)' }}>
+          <div className="card calc-summary-card">
             <span className="muted small" style={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Estimated Monthly Obligation
             </span>
@@ -546,12 +562,12 @@ export function LoanList() {
               <span style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--slate-500)', marginLeft: '6px' }}>/ month</span>
             </div>
 
-            <div style={{ background: '#ffffff', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1rem', margin: '1rem 0' }}>
-              <div className="row between" style={{ padding: '0.35rem 0', borderBottom: '1px solid #f1f5f9' }}>
+            <div style={{ background: 'var(--card-bg-subtle)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1rem', margin: '1rem 0' }}>
+              <div className="row between" style={{ padding: '0.35rem 0', borderBottom: '1px solid var(--border-color)' }}>
                 <span className="muted small">Principal Borrowed:</span>
                 <b>₹{calcAmount.toLocaleString('en-IN')}</b>
               </div>
-              <div className="row between" style={{ padding: '0.35rem 0', borderBottom: '1px solid #f1f5f9' }}>
+              <div className="row between" style={{ padding: '0.35rem 0', borderBottom: '1px solid var(--border-color)' }}>
                 <span className="muted small">Total Interest Accrued:</span>
                 <b className="text-emerald">+₹{calcResult.totalInterest.toLocaleString('en-IN')}</b>
               </div>
@@ -608,7 +624,7 @@ export function LoanList() {
                 style={{ fontSize: '0.82rem', padding: '6px 8px', borderRadius: '4px' }}
               >
                 <option value="">All Loan Products</option>
-                {LOAN_PRODUCTS.map((prod) => (
+                {products.map((prod) => (
                   <option key={prod.id} value={prod.id}>
                     {prod.title}
                   </option>
@@ -651,7 +667,7 @@ export function LoanList() {
                       <tr key={l.id}>
                         <td>
                           <Link to={'/loans/' + l.id} style={{ fontWeight: 600 }}>
-                            #{l.id} {l.group_loan ? <span className="muted small">(SHG)</span> : ''}
+                            #{l.id} {(l.group_loan || l.shg_id) ? <span className="muted small">(SHG)</span> : ''}
                           </Link>
                         </td>
                         <td>
@@ -705,7 +721,7 @@ export function LoanList() {
 
 export function LoanApply() {
   const { user } = useAuth()
-  const { t } = useLang()
+  const { lang, t } = useLang()
   const nav = useNavigate()
   const [searchParams] = useSearchParams()
 
@@ -714,7 +730,10 @@ export function LoanApply() {
   const queryRate = searchParams.get('rate')
   const queryTenure = searchParams.get('tenure')
 
-  const initialProd = LOAN_PRODUCTS.find((p) => p.id === queryProduct) || LOAN_PRODUCTS[0]
+  const serverProds = useLoad(() => api('/loans/products', { auth: false }), [])
+  const products = useMemo(() => mergeServerProducts(serverProds.data, lang), [serverProds.data, lang])
+
+  const initialProd = products.find((p) => p.id === queryProduct) || products[0]
 
   const [selectedProduct, setSelectedProduct] = useState(initialProd)
   const [f, setF] = useState({
@@ -727,6 +746,19 @@ export function LoanApply() {
     group_loan: initialProd.id === 'mahila_shakti',
     documents: [],
   })
+
+  // Synchronize with server products when loaded
+  useEffect(() => {
+    if (products.length > 0) {
+      const match = products.find((p) => p.id === (queryProduct || f.product_type)) || products[0]
+      setSelectedProduct(match)
+      setF((prev) => ({
+        ...prev,
+        product_type: match.id,
+        annual_rate: match.apr,
+      }))
+    }
+  }, [products, queryProduct])
 
   const [preview, setPreview] = useState(null)
   const [err, setErr] = useState('')
@@ -862,7 +894,7 @@ export function LoanApply() {
           Select Credit Program:
         </span>
         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-          {LOAN_PRODUCTS.map((prod) => (
+          {products.map((prod) => (
             <button
               key={prod.id}
               type="button"
@@ -1060,7 +1092,7 @@ export function LoanApply() {
                         padding: '0.6rem 0.75rem',
                         border: isAttached ? '1.5px solid var(--emerald-600)' : '1px solid var(--border-color)',
                         borderRadius: '6px',
-                        background: isAttached ? 'var(--emerald-50, #ecfdf5)' : '#ffffff',
+                        background: isAttached ? 'var(--emerald-50)' : 'var(--card-bg)',
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
@@ -1181,10 +1213,12 @@ export function LoanApply() {
 export function LoanDetail() {
   const { id } = useParams()
   const { user } = useAuth()
-  const { t } = useLang()
+  const { lang, t } = useLang()
   const toast = useToast()
   const loan = useLoad(() => api('/loans/' + id), [id])
   const sched = useLoad(() => api('/loans/' + id + '/schedule'), [id])
+  const serverProds = useLoad(() => api('/loans/products', { auth: false }), [])
+  const products = useMemo(() => mergeServerProducts(serverProds.data, lang), [serverProds.data, lang])
   const [msg, setMsg] = useState({ kind: 'error', text: '' })
   const [note, setNote] = useState('')
   const [paymentModal, setPaymentModal] = useState(null)
@@ -1347,7 +1381,7 @@ export function LoanDetail() {
   const repaymentPct = totalScheduledAmount > 0 ? Math.round((totalPaidAmount / totalScheduledAmount) * 100) : 0
 
   const prodType = l.product_type || 'kisan_agri'
-  const productInfo = LOAN_PRODUCTS.find((p) => p.id === prodType) || LOAN_PRODUCTS[0]
+  const productInfo = products.find((p) => p.id === prodType) || products[0]
 
   return (
     <div className="page-container">
@@ -1420,6 +1454,33 @@ export function LoanDetail() {
           sub={`Band: ${t(l.ai_band)}`}
         />
       </div>
+
+      {(l.group_loan || l.shg_id) && (
+        <Card title="Joint Liability Group (SHG) Social Guarantee" style={{ marginBottom: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{
+                background: 'var(--primary-subtle, rgba(20, 184, 166, 0.15))',
+                color: 'var(--primary, #0d9488)',
+                borderRadius: '8px',
+                padding: '0.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <IconUsers size={24} />
+              </div>
+              <div>
+                <div style={{ fontWeight: 600 }}>SHG Peer Endorsement Active</div>
+                <div className="muted small">
+                  Backed by Self-Help Group #{l.shg_id} mutual guarantee resolution and social collateral under NRLM guidelines.
+                </div>
+              </div>
+            </div>
+            <Badge tone="approved">Verified SHG Backed</Badge>
+          </div>
+        </Card>
+      )}
 
       {l.status === 'approved' && totalScheduledAmount > 0 && (
         <Card title="Repayment Amortization Progress" style={{ marginBottom: '1.25rem' }}>
@@ -1888,7 +1949,7 @@ export function LoanDetail() {
               </div>
 
               {/* Statutory Fair Practice Code Seal */}
-              <div style={{ background: '#f8fafc', padding: '0.75rem 0.85rem', borderRadius: '6px', borderLeft: '3px solid var(--emerald-600)', fontSize: '0.76rem', color: '#475569', marginBottom: '1.25rem' }}>
+              <div style={{ background: 'var(--card-bg-subtle)', padding: '0.75rem 0.85rem', borderRadius: '6px', borderLeft: '3px solid var(--emerald-600)', fontSize: '0.76rem', color: '#475569', marginBottom: '1.25rem' }}>
                 <b>Statutory Fair Practices Declaration:</b> Issued under the RBI Fair Practices Code for Microfinance Institutions. The borrower is entitled to an itemized passbook, transparent reducing-rate calculation, and zero foreclosure penalties.
               </div>
 
@@ -1905,7 +1966,7 @@ export function LoanDetail() {
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <span className={`badge ${l.status === 'approved' || l.status === 'disbursed' ? 'approved' : 'pending'}`} style={{ fontSize: '0.7rem' }}>
-                    {l.status === 'approved' || l.status === 'disbursed' ? '✓ DIGITALLY SEALED & SANCTIONED' : 'PENDING UNDERWRITING REVIEW'}
+                    {l.status === 'approved' || l.status === 'disbursed' ? '✓ Institutional Sanction Confirmed' : 'PENDING UNDERWRITING REVIEW'}
                   </span>
                   <div className="muted small" style={{ fontSize: '0.68rem', marginTop: '2px' }}>DPDP-2023 Verified</div>
                 </div>

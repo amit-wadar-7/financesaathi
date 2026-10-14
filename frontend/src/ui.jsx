@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 
 export function Alert({ kind = 'error', children }) {
   if (!children) return null
@@ -207,8 +207,8 @@ export const useToast = () => useContext(ToastContext) || {
    INTERACTIVE SVG CHARTS & GAUGES
    ========================================================================= */
 
-/** 1. CIBIL Bureau Speedometer Dial (300 to 900) */
-export function CibilSpeedometer({ score = 740, size = 180 }) {
+/** 1. Saathi Financial Health Score Dial (300 to 900) */
+export function FinancialHealthScoreDial({ score = 740, size = 180 }) {
   const minScore = 300
   const maxScore = 900
   const clamped = Math.max(minScore, Math.min(maxScore, score))
@@ -238,7 +238,7 @@ export function CibilSpeedometer({ score = 740, size = 180 }) {
     <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
       <svg width={size} height={size * 0.65} viewBox={`0 0 ${size} ${size * 0.65}`}>
         <defs>
-          <linearGradient id="cibilArcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <linearGradient id="healthScoreArcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="#e11d48" />
             <stop offset="35%" stopColor="#f59e0b" />
             <stop offset="65%" stopColor="#10b981" />
@@ -257,7 +257,7 @@ export function CibilSpeedometer({ score = 740, size = 180 }) {
         <path
           d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
           fill="none"
-          stroke="url(#cibilArcGrad)"
+          stroke="url(#healthScoreArcGrad)"
           strokeWidth="12"
           strokeLinecap="round"
         />
@@ -392,10 +392,68 @@ export function CashflowBarChart({ income = 25000, expenses = 14000, emi = 3200 
           <span style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '6px' }}>Surplus</span>
         </div>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.75rem', fontSize: '0.75rem', color: '#64748b' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.75rem', fontSize: '0.75rem', color: 'var(--slate-500)' }}>
         <span>Capacity Headroom: <strong style={{ color: surplus >= 0 ? '#059669' : '#e11d48' }}>₹{surplus.toLocaleString()}/mo</strong></span>
         <span>FOIR: <strong>{income > 0 ? Math.round((emi / income) * 100) : 0}%</strong></span>
       </div>
     </div>
   )
 }
+
+export function Modal({ isOpen, onClose, title, children, maxWidth = 540 }) {
+  const modalRef = useRef(null)
+
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose?.()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    const timer = setTimeout(() => {
+      const focusable = modalRef.current?.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+      if (focusable && focusable.length > 0) {
+        focusable[0].focus()
+      }
+    }, 50)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      clearTimeout(timer)
+    }
+  }, [isOpen, onClose])
+
+  if (!isOpen) return null
+
+  return (
+    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div
+        ref={modalRef}
+        className="modal-card"
+        style={{ maxWidth }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="modal-header">
+          <h3 id="modal-title" style={{ margin: 0, fontSize: '1.2rem', color: 'var(--slate-900)' }}>
+            {title}
+          </h3>
+          <button
+            type="button"
+            className="icon-btn"
+            onClick={onClose}
+            aria-label="Close dialog"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="modal-body" style={{ marginTop: '1rem' }}>
+          {children}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export const CibilSpeedometer = FinancialHealthScoreDial;

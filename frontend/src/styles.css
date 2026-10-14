@@ -17,9 +17,20 @@
   --slate-50:  #f8fafc;
 
   /* Surfaces & Canvas */
-  --canvas-bg:     #f8fafc;
-  --card-bg:       #ffffff;
-  --border-color:  #e2e8f0;
+  --canvas-bg:        #f8fafc;
+  --card-bg:          #ffffff;
+  --card-bg-subtle:   #f8fafc;
+  --card-hover-bg:    #f1f5f9;
+  --border-color:     #e2e8f0;
+  --border-subtle:    #f1f5f9;
+
+  /* Button & Tab Tokens */
+  --btn-primary-bg:   #0f172a;
+  --btn-primary-text: #ffffff;
+  --btn-primary-hover: #1e293b;
+  --tab-active-bg:    #0f172a;
+  --tab-active-text:  #ffffff;
+
 
   /* Primary Brand: Trust Emerald */
   --emerald-700:   #047857;
@@ -699,20 +710,21 @@ a:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--slate-900);
-  color: #ffffff;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
   font-size: 0.84rem;
   font-weight: 600;
   padding: 7px 14px;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--slate-900);
+  border: 1px solid var(--btn-primary-bg);
   cursor: pointer;
   transition: all 0.15s ease;
   text-decoration: none;
 }
 
 .btn:hover {
-  background: var(--slate-800);
+  background: var(--btn-primary-hover);
+  color: var(--btn-primary-text);
   text-decoration: none;
 }
 
@@ -883,8 +895,8 @@ tr:hover td { background: #fafafa; }
 .tab-btn:hover { color: var(--slate-900); }
 
 .tab-btn.active {
-  background: var(--slate-900);
-  color: #ffffff;
+  background: var(--tab-active-bg);
+  color: var(--tab-active-text);
 }
 
 .filter-bar-card {
@@ -1553,21 +1565,31 @@ tr:hover td { background: #fafafa; }
 
 /* Dark Theme Variables & Full Inversion */
 [data-theme="dark"] {
-  --canvas-bg: #090d16;
-  --card-bg: #111827;
-  --border-color: #1f2937;
-  --text-primary: #f8fafc;
-  --text-muted: #94a3b8;
-  --slate-900: #f8fafc;
-  --slate-800: #f1f5f9;
-  --slate-700: #e2e8f0;
-  --slate-600: #cbd5e1;
-  --slate-500: #94a3b8;
-  --slate-400: #64748b;
-  --slate-300: #475569;
-  --slate-200: #334155;
-  --slate-100: #1e293b;
-  --slate-50:  #0f172a;
+  --canvas-bg:        #0b1120;
+  --card-bg:          #111827;
+  --card-bg-subtle:   #1e293b;
+  --card-hover-bg:    #1e293b;
+  --border-color:     #1f2937;
+  --border-subtle:    #374151;
+
+  --btn-primary-bg:   #059669;
+  --btn-primary-text: #ffffff;
+  --btn-primary-hover: #047857;
+  --tab-active-bg:    #059669;
+  --tab-active-text:  #ffffff;
+
+  --text-primary:     #f8fafc;
+  --text-muted:       #94a3b8;
+  --slate-900:        #f8fafc;
+  --slate-800:        #f1f5f9;
+  --slate-700:        #e2e8f0;
+  --slate-600:        #cbd5e1;
+  --slate-500:        #94a3b8;
+  --slate-400:        #64748b;
+  --slate-300:        #475569;
+  --slate-200:        #334155;
+  --slate-100:        #1e293b;
+  --slate-50:         #0f172a;
 }
 
 [data-theme="dark"] body {
@@ -1592,10 +1614,11 @@ tr:hover td { background: #fafafa; }
 [data-theme="dark"] .modal-card,
 [data-theme="dark"] .modal-box,
 [data-theme="dark"] .stat,
-[data-theme="dark"] .grievance-card {
+[data-theme="dark"] .grievance-card,
+[data-theme="dark"] .calc-summary-card {
   background: #111827 !important;
   border-color: #1f2937 !important;
-  color: #f8fafc;
+  color: #f8fafc !important;
 }
 
 [data-theme="dark"] .stat-value {
@@ -1712,6 +1735,171 @@ tr:hover td { background: #fafafa; }
   background: #1e293b !important;
   border-color: #334155 !important;
 }
+
+/* Specific Dark Mode overrides for Loans, Reports, Dashboard, and Buttons */
+[data-theme="dark"] .btn:not(.ghost):not(.secondary) {
+  background: #059669 !important;
+  border-color: #059669 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .btn:not(.ghost):not(.secondary):hover {
+  background: #047857 !important;
+  border-color: #047857 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .btn.ghost {
+  background: transparent !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .btn.ghost:hover {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .tab-btn {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .tab-btn.active {
+  background: #059669 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .tab-bar-card,
+[data-theme="dark"] .filter-bar-card {
+  background: #111827 !important;
+  border-color: #1f2937 !important;
+}
+
+[data-theme="dark"] .loan-product-card {
+  background: #111827 !important;
+  border-color: #1f2937 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .loan-product-card.featured {
+  background: #111827 !important;
+  border-color: #10b981 !important;
+}
+
+[data-theme="dark"] .product-metrics-bar {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .metric-label {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .metric-val {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .product-features-list li {
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .saathi-card-box {
+  background: #111827 !important;
+  border-color: #1f2937 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .report-catalog-card {
+  background: #111827 !important;
+  border-color: #1f2937 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .official-report-document {
+  background: #111827 !important;
+  border-color: #1f2937 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .scheme-card {
+  background: #111827 !important;
+  border-color: #1f2937 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .stat-card {
+  background: #111827 !important;
+  border-color: #1f2937 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .kpi-metric-card {
+  background: #111827 !important;
+  border-color: #1f2937 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .kpi-metric-title {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .kpi-metric-value {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .savings-goal-banner {
+  background: #111827 !important;
+  border-color: #1f2937 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .hero-action-btn {
+  background: #1e293b !important;
+  color: #6ee7b7 !important;
+  border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .hero-action-btn:hover {
+  background: #334155 !important;
+  color: #a7f3d0 !important;
+}
+
+[data-theme="dark"] .hero-action-btn.secondary {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-theme="dark"] .question {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .badge.neutral {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .badge.pending {
+  background: rgba(217, 119, 6, 0.2) !important;
+  border-color: rgba(217, 119, 6, 0.4) !important;
+  color: #fcd34d !important;
+}
+
+[data-theme="dark"] .badge.approved {
+  background: rgba(5, 150, 105, 0.2) !important;
+  border-color: rgba(5, 150, 105, 0.4) !important;
+  color: #6ee7b7 !important;
+}
+
+[data-theme="dark"] .toast-item {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
 
 /* Print Optimization for Sanction Letters and Account Statements */
 @media print {
@@ -3676,8 +3864,9 @@ tr:hover td { background: #fafafa; }
   }
 
   .context-breadcrumb {
-    max-width: 160px;
-    overflow: hidden;
+    max-width: none;
+    flex: 1;
+    min-width: 0;
   }
 
   .context-app-name, .context-slash {
@@ -3685,10 +3874,13 @@ tr:hover td { background: #fafafa; }
   }
 
   .context-current {
-    font-size: 0.85rem;
-    white-space: nowrap;
+    font-size: 0.88rem;
+    white-space: normal;
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   .top-brand-mobile {
@@ -3718,5 +3910,84 @@ tr:hover td { background: #fafafa; }
     width: 100%;
   }
 }
+
+@media (max-width: 640px) {
+  .page-header-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
+  }
+
+  .page-header-row > div:last-child {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .balance-hero-card {
+    padding: 1.25rem 1rem !important;
+  }
+
+  .balance-amount-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.6rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .balance-amount-display {
+    font-size: 2.1rem !important;
+  }
+
+  .balance-sparkline-svg {
+    width: 100% !important;
+    max-width: 220px !important;
+    height: 36px !important;
+  }
+
+  .balance-actions-row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.5rem !important;
+    padding-top: 0.85rem !important;
+  }
+
+  .hero-action-btn {
+    width: 100% !important;
+    justify-content: center !important;
+    font-size: 0.8rem !important;
+    padding: 0.6rem 0.4rem !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .desktop-top-bar {
+    padding: 0 0.5rem !important;
+  }
+
+  .lang-toggle-pills {
+    gap: 2px !important;
+  }
+
+  .lang-btn {
+    padding: 2px 6px !important;
+    font-size: 0.72rem !important;
+  }
+
+  .balance-amount-display {
+    font-size: 1.85rem !important;
+  }
+
+  .balance-actions-row {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.4rem !important;
+  }
+
+  .hero-action-btn {
+    font-size: 0.76rem !important;
+    gap: 0.3rem !important;
+  }
+}
+
 
 

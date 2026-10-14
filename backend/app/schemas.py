@@ -231,6 +231,7 @@ class LoanOut(ORM):
     user_id: int
     borrower_name: str = ""
     shg_id: int | None
+    group_loan: bool = False
     product_id: int | None = None
     amount: float
     annual_rate: float
@@ -426,3 +427,40 @@ class GrievanceOut(ORM):
     response: str
     created_at: datetime
     resolved_at: datetime | None = None
+
+
+class AdminCourseIn(BaseModel):
+    slug: str = Field(min_length=2, max_length=60)
+    language: str = Field(default="en", max_length=5)
+    title: str = Field(min_length=2, max_length=200)
+    summary: str = Field(default="", max_length=400)
+    content: str = Field(min_length=10)
+
+
+class AdminSchemeIn(BaseModel):
+    code: str = Field(min_length=2, max_length=50)
+    name: str = Field(min_length=2, max_length=200)
+    language: str = Field(default="en", max_length=5)
+    category: str = Field(default="general", max_length=50)
+    benefit_summary: str = Field(default="", max_length=255)
+    benefit_value: float = Field(default=0.0, ge=0)
+    description: str = Field(min_length=10)
+    eligibility: str = Field(min_length=5)
+    url: str = Field(default="", max_length=255)
+
+
+class AdminLoanProductIn(BaseModel):
+    code: str = Field(min_length=2, max_length=50)
+    name: str = Field(min_length=2, max_length=200)
+    name_hi: str = Field(default="", max_length=200)
+    name_mr: str = Field(default="", max_length=200)
+    annual_rate: float = Field(gt=0, le=100)
+    min_amount: float = Field(gt=0)
+    max_amount: float = Field(gt=0)
+    min_tenure: int = Field(ge=1, le=120)
+    max_tenure: int = Field(ge=1, le=120)
+    allowed_schedule_types: list[str] = ["monthly"]
+    required_documents: list[str] = ["aadhaar"]
+    eligibility_notes: str = ""
+    active: bool = True
+

@@ -3,13 +3,13 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      - POSTGRES_USER=financesaathi
-      - POSTGRES_PASSWORD=financesaathi_secure_pg_pass_2026
-      - POSTGRES_DB=financesaathi
+      - POSTGRES_USER=${POSTGRES_USER:-financesaathi}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-financesaathi_pg_secret_2026}
+      - POSTGRES_DB=${POSTGRES_DB:-financesaathi}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U financesaathi -d financesaathi"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-financesaathi} -d ${POSTGRES_DB:-financesaathi}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -21,11 +21,13 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://financesaathi:financesaathi_secure_pg_pass_2026@db:5432/financesaathi
-      - SECRET_KEY=financesaathi_prod_secret_key_change_in_production_2026_at_least_32_chars
-      - CORS_ORIGINS=http://localhost:5173,http://localhost:3000,http://localhost:80
-      - LLM_PROVIDER=none
-      - APP_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-financesaathi}:${POSTGRES_PASSWORD:-financesaathi_pg_secret_2026}@db:5432/${POSTGRES_DB:-financesaathi}
+      - SECRET_KEY=${SECRET_KEY:-financesaathi_prod_secret_key_change_in_production_2026_at_least_32_chars}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@financesaathi.org}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:5173,http://localhost:3000,http://localhost:80}
+      - LLM_PROVIDER=${LLM_PROVIDER:-none}
+      - APP_ENV=${APP_ENV:-production}
     volumes:
       - backend_uploads:/app/uploads
     depends_on:

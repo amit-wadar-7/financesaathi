@@ -43,7 +43,9 @@ def require_roles(*roles: str):
 
 
 def audit(db: Session, actor_id, action: str, entity: str, entity_id=None, detail: str = ""):
-    db.add(models.AuditLog(actor_id=actor_id, action=action, entity=entity, entity_id=entity_id, detail=detail))
+    actual_id = actor_id.id if isinstance(actor_id, models.User) else actor_id
+    db.add(models.AuditLog(actor_id=actual_id, action=action, entity=entity, entity_id=entity_id, detail=detail))
+
 
 
 def notify(db: Session, user_id: int, message: str):

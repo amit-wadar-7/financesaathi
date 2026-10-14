@@ -429,6 +429,7 @@ function DesktopLayout({ children }) {
               className="theme-btn"
               onClick={toggleTheme}
               title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
               style={{
                 background: 'transparent',
                 border: '1px solid var(--border-color)',
@@ -511,6 +512,7 @@ function DesktopLayout({ children }) {
             className="floating-saathi-trigger"
             onClick={() => setFloatingChatOpen(!floatingChatOpen)}
             title="Ask Saathi AI"
+            aria-label="Ask Saathi AI Assistant"
           >
             <span className="floating-robot"><IconBot size={18} /></span>
             <span className="floating-label">Ask Saathi</span>

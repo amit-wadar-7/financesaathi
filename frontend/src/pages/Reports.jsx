@@ -114,8 +114,8 @@ export default function Reports() {
                   padding: '6px 14px',
                   borderRadius: '6px',
                   fontWeight: selectedCategory === c.id ? 700 : 500,
-                  background: selectedCategory === c.id ? 'var(--slate-900)' : 'var(--slate-100)',
-                  color: selectedCategory === c.id ? '#ffffff' : 'var(--slate-700)',
+                  background: selectedCategory === c.id ? 'var(--tab-active-bg)' : 'var(--card-bg-subtle)',
+                  color: selectedCategory === c.id ? 'var(--tab-active-text)' : 'var(--slate-700)',
                   border: '1px solid transparent',
                 }}
                 onClick={() => setSelectedCategory(c.id)}
@@ -137,7 +137,7 @@ export default function Reports() {
                 fontSize: '0.82rem',
                 borderRadius: '6px',
                 border: '1px solid var(--border-color)',
-                background: '#ffffff',
+                background: 'var(--card-bg)',
               }}
             />
           </div>
@@ -300,7 +300,7 @@ function ReportViewerModal({ slug, onClose }) {
           padding: 0,
           borderRadius: '12px',
           overflow: 'hidden',
-          background: '#ffffff',
+          background: 'var(--card-bg)',
         }}
       >
         {/* Top Control Bar (Hidden during print) */}
@@ -308,8 +308,7 @@ function ReportViewerModal({ slug, onClose }) {
           className="report-modal-header no-print"
           style={{
             padding: '0.85rem 1.25rem',
-            background: 'var(--slate-900)',
-            color: '#ffffff',
+            background: 'var(--tab-active-bg)', color: 'var(--tab-active-text)',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -353,7 +352,7 @@ function ReportViewerModal({ slug, onClose }) {
         </div>
 
         {/* Scrollable Report Content Area */}
-        <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1, background: '#f8fafc' }}>
+        <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1, background: 'var(--card-bg-subtle)' }}>
           {loading ? (
             <div style={{ padding: '3rem 0', textAlign: 'center' }}>
               <Loading />
@@ -366,7 +365,7 @@ function ReportViewerModal({ slug, onClose }) {
             <div
               className="official-report-document"
               style={{
-                background: '#ffffff',
+                background: 'var(--card-bg)',
                 border: '1px solid var(--border-color)',
                 borderRadius: '8px',
                 padding: '2rem',
@@ -468,25 +467,25 @@ function ParAgingView({ data }) {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
-        <div className="card" style={{ padding: '0.85rem', background: '#f8fafc' }}>
+        <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
           <span className="muted small">Total Loan Portfolio</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0', color: 'var(--slate-900)' }}>
             ₹{data.total_portfolio?.toLocaleString()}
           </h4>
         </div>
-        <div className="card" style={{ padding: '0.85rem', background: '#f8fafc' }}>
+        <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
           <span className="muted small">Capital at Risk</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0', color: 'var(--rose-600)' }}>
             ₹{data.at_risk_capital?.toLocaleString()}
           </h4>
         </div>
-        <div className="card" style={{ padding: '0.85rem', background: '#f8fafc' }}>
+        <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
           <span className="muted small">PAR Ratio</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0', color: data.par_percentage > 5 ? 'var(--rose-600)' : 'var(--emerald-600)' }}>
             {data.par_percentage}%
           </h4>
         </div>
-        <div className="card" style={{ padding: '0.85rem', background: '#f8fafc' }}>
+        <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
           <span className="muted small">NPA (90+ DPD)</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0', color: 'var(--slate-700)' }}>
             {data.npa_percentage}%
@@ -620,23 +619,23 @@ function CollectionEfficiencyView({ data }) {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
-        <div className="card" style={{ padding: '0.85rem', background: '#f8fafc' }}>
+        <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
           <span className="muted small">Billed Demand</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0' }}>₹{data.total_demand?.toLocaleString()}</h4>
         </div>
-        <div className="card" style={{ padding: '0.85rem', background: '#f8fafc' }}>
+        <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
           <span className="muted small">Total Recovered</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0', color: 'var(--emerald-600)' }}>
             ₹{data.total_collected?.toLocaleString()}
           </h4>
         </div>
-        <div className="card" style={{ padding: '0.85rem', background: '#f8fafc' }}>
+        <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
           <span className="muted small">Overdue Receivables</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0', color: 'var(--rose-600)' }}>
             ₹{data.overdue_receivables?.toLocaleString()}
           </h4>
         </div>
-        <div className="card" style={{ padding: '0.85rem', background: '#f8fafc' }}>
+        <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
           <span className="muted small">Collection Efficiency</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0', color: 'var(--emerald-700)' }}>
             {data.collection_efficiency_pct}%
@@ -787,7 +786,7 @@ function TaxCertificateView({ data }) {
         <p className="muted small" style={{ margin: '0.2rem 0 0', fontWeight: 600 }}>Financial Year: {data.financial_year}</p>
       </div>
 
-      <div className="card" style={{ background: '#f8fafc', padding: '1.25rem', marginBottom: '1.5rem' }}>
+      <div className="card" style={{ background: 'var(--card-bg-subtle)', padding: '1.25rem', marginBottom: '1.5rem' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '0.85rem' }}>
           <div>
             <span className="muted">Borrower Name:</span>
@@ -821,7 +820,7 @@ function TaxCertificateView({ data }) {
               <td className="muted small">Fiscal Year Finance Charges</td>
               <td style={{ fontWeight: 700 }}>₹{data.interest_paid?.toLocaleString()}</td>
             </tr>
-            <tr style={{ background: '#f8fafc' }}>
+            <tr style={{ background: 'var(--card-bg-subtle)' }}>
               <td style={{ fontWeight: 700, color: 'var(--slate-900)' }}>Total Repayment Service</td>
               <td className="muted small">Total Cashflow Outflow</td>
               <td style={{ fontWeight: 800, color: 'var(--slate-900)' }}>₹{data.total_repaid?.toLocaleString()}</td>
@@ -853,17 +852,17 @@ function CreditHealthView({ data }) {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
-        <div className="card center" style={{ padding: '1rem', background: '#f8fafc', textAlign: 'center' }}>
+        <div className="card center" style={{ padding: '1rem', background: 'var(--card-bg-subtle)', textAlign: 'center' }}>
           <span className="muted small">Credit Bureau Score</span>
           <h2 style={{ fontSize: '2rem', margin: '0.2rem 0', color: 'var(--emerald-700)' }}>{data.bureau_score}</h2>
           <span className="badge success">{data.score_band}</span>
         </div>
-        <div className="card" style={{ padding: '1rem', background: '#f8fafc' }}>
+        <div className="card" style={{ padding: '1rem', background: 'var(--card-bg-subtle)' }}>
           <span className="muted small">Debt-to-Income (FOIR)</span>
           <h3 style={{ margin: '0.3rem 0', fontSize: '1.3rem' }}>{data.foir_percentage}%</h3>
           <span className="muted small">Existing EMIs: ₹{data.existing_debt_service} / mo</span>
         </div>
-        <div className="card" style={{ padding: '1rem', background: '#f8fafc' }}>
+        <div className="card" style={{ padding: '1rem', background: 'var(--card-bg-subtle)' }}>
           <span className="muted small">Safe Borrowing Headroom</span>
           <h3 style={{ margin: '0.3rem 0', fontSize: '1.3rem', color: 'var(--emerald-700)' }}>
             ₹{data.capacity_headroom?.toLocaleString()}
@@ -904,21 +903,21 @@ function ShgAuditView({ data }) {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
-        <div className="card" style={{ padding: '0.85rem', background: '#f8fafc' }}>
+        <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
           <span className="muted small">Enrolled Members</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0' }}>{data.total_members} Members</h4>
         </div>
-        <div className="card" style={{ padding: '0.85rem', background: '#f8fafc' }}>
+        <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
           <span className="muted small">Group Savings Fund</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0', color: 'var(--emerald-600)' }}>
             {data.accumulated_group_savings}
           </h4>
         </div>
-        <div className="card" style={{ padding: '0.85rem', background: '#f8fafc' }}>
+        <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
           <span className="muted small">Bank Credit Linkage</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0' }}>{data.active_credit_linkage}</h4>
         </div>
-        <div className="card" style={{ padding: '0.85rem', background: '#f8fafc' }}>
+        <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
           <span className="muted small">Compliance Rating</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0', color: 'var(--emerald-700)' }}>
             {data.joint_liability_compliance}
@@ -964,17 +963,17 @@ function RbiComplianceView({ data }) {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
-        <div className="card" style={{ padding: '0.85rem', background: '#f8fafc' }}>
+        <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
           <span className="muted small">Statutory PSL Target</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0' }}>{data.psl_target_pct}% of Book</h4>
         </div>
-        <div className="card" style={{ padding: '0.85rem', background: '#f8fafc' }}>
+        <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
           <span className="muted small">Actual PSL Achieved</span>
           <h4 style={{ fontSize: '1.2rem', margin: '0.3rem 0 0', color: 'var(--emerald-700)' }}>
             {data.psl_achieved_pct}%
           </h4>
         </div>
-        <div className="card" style={{ padding: '0.85rem', background: '#f8fafc' }}>
+        <div className="card" style={{ padding: '0.85rem', background: 'var(--card-bg-subtle)' }}>
           <span className="muted small">Compliance Status</span>
           <h4 style={{ fontSize: '1.1rem', margin: '0.3rem 0 0', color: 'var(--emerald-700)' }}>
             {data.psl_status}
@@ -1020,7 +1019,7 @@ function RbiComplianceView({ data }) {
         </table>
       </div>
 
-      <div className="card" style={{ padding: '1rem', background: '#f8fafc' }}>
+      <div className="card" style={{ padding: '1rem', background: 'var(--card-bg-subtle)' }}>
         <p className="muted small" style={{ margin: 0, lineHeight: 1.5 }}>
           {data.audit_declaration}
         </p>

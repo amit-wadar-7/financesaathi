@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { api, money } from '../api'
 import { useAuth } from '../auth'
 import { useLang } from '../i18n'
-import { Alert, Badge, Card, Field, Loading, Progress, Stat, useLoad } from '../ui'
+import { Alert, Badge, Card, Field, Loading, Modal, Progress, Stat, useLoad } from '../ui'
 import {
   IconUser,
   IconBell,
@@ -439,8 +439,21 @@ export function AtRisk() {
 export function Admin() {
   const users = useLoad(() => api('/admin/users'))
   const audit = useLoad(() => api('/admin/audit?limit=50'))
+  const loanProducts = useLoad(() => api('/loans/products'))
+  const schemes = useLoad(() => api('/schemes?language=en'))
+  const courses = useLoad(() => api('/courses?language=en'))
+
+  const [adminTab, setAdminTab] = useState('governance') // 'governance', 'products', 'schemes', 'courses'
   const [msg, setMsg] = useState({ kind: 'error', text: '' })
   const [runningReminders, setRunningReminders] = useState(false)
+
+  // Product Edit State
+  const [editingProduct, setEditingProduct] = useState(null)
+  const [savingProduct, setSavingProduct] = useState(false)
+
+  // Scheme Edit State
+  const [editingScheme, setEditingScheme] = useState(null)
+  const [savingScheme, setSavingScheme] = useState(false)
 
   const setRole = async (id, role) => {
     setMsg({ kind: 'error', text: '' })
@@ -467,117 +480,533 @@ export function Admin() {
     }
   }
 
+  const handleSaveProduct = async (e) => {
+    e.preventDefault()
+    setSavingProduct(true)
+    setMsg({ kind: 'error', text: '' })
+    try {
+      await api('/admin/loan-products/' + editingProduct.id, {
+        method: 'PUT',
+        body: {
+          code: editingProduct.code,
+          name: editingProduct.name,
+          name_hi: editingProduct.name_hi || '',
+          name_mr: editingProduct.name_mr || '',
+          annual_rate: Number(editingProduct.annual_rate),
+          min_amount: Number(editingProduct.min_amount),
+          max_amount: Number(editingProduct.max_amount),
+          min_tenure: Number(editingProduct.min_tenure),
+          max_tenure: Number(editingProduct.max_tenure),
+          allowed_schedule_types: editingProduct.allowed_schedule_types || ['monthly'],
+          required_documents: editingProduct.required_documents || ['aadhaar'],
+          eligibility_notes: editingProduct.eligibility_notes || '',
+          active: editingProduct.active ?? true,
+        },
+      })
+      setMsg({ kind: 'success', text: `Loan product '${editingProduct.name}' updated successfully.` })
+      setEditingProduct(null)
+      loanProducts.reload()
+      audit.reload()
+    } catch (e) {
+      setMsg({ kind: 'error', text: e.message })
+    } finally {
+      setSavingProduct(false)
+    }
+  }
+
+  const handleSaveScheme = async (e) => {
+    e.preventDefault()
+    setSavingScheme(true)
+    setMsg({ kind: 'error', text: '' })
+    try {
+      await api('/admin/schemes/' + editingScheme.id, {
+        method: 'PUT',
+        body: {
+          code: editingScheme.code,
+          name: editingScheme.name,
+          language: editingScheme.language || 'en',
+          category: editingScheme.category || 'general',
+          benefit_summary: editingScheme.benefit_summary || '',
+          benefit_value: Number(editingScheme.benefit_value) || 0,
+          description: editingScheme.description || '',
+          eligibility: editingScheme.eligibility || '',
+          url: editingScheme.url || '',
+        },
+      })
+      setMsg({ kind: 'success', text: `Scheme '${editingScheme.name}' updated successfully.` })
+      setEditingScheme(null)
+      schemes.reload()
+      audit.reload()
+    } catch (e) {
+      setMsg({ kind: 'error', text: e.message })
+    } finally {
+      setSavingScheme(false)
+    }
+  }
+
   const userList = users.data || []
   const auditList = audit.data || []
+  const productList = loanProducts.data || []
+  const schemeList = schemes.data || []
+  const courseList = courses.data || []
 
   return (
     <>
       <div className="row between" style={{ marginBottom: '1.25rem', alignItems: 'flex-start' }}>
         <div>
-          <h2>System Administration & Governance Terminal</h2>
+          <h2>System Administration & Content Governance</h2>
           <p className="muted" style={{ margin: '0.2rem 0 0 0' }}>
-            Role-based access control, statutory audit logging, and automated batch cron triggers
+            Authoritative microfinance catalog CMS, welfare scheme registry, statutory audit trail, and user roles
           </p>
         </div>
       </div>
 
       <div className="grid" style={{ marginBottom: '1.25rem' }}>
-        <Stat label="Total Registered Users" value={userList.length} sub="Across all roles" />
-        <Stat label="Audit Events Logged" value={auditList.length} sub="Immutable ledger items" />
-        <Stat label="System Architecture" value="FastAPI + SQLite" sub="Statutory DPDP compliant" />
+        <Stat label="Total Users" value={userList.length} sub="Across all roles" />
+        <Stat label="Loan Products" value={productList.length} sub="Institutional catalog" />
+        <Stat label="Welfare Schemes" value={schemeList.length} sub="Active national registry" />
+        <Stat label="Audit Events" value={auditList.length} sub="Cryptographic log" />
       </div>
 
       <Alert kind={msg.kind}>{msg.text}</Alert>
 
-      <Card title="Batch Execution Services" style={{ marginBottom: '1.25rem' }}>
-        <div className="row between" style={{ alignItems: 'center' }}>
-          <div>
-            <h4 style={{ margin: 0 }}>Automated EMI Due Reminders</h4>
-            <p className="muted small" style={{ margin: '0.2rem 0 0 0' }}>
-              Scans all active repayment schedules for upcoming maturities and triggers SMS/in-app notices.
-            </p>
-          </div>
-          <button className="btn" onClick={remind} disabled={runningReminders}>
-            <IconClock size={16} /> {runningReminders ? 'Triggering Reminders…' : 'Execute Reminder Engine Now'}
-          </button>
-        </div>
-      </Card>
+      {/* Admin Tab Bar */}
+      <div className="card tab-bar-card" style={{ marginBottom: '1.25rem' }}>
+        <button
+          type="button"
+          className={`tab-btn ${adminTab === 'governance' ? 'active' : ''}`}
+          onClick={() => setAdminTab('governance')}
+        >
+          Governance & Access ({userList.length})
+        </button>
+        <button
+          type="button"
+          className={`tab-btn ${adminTab === 'products' ? 'active' : ''}`}
+          onClick={() => setAdminTab('products')}
+        >
+          Loan Products CMS ({productList.length})
+        </button>
+        <button
+          type="button"
+          className={`tab-btn ${adminTab === 'schemes' ? 'active' : ''}`}
+          onClick={() => setAdminTab('schemes')}
+        >
+          Welfare Schemes CMS ({schemeList.length})
+        </button>
+        <button
+          type="button"
+          className={`tab-btn ${adminTab === 'courses' ? 'active' : ''}`}
+          onClick={() => setAdminTab('courses')}
+        >
+          Courses CMS ({courseList.length})
+        </button>
+      </div>
 
-      <Card title="User Access Directory & Role Assignment" style={{ marginBottom: '1.25rem' }}>
-        {users.loading ? (
-          <Loading />
-        ) : (
+      {/* TAB 1: Governance & Access */}
+      {adminTab === 'governance' && (
+        <>
+          <Card title="Batch Execution Services" style={{ marginBottom: '1.25rem' }}>
+            <div className="row between" style={{ alignItems: 'center' }}>
+              <div>
+                <h4 style={{ margin: 0 }}>Automated EMI Due Reminders</h4>
+                <p className="muted small" style={{ margin: '0.2rem 0 0 0' }}>
+                  Scans all active repayment schedules for upcoming maturities and triggers notices.
+                </p>
+              </div>
+              <button className="btn" onClick={remind} disabled={runningReminders}>
+                <IconClock size={16} /> {runningReminders ? 'Triggering Reminders…' : 'Execute Reminder Engine Now'}
+              </button>
+            </div>
+          </Card>
+
+          <Card title="User Access Directory & Role Assignment" style={{ marginBottom: '1.25rem' }}>
+            {users.loading ? (
+              <Loading />
+            ) : (
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>User ID</th>
+                      <th>Legal Name</th>
+                      <th>Email Credential</th>
+                      <th>Privilege Role</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {userList.map((u) => (
+                      <tr key={u.id}>
+                        <td>#{u.id}</td>
+                        <td style={{ fontWeight: 600 }}>{u.name}</td>
+                        <td>{u.email}</td>
+                        <td>
+                          <select
+                            value={u.role}
+                            onChange={(e) => setRole(u.id, e.target.value)}
+                            style={{ padding: '4px 8px', fontSize: '0.82rem' }}
+                          >
+                            {['user', 'shg_leader', 'officer', 'admin'].map((r) => (
+                              <option key={r} value={r}>
+                                {r.toUpperCase()}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
+
+          <Card title="Statutory Audit Trail (Last 50 Events)">
+            {audit.loading ? (
+              <Loading />
+            ) : (
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Timestamp</th>
+                      <th>Actor ID</th>
+                      <th>Action</th>
+                      <th>Target Entity</th>
+                      <th>Operational Details</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {auditList.map((a) => (
+                      <tr key={a.id}>
+                        <td>{new Date(a.created_at + 'Z').toLocaleString()}</td>
+                        <td>Actor #{a.actor_id}</td>
+                        <td>
+                          <Badge tone="pending">{a.action}</Badge>
+                        </td>
+                        <td>
+                          {a.entity} #{a.entity_id}
+                        </td>
+                        <td className="small">{a.detail}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
+        </>
+      )}
+
+      {/* TAB 2: Loan Products CMS */}
+      {adminTab === 'products' && (
+        <Card title="Authoritative Loan Product Catalog (Server Backed)">
+          <p className="muted small" style={{ marginBottom: '1rem' }}>
+            Interest rates, principal caps, and repayment tenure ranges configured here dynamically bind into the borrowing marketplace.
+          </p>
+
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>User ID</th>
-                  <th>Legal Name</th>
-                  <th>Email Credential</th>
-                  <th>Privilege Role</th>
-                </tr>
-              </thead>
-              <tbody>
-                {userList.map((u) => (
-                  <tr key={u.id}>
-                    <td>#{u.id}</td>
-                    <td style={{ fontWeight: 600 }}>{u.name}</td>
-                    <td>{u.email}</td>
-                    <td>
-                      <select
-                        value={u.role}
-                        onChange={(e) => setRole(u.id, e.target.value)}
-                        style={{ padding: '4px 8px', fontSize: '0.82rem' }}
-                      >
-                        {['user', 'shg_leader', 'officer', 'admin'].map((r) => (
-                          <option key={r} value={r}>
-                            {r.toUpperCase()}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
-
-      <Card title="Statutory Immutable Audit Trail (Last 50 Events)">
-        {audit.loading ? (
-          <Loading />
-        ) : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Timestamp</th>
-                  <th>Actor ID</th>
+                  <th>Product Code</th>
+                  <th>Facility Name</th>
+                  <th>Authoritative APR</th>
+                  <th>Principal Range</th>
+                  <th>Tenure Range</th>
+                  <th>Status</th>
                   <th>Action</th>
-                  <th>Target Entity</th>
-                  <th>Operational Details</th>
                 </tr>
               </thead>
               <tbody>
-                {auditList.map((a) => (
-                  <tr key={a.id}>
-                    <td>{new Date(a.created_at + 'Z').toLocaleString()}</td>
-                    <td>Actor #{a.actor_id}</td>
+                {productList.map((p) => (
+                  <tr key={p.id}>
                     <td>
-                      <Badge tone="pending">{a.action}</Badge>
+                      <span className="badge neutral">{p.code}</span>
                     </td>
                     <td>
-                      {a.entity} #{a.entity_id}
+                      <div style={{ fontWeight: 600 }}>{p.name}</div>
+                      <div className="muted small">{p.eligibility_notes}</div>
                     </td>
-                    <td className="small">{a.detail}</td>
+                    <td style={{ fontWeight: 700, color: 'var(--emerald-600)' }}>
+                      {p.annual_rate}% p.a.
+                    </td>
+                    <td>
+                      ₹{p.min_amount.toLocaleString('en-IN')} – ₹{p.max_amount.toLocaleString('en-IN')}
+                    </td>
+                    <td>
+                      {p.min_tenure} – {p.max_tenure} mo
+                    </td>
+                    <td>
+                      <Badge tone={p.active ? 'approved' : 'caution'}>
+                        {p.active ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="btn small ghost"
+                        onClick={() => setEditingProduct({ ...p })}
+                      >
+                        Edit Limits & Rate
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        )}
-      </Card>
+        </Card>
+      )}
+
+      {/* TAB 3: Welfare Schemes CMS */}
+      {adminTab === 'schemes' && (
+        <Card title="National & State Welfare Schemes Registry">
+          <p className="muted small" style={{ marginBottom: '1rem' }}>
+            Government DBT programs, subsidies, and eligibility criteria synchronized across English, Hindi, and Marathi.
+          </p>
+
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Scheme Code</th>
+                  <th>Scheme Name</th>
+                  <th>Category</th>
+                  <th>Direct Grant Value</th>
+                  <th>Verified As Of</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {schemeList.map((s) => (
+                  <tr key={s.id}>
+                    <td>
+                      <span className="badge neutral">{s.code}</span>
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: 600 }}>{s.name}</div>
+                      <div className="muted small">{s.benefit_summary}</div>
+                    </td>
+                    <td>
+                      <span className="badge">{s.category}</span>
+                    </td>
+                    <td style={{ fontWeight: 700, color: 'var(--emerald-600)' }}>
+                      {s.benefit_value > 0 ? `₹${Number(s.benefit_value).toLocaleString('en-IN')}` : 'Subsidized Credit'}
+                    </td>
+                    <td className="muted small">{s.last_verified}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="btn small ghost"
+                        onClick={() => setEditingScheme({ ...s })}
+                      >
+                        Edit Scheme
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      {/* TAB 4: Courses CMS */}
+      {adminTab === 'courses' && (
+        <Card title="Financial Literacy Modules Catalog">
+          <p className="muted small" style={{ marginBottom: '1rem' }}>
+            Bite-sized rural education modules with interactive 8-question quizzes.
+          </p>
+
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Slug Reference</th>
+                  <th>Course Title</th>
+                  <th>Summary</th>
+                  <th>Language</th>
+                </tr>
+              </thead>
+              <tbody>
+                {courseList.map((c) => (
+                  <tr key={c.id}>
+                    <td>
+                      <span className="badge neutral">{c.slug}</span>
+                    </td>
+                    <td style={{ fontWeight: 600 }}>{c.title}</td>
+                    <td className="muted small" style={{ maxWidth: '350px' }}>{c.summary}</td>
+                    <td>
+                      <Badge>{c.language.toUpperCase()}</Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      {/* Product Edit Modal */}
+      {editingProduct && (
+        <Modal
+          isOpen={Boolean(editingProduct)}
+          onClose={() => setEditingProduct(null)}
+          title={`Edit Loan Product: ${editingProduct.name}`}
+          maxWidth={500}
+        >
+          <form onSubmit={handleSaveProduct} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+            <Field label="Annual Interest Rate (% p.a.)">
+              <input
+                type="number"
+                step="0.1"
+                min="1"
+                max="60"
+                required
+                value={editingProduct.annual_rate}
+                onChange={(e) => setEditingProduct({ ...editingProduct, annual_rate: e.target.value })}
+              />
+            </Field>
+
+            <div className="row" style={{ gap: '0.6rem' }}>
+              <div style={{ flex: 1 }}>
+                <Field label="Min Principal (₹)">
+                  <input
+                    type="number"
+                    step="500"
+                    min="500"
+                    required
+                    value={editingProduct.min_amount}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, min_amount: e.target.value })}
+                  />
+                </Field>
+              </div>
+              <div style={{ flex: 1 }}>
+                <Field label="Max Principal (₹)">
+                  <input
+                    type="number"
+                    step="1000"
+                    min="1000"
+                    required
+                    value={editingProduct.max_amount}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, max_amount: e.target.value })}
+                  />
+                </Field>
+              </div>
+            </div>
+
+            <div className="row" style={{ gap: '0.6rem' }}>
+              <div style={{ flex: 1 }}>
+                <Field label="Min Tenure (Mo)">
+                  <input
+                    type="number"
+                    min="1"
+                    max="60"
+                    required
+                    value={editingProduct.min_tenure}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, min_tenure: e.target.value })}
+                  />
+                </Field>
+              </div>
+              <div style={{ flex: 1 }}>
+                <Field label="Max Tenure (Mo)">
+                  <input
+                    type="number"
+                    min="1"
+                    max="120"
+                    required
+                    value={editingProduct.max_tenure}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, max_tenure: e.target.value })}
+                  />
+                </Field>
+              </div>
+            </div>
+
+            <Field label="Eligibility Guidelines & Underwriting Notes">
+              <textarea
+                rows={2}
+                value={editingProduct.eligibility_notes}
+                onChange={(e) => setEditingProduct({ ...editingProduct, eligibility_notes: e.target.value })}
+              />
+            </Field>
+
+            <label className="check" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <input
+                type="checkbox"
+                checked={editingProduct.active}
+                onChange={(e) => setEditingProduct({ ...editingProduct, active: e.target.checked })}
+              />
+              <span>Product Active in Marketplace</span>
+            </label>
+
+            <div className="modal-actions" style={{ marginTop: '0.5rem' }}>
+              <button type="button" className="btn ghost" onClick={() => setEditingProduct(null)}>
+                Cancel
+              </button>
+              <button type="submit" className="btn" disabled={savingProduct}>
+                {savingProduct ? 'Saving…' : 'Save Changes'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Scheme Edit Modal */}
+      {editingScheme && (
+        <Modal
+          isOpen={Boolean(editingScheme)}
+          onClose={() => setEditingScheme(null)}
+          title={`Edit Welfare Scheme: ${editingScheme.name}`}
+          maxWidth={500}
+        >
+          <form onSubmit={handleSaveScheme} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+            <Field label="Scheme Headline & Title">
+              <input
+                type="text"
+                required
+                value={editingScheme.name}
+                onChange={(e) => setEditingScheme({ ...editingScheme, name: e.target.value })}
+              />
+            </Field>
+
+            <Field label="Key Financial Benefit Summary">
+              <input
+                type="text"
+                required
+                value={editingScheme.benefit_summary}
+                onChange={(e) => setEditingScheme({ ...editingScheme, benefit_summary: e.target.value })}
+              />
+            </Field>
+
+            <Field label="Grant / Assistance Ceiling (₹)">
+              <input
+                type="number"
+                step="500"
+                min="0"
+                value={editingScheme.benefit_value}
+                onChange={(e) => setEditingScheme({ ...editingScheme, benefit_value: e.target.value })}
+              />
+            </Field>
+
+            <Field label="Official Portal URL">
+              <input
+                type="url"
+                value={editingScheme.url}
+                onChange={(e) => setEditingScheme({ ...editingScheme, url: e.target.value })}
+              />
+            </Field>
+
+            <div className="modal-actions" style={{ marginTop: '0.5rem' }}>
+              <button type="button" className="btn ghost" onClick={() => setEditingScheme(null)}>
+                Cancel
+              </button>
+              <button type="submit" className="btn" disabled={savingScheme}>
+                {savingScheme ? 'Saving…' : 'Save Changes'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </>
   )
 }

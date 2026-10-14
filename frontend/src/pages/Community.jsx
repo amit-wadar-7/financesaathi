@@ -550,8 +550,8 @@ export function SHG() {
         <>
           <div
             style={{
-              background: '#ffffff',
-              border: '1px solid var(--border-hairline)',
+              background: 'var(--card-bg)',
+              border: '1px solid var(--border-color)',
               borderRadius: '8px',
               padding: '1.2rem',
               marginBottom: '1.25rem',
@@ -622,7 +622,7 @@ export function SHG() {
                         justifyContent: 'space-between',
                         alignItems: 'center',
                         borderBottom: '1px solid var(--border-color)',
-                        background: isPresent ? '#ffffff' : '#fef2f2',
+                        background: isPresent ? 'var(--card-bg)' : 'var(--card-bg-subtle)',
                       }}
                     >
                       <span style={{ fontSize: '0.82rem', fontWeight: 500 }}>{m.name}</span>

@@ -4,7 +4,7 @@ import QRCode from 'qrcode'
 import { api, money } from '../api'
 import { useAuth } from '../auth'
 import { useLang } from '../i18n'
-import { Alert, Badge, Card, Loading, Progress, Stat, useLoad, useToast, CibilSpeedometer, CashflowBarChart } from '../ui'
+import { Alert, Badge, Card, Loading, Progress, Stat, useLoad, useToast, FinancialHealthScoreDial, CashflowBarChart } from '../ui'
 import {
   IconInfo,
   IconCalendar,
@@ -217,7 +217,7 @@ function AdminDashboardView({ data, reload }) {
           <div className="card">
             <div className="row between" style={{ alignItems: 'center', marginBottom: '0.85rem' }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '1.05rem' }}>Immutable Statutory Audit Log</h3>
+                <h3 style={{ margin: 0, fontSize: '1.05rem' }}>Statutory Audit Log</h3>
                 <span className="muted small">Real-time DPDP Act 2023 compliance record</span>
               </div>
               <button type="button" className="btn small ghost" onClick={() => audit.reload()}>
@@ -1086,6 +1086,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
               className="balance-eye-btn"
               onClick={() => setHideBalance(!hideBalance)}
               title={hideBalance ? 'Show balance' : 'Hide balance'}
+              aria-label={hideBalance ? 'Show balance' : 'Hide balance'}
             >
               {hideBalance ? <IconEyeOff size={15} /> : <IconEye size={15} />}
             </button>
@@ -1097,7 +1098,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
                 ? `+₹${recentNet.toLocaleString('en-IN')} net activity`
                 : recentNet < 0
                 ? `-₹${Math.abs(recentNet).toLocaleString('en-IN')} net outflow`
-                : 'Ledger Reconciled'}
+                : (transactions && transactions.length > 0 ? 'Ledger Reconciled' : 'No transactions yet')}
             </span>
           </div>
         </div>
@@ -1249,7 +1250,15 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
 
           <div className="chart-insight-footer">
             <span>Average monthly surplus: <b>₹{Number(kpiData.savings_this_month).toLocaleString('en-IN')}</b></span>
-            <span style={{ color: '#059669', fontWeight: 600 }}>Savings Rate: 48.3%</span>
+            {incomeNum > 0 ? (
+              <span style={{ color: 'var(--emerald-600)', fontWeight: 600 }}>
+                Savings Rate: {Math.max(0, Math.round(((incomeNum - expensesNum) / incomeNum) * 100))}%
+              </span>
+            ) : (
+              <span className="muted" style={{ fontWeight: 500 }}>
+                Savings Rate: —
+              </span>
+            )}
           </div>
         </div>
 

@@ -184,6 +184,10 @@ class Loan(Base):
     user: Mapped["User"] = relationship(foreign_keys=[user_id])
     product: Mapped["LoanProduct | None"] = relationship()
 
+    @property
+    def group_loan(self) -> bool:
+        return bool(self.shg_id)
+
 
 class LoanDocument(Base):
     __tablename__ = "loan_documents"

@@ -1,153 +1,220 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useMemo } from 'react'
+import enData from './locales/en.json'
+import hiData from './locales/hi.json'
+import mrData from './locales/mr.json'
 
-const D = {
-  en: {
-    dashboard: 'Dashboard', loans: 'Loans & SHG', calculators: 'Calculators', learn: 'Academy', schemes: 'Schemes',
-    savings: 'Savings & Budget', profile: 'Profile', shg: 'My SHG', atRisk: 'At-risk loans', admin: 'Admin',
-    notifications: 'Notifications', logout: 'Logout', login: 'Login', register: 'Register',
-    email: 'Email', password: 'Password', name: 'Full name', phone: 'Phone', language: 'Language',
-    newLoan: 'New loan', amount: 'Amount (Rs)', rate: 'Interest rate (% per year)', months: 'Tenure (months)',
-    purpose: 'Purpose', apply: 'Apply', status: 'Status', emi: 'EMI', outstanding: 'Outstanding',
-    nextInstallment: 'Next instalment', totalSaved: 'Total saved', coursesDone: 'Courses completed',
-    activeLoans: 'Active loans', pendingLoans: 'Pending loans', healthScore: 'Financial health score',
-    save: 'Save', income: 'Monthly income (Rs)', expenses: 'Monthly expenses (Rs)',
-    existingEmi: 'Existing EMIs per month (Rs)', savingsBalance: 'Current savings (Rs)',
-    welcome: 'Namaste', pay: 'Pay', approve: 'Approve', reject: 'Reject', submit: 'Submit',
-    start: 'Start', back: 'Back', ready: 'Ready', caution: 'Needs caution', not_ready: 'Not ready',
-    fillProfile: 'Please fill in your income and expenses in your profile first.',
-    noAccount: 'No account?', haveAccount: 'Already registered?',
-    saathiAi: 'Saathi AI', quickActions: 'Quick Actions', depositShg: 'Deposit SHG', payEmi: 'Pay EMI',
-    askSaathi: 'Ask Saathi', emergencyCalc: 'Emergency Calc', totalSavingsAssets: 'TOTAL SAVINGS & ASSETS',
-    monthlySpend: 'Monthly Spend & Budget', targetGoal: 'Target Savings Goal', streak: '5-Day Learning Streak!',
-    viewLedger: 'View Ledger', payUpi: 'Pay UPI', allGoals: 'All Goals', startLesson: 'Start Lesson',
+// Legacy mappings for backward compatibility with existing code
+const legacyEn = {
+  dashboard: 'Dashboard', loans: 'Loans & SHG', calculators: 'Calculators', learn: 'Academy', schemes: 'Schemes',
+  savings: 'Savings & Budget', profile: 'Profile', shg: 'My SHG', atRisk: 'At-risk loans', admin: 'Admin',
+  notifications: 'Notifications', logout: 'Logout', login: 'Login', register: 'Register',
+  email: 'Email', password: 'Password', name: 'Full name', phone: 'Phone', language: 'Language',
+  newLoan: 'New loan', amount: 'Amount (Rs)', rate: 'Interest rate (% per year)', months: 'Tenure (months)',
+  purpose: 'Purpose', apply: 'Apply', status: 'Status', emi: 'EMI', outstanding: 'Outstanding',
+  nextInstallment: 'Next instalment', totalSaved: 'Total saved', coursesDone: 'Courses completed',
+  activeLoans: 'Active loans', pendingLoans: 'Pending loans', healthScore: 'Financial health score',
+  save: 'Save', income: 'Monthly income (Rs)', expenses: 'Monthly expenses (Rs)',
+  existingEmi: 'Existing EMIs per month (Rs)', savingsBalance: 'Current savings (Rs)',
+  welcome: 'Namaste', pay: 'Pay', approve: 'Approve', reject: 'Reject', submit: 'Submit',
+  start: 'Start', back: 'Back', ready: 'Ready', caution: 'Needs caution', not_ready: 'Not ready',
+  fillProfile: 'Please fill in your income and expenses in your profile first.',
+  noAccount: 'No account?', haveAccount: 'Already registered?',
+  saathiAi: 'Saathi AI', quickActions: 'Quick Actions', depositShg: 'Deposit SHG', payEmi: 'Pay EMI',
+  askSaathi: 'Ask Saathi', emergencyCalc: 'Emergency Calc', totalSavingsAssets: 'TOTAL SAVINGS & ASSETS',
+  monthlySpend: 'Monthly Spend & Budget', targetGoal: 'Target Savings Goal',
+  viewLedger: 'View Ledger', payUpi: 'Pay UPI', allGoals: 'All Goals', startLesson: 'Start Lesson',
+  kisanAgri: 'Kisan Agri & Harvest Facility',
+  pmMudra: 'PM MUDRA MSME Business Credit',
+  mahilaShakti: 'Mahila Shakti SHG Enterprise Loan',
+  pmSvanidhi: 'PM SVANidhi Street Vendor Credit',
+  emergencyHealth: 'Emergency Medical & Health Advance',
+  solarGreen: 'Clean Energy & Solar Rooftop Loan',
+  reducingBalance: 'Reducing Balance Interest Method',
+  gestation: 'Crop Growth / Gestation',
+  harvestBullet: 'Harvest / Mandi Sale Bullet',
+  subvention: 'Government Interest Subvention',
+  foreclosure: 'Foreclosure / Prepayment',
+  tenure: 'Tenure', principal: 'Principal', interest: 'Interest',
+  simulatedDemoMode: 'Simulated Demo Mode',
+  noRealMoney: 'No live banking gateway is connected. Demo mode for portfolio tracking.',
+  soa: 'Official Statement of Account (SOA)',
+  taxCert: 'Annual Interest Certificate',
+  creditHealth: 'Credit Health Diagnostic',
+  shgAudit: 'SHG Joint Liability Statement',
+  rbiAudit: 'RBI Fair Practice Compliance Audit',
+  grievances: 'Grievance Redressal (RBI Cell)',
+  lodgeGrievance: 'Lodge New Grievance',
+  ombudsman: 'Internal Ombudsman & Grievance Cell',
+}
 
-    // Financial & Product terminology
-    kisanAgri: 'Kisan Agri & Harvest Facility',
-    pmMudra: 'PM MUDRA MSME Business Credit',
-    mahilaShakti: 'Mahila Shakti SHG Enterprise Loan',
-    pmSvanidhi: 'PM SVANidhi Street Vendor Credit',
-    emergencyHealth: 'Emergency Medical & Health Advance',
-    solarGreen: 'Clean Energy & Solar Rooftop Loan',
-    reducingBalance: 'Reducing Balance Interest Method',
-    gestation: 'Crop Growth / Gestation',
-    harvestBullet: 'Harvest / Mandi Sale Bullet',
-    subvention: 'Government Interest Subvention',
-    foreclosure: 'Foreclosure / Prepayment',
-    tenure: 'Tenure',
-    principal: 'Principal',
-    interest: 'Interest',
-    simulatedDemoMode: 'Simulated Demo Mode',
-    noRealMoney: 'No live banking gateway is connected. Demo mode for portfolio tracking.',
-    soa: 'Official Statement of Account (SOA)',
-    taxCert: 'Annual Interest Certificate',
-    creditHealth: 'Credit Health Diagnostic',
-    shgAudit: 'SHG Joint Liability Statement',
-    rbiAudit: 'RBI Fair Practice Compliance Audit',
-    grievances: 'Grievance Redressal (RBI Cell)',
-    lodgeGrievance: 'Lodge New Grievance',
-    ombudsman: 'Internal Ombudsman & Grievance Cell',
-  },
-  hi: {
-    dashboard: 'डैशबोर्ड', loans: 'ऋण व SHG', calculators: 'कैलकुलेटर', learn: 'अकादमी', schemes: 'योजनाएँ',
-    savings: 'बचत व बजट', profile: 'प्रोफ़ाइल', shg: 'मेरा एसएचजी', atRisk: 'जोखिम वाले ऋण', admin: 'एडमिन',
-    notifications: 'सूचनाएँ', logout: 'लॉग आउट', login: 'लॉग इन', register: 'पंजीकरण',
-    email: 'ईमेल', password: 'पासवर्ड', name: 'पूरा नाम', phone: 'फ़ोन', language: 'भाषा',
-    newLoan: 'नया ऋण', amount: 'राशि (रु)', rate: 'ब्याज दर (% प्रति वर्ष)', months: 'अवधि (महीने)',
-    purpose: 'उद्देश्य', apply: 'आवेदन करें', status: 'स्थिति', emi: 'ईएमआई', outstanding: 'बकाया',
-    nextInstallment: 'अगली किस्त', totalSaved: 'कुल बचत', coursesDone: 'पूरे किए कोर्स',
-    activeLoans: 'चालू ऋण', pendingLoans: 'लंबित ऋण', healthScore: 'वित्तीय स्वास्थ्य स्कोर',
-    save: 'सहेजें', income: 'मासिक आय (रु)', expenses: 'मासिक खर्च (रु)',
-    existingEmi: 'मौजूदा मासिक ईएमआई (रु)', savingsBalance: 'वर्तमान बचत (रु)',
-    welcome: 'नमस्ते', pay: 'भुगतान', approve: 'मंज़ूर करें', reject: 'अस्वीकार करें', submit: 'जमा करें',
-    start: 'शुरू करें', back: 'वापस', ready: 'तैयार', caution: 'सावधानी ज़रूरी', not_ready: 'तैयार नहीं',
-    fillProfile: 'कृपया पहले प्रोफ़ाइल में अपनी आय और खर्च भरें।',
-    noAccount: 'खाता नहीं है?', haveAccount: 'पहले से पंजीकृत हैं?',
-    saathiAi: 'साथी AI', quickActions: 'त्वरित क्रियाएँ', depositShg: 'SHG बचत जमा', payEmi: 'किस्त भरें',
-    askSaathi: 'साथी से पूछें', emergencyCalc: 'आपातकालीन कैल्क', totalSavingsAssets: 'कुल बचत एवं संपत्ति',
-    monthlySpend: 'मासिक खर्च व बजट', targetGoal: 'लक्ष्य बचत योजना', streak: '5-दिवसीय लर्निंग स्ट्रीक!',
-    viewLedger: 'लेजर देखें', payUpi: 'UPI भुगतान', allGoals: 'सभी लक्ष्य', startLesson: 'पाठ शुरू करें',
+const legacyHi = {
+  dashboard: 'डैशबोर्ड', loans: 'ऋण व SHG', calculators: 'कैलकुलेटर', learn: 'अकादमी', schemes: 'योजनाएँ',
+  savings: 'बचत व बजट', profile: 'प्रोफ़ाइल', shg: 'मेरा एसएचजी', atRisk: 'जोखिम वाले ऋण', admin: 'एडमिन',
+  notifications: 'सूचनाएँ', logout: 'लॉग आउट', login: 'लॉग इन', register: 'पंजीकरण',
+  email: 'ईमेल', password: 'पासवर्ड', name: 'पूरा नाम', phone: 'फ़ोन', language: 'भाषा',
+  newLoan: 'नया ऋण', amount: 'राशि (रु)', rate: 'ब्याज दर (% प्रति वर्ष)', months: 'अवधि (महीने)',
+  purpose: 'उद्देश्य', apply: 'आवेदन करें', status: 'स्थिति', emi: 'ईएमआई', outstanding: 'बकाया',
+  nextInstallment: 'अगली किस्त', totalSaved: 'कुल बचत', coursesDone: 'पूरे किए कोर्स',
+  activeLoans: 'चालू ऋण', pendingLoans: 'लंबित ऋण', healthScore: 'वित्तीय स्वास्थ्य स्कोर',
+  save: 'सहेजें', income: 'मासिक आय (रु)', expenses: 'मासिक खर्च (रु)',
+  existingEmi: 'मौजूदा मासिक ईएमआई (रु)', savingsBalance: 'वर्तमान बचत (रु)',
+  welcome: 'नमस्ते', pay: 'भुगतान', approve: 'मंज़ूर करें', reject: 'अस्वीकार करें', submit: 'जमा करें',
+  start: 'शुरू करें', back: 'वापस', ready: 'तैयार', caution: 'सावधानी ज़रूरी', not_ready: 'तैयार नहीं',
+  fillProfile: 'कृपया पहले प्रोफ़ाइल में अपनी आय और खर्च भरें।',
+  noAccount: 'खाता नहीं है?', haveAccount: 'पहले से पंजीकृत हैं?',
+  saathiAi: 'साथी AI', quickActions: 'त्वरित क्रियाएँ', depositShg: 'SHG बचत जमा', payEmi: 'किस्त भरें',
+  askSaathi: 'साथी से पूछें', emergencyCalc: 'आपातकालीन कैल्क', totalSavingsAssets: 'कुल बचत एवं संपत्ति',
+  monthlySpend: 'मासिक खर्च व बजट', targetGoal: 'लक्ष्य बचत योजना',
+  viewLedger: 'लेजर देखें', payUpi: 'UPI भुगतान', allGoals: 'सभी लक्ष्य', startLesson: 'पाठ शुरू करें',
+  kisanAgri: 'किसान कृषि एवं फसल ऋण सुविधा',
+  pmMudra: 'पीएम मुद्रा एमएसएमई व्यापार ऋण',
+  mahilaShakti: 'महिला शक्ति एसएचजी उद्यम ऋण',
+  pmSvanidhi: 'पीएम स्वनिधि स्ट्रीट वेंडर क्रेडिट',
+  emergencyHealth: 'आपातकालीन चिकित्सा एवं स्वास्थ्य अग्रिम',
+  solarGreen: 'स्वच्छ ऊर्जा एवं सोलर रूफटॉप ऋण',
+  reducingBalance: 'घटते ब्याज की पद्धति (Reducing Balance)',
+  gestation: 'फसल वृद्धि / रख-रखाव अवधि',
+  harvestBullet: 'फसल कटाई / मंडी बिक्री एकमुश्त भुगतान',
+  subvention: 'सरकारी ब्याज सब्सिडी (Subvention)',
+  foreclosure: 'पूर्व-भुगतान शुल्क (शून्य)',
+  tenure: 'अवधि', principal: 'मूलधन', interest: 'ब्याज',
+  simulatedDemoMode: 'डेमो सिमुलेशन मोड',
+  noRealMoney: 'कोई वास्तविक बैंक खाता लिंक नहीं है। केवल लेजर ट्रैकिंग हेतु डेमो मोड।',
+  soa: 'आधिकारिक ऋण खाता विवरण (SOA)',
+  taxCert: 'वार्षिक ब्याज एवं कर प्रमाण पत्र',
+  creditHealth: 'क्रेडिट स्वास्थ्य एवं क्षमता विश्लेषण',
+  shgAudit: 'एसएचजी संयुक्त देयता व बचत ऑडिट',
+  rbiAudit: 'आरबीआई उचित व्यवहार संहिता अनुपालन ऑडिट',
+  grievances: 'शिकायत निवारण (आरबीआई सेल)',
+  lodgeGrievance: 'नई शिकायत दर्ज करें',
+  ombudsman: 'आंतरिक लोकपाल व शिकायत निवारण सेल',
+}
 
-    // Financial & Product terminology
-    kisanAgri: 'किसान कृषि एवं फसल ऋण सुविधा',
-    pmMudra: 'पीएम मुद्रा एमएसएमई व्यापार ऋण',
-    mahilaShakti: 'महिला शक्ति एसएचजी उद्यम ऋण',
-    pmSvanidhi: 'पीएम स्वनिधि स्ट्रीट वेंडर क्रेडिट',
-    emergencyHealth: 'आपातकालीन चिकित्सा एवं स्वास्थ्य अग्रिम',
-    solarGreen: 'स्वच्छ ऊर्जा एवं सोलर रूफटॉप ऋण',
-    reducingBalance: 'घटते ब्याज की पद्धति (Reducing Balance)',
-    gestation: 'फसल वृद्धि / रख-रखाव अवधि',
-    harvestBullet: 'फसल कटाई / मंडी बिक्री एकमुश्त भुगतान',
-    subvention: 'सरकारी ब्याज सब्सिडी (Subvention)',
-    foreclosure: 'पूर्व-भुगतान शुल्क (शून्य)',
-    tenure: 'अवधि',
-    principal: 'मूलधन',
-    interest: 'ब्याज',
-    simulatedDemoMode: 'डेमो सिमुलेशन मोड',
-    noRealMoney: 'कोई वास्तविक बैंक खाता लिंक नहीं है। केवल लेजर ट्रैकिंग हेतु डेमो मोड।',
-    soa: 'आधिकारिक ऋण खाता विवरण (SOA)',
-    taxCert: 'वार्षिक ब्याज एवं कर प्रमाण पत्र',
-    creditHealth: 'क्रेडिट स्वास्थ्य एवं क्षमता विश्लेषण',
-    shgAudit: 'एसएचजी संयुक्त देयता व बचत ऑडिट',
-    rbiAudit: 'आरबीआई उचित व्यवहार संहिता अनुपालन ऑडिट',
-    grievances: 'शिकायत निवारण (आरबीआई सेल)',
-    lodgeGrievance: 'नई शिकायत दर्ज करें',
-    ombudsman: 'आंतरिक लोकपाल व शिकायत निवारण सेल',
-  },
-  mr: {
-    dashboard: 'डॅशबोर्ड', loans: 'कर्जे व बचत गट', calculators: 'कॅल्क्युलेटर', learn: 'अकादमी', schemes: 'शासकीय योजना',
-    savings: 'बचत व अंदाजपत्रक', profile: 'प्रोफाइल', shg: 'माझा बचत गट', atRisk: 'जोखमीची कर्जे', admin: 'अॅडमिन',
-    notifications: 'सूचना', logout: 'लॉग आउट', login: 'लॉग इन', register: 'नोंदणी',
-    email: 'ईमेल', password: 'पासवर्ड', name: 'पूर्ण नाव', phone: 'फोन', language: 'भाषा',
-    newLoan: 'नवीन कर्ज', amount: 'रक्कम (रु)', rate: 'व्याजदर (% वार्षिक)', months: 'कालावधी (महिने)',
-    purpose: 'उद्देश', apply: 'अर्ज करा', status: 'स्थिती', emi: 'ईएमआय', outstanding: 'थकबाकी',
-    nextInstallment: 'पुढचा हप्ता', totalSaved: 'एकूण बचत', coursesDone: 'पूर्ण केलेले कोर्स',
-    activeLoans: 'चालू कर्जे', pendingLoans: 'प्रलंबित कर्जे', healthScore: 'आर्थिक आरोग्य गुण',
-    save: 'जतन करा', income: 'मासिक उत्पन्न (रु)', expenses: 'मासिक खर्च (रु)',
-    existingEmi: 'सध्याचे मासिक ईएमआय (रु)', savingsBalance: 'सध्याची बचत (रु)',
-    welcome: 'नमस्ते', pay: 'भरा', approve: 'मंजूर करा', reject: 'नाकारा', submit: 'सादर करा',
-    start: 'सुरू करा', back: 'मागे', ready: 'तयार', caution: 'सावधगिरी हवी', not_ready: 'तयार नाही',
-    fillProfile: 'कृपया आधी प्रोफाइलमध्ये तुमचे उत्पन्न आणि खर्च भरा.',
-    noAccount: 'खाते नाही?', haveAccount: 'आधीच नोंदणी केली आहे?',
-    saathiAi: 'साथी AI', quickActions: 'जलद कृती', depositShg: 'बचत गट जमा', payEmi: 'हप्ता भरा',
-    askSaathi: 'साथीला विचारा', emergencyCalc: 'आपत्कालीन कैल्क', totalSavingsAssets: 'एकूण बचत व मालमत्ता',
-    monthlySpend: 'मासिक खर्च व अंदाजपत्रक', targetGoal: 'ध्येय बचत योजना', streak: '५-दिवसीय लर्निंग स्ट्रीक!',
-    viewLedger: 'पासबुक/लेजर', payUpi: 'UPI भरा', allGoals: 'सर्व ध्येये', startLesson: 'धडा सुरू करा',
+const legacyMr = {
+  dashboard: 'डॅशबोर्ड', loans: 'कर्जे व बचत गट', calculators: 'कॅल्क्युलेटर', learn: 'अकादमी', schemes: 'शासकीय योजना',
+  savings: 'बचत व अंदाजपत्रक', profile: 'प्रोफाइल', shg: 'माझा बचत गट', atRisk: 'जोखमीची कर्जे', admin: 'अॅडमिन',
+  notifications: 'सूचना', logout: 'लॉग आउट', login: 'लॉग इन', register: 'नोंदणी',
+  email: 'ईमेल', password: 'पासवर्ड', name: 'पूर्ण नाव', phone: 'फोन', language: 'भाषा',
+  newLoan: 'नवीन कर्ज', amount: 'रक्कम (रु)', rate: 'व्याजदर (% वार्षिक)', months: 'कालावधी (महिने)',
+  purpose: 'उद्देश', apply: 'अर्ज करा', status: 'स्थिती', emi: 'ईएमआय', outstanding: 'थकबाकी',
+  nextInstallment: 'पुढचा हप्ता', totalSaved: 'एकूण बचत', coursesDone: 'पूर्ण केलेले कोर्स',
+  activeLoans: 'चालू कर्जे', pendingLoans: 'प्रलंबित कर्जे', healthScore: 'आर्थिक आरोग्य गुण',
+  save: 'जतन करा', income: 'मासिक उत्पन्न (रु)', expenses: 'मासिक खर्च (रु)',
+  existingEmi: 'सध्याचे मासिक ईएमआय (रु)', savingsBalance: 'सध्याची बचत (रु)',
+  welcome: 'नमस्कार', pay: 'भरा', approve: 'मंजूर करा', reject: 'नाकारा', submit: 'सादर करा',
+  start: 'सुरू करा', back: 'मागे', ready: 'तयार', caution: 'सावधगिरी हवी', not_ready: 'तयार नाही',
+  fillProfile: 'कृपया आधी प्रोफाइलमध्ये तुमचे उत्पन्न आणि खर्च भरा.',
+  noAccount: 'खाते नाही?', haveAccount: 'आधीच नोंदणी केली आहे?',
+  saathiAi: 'साथी AI', quickActions: 'जलद कृती', depositShg: 'बचत गट जमा', payEmi: 'हप्ता भरा',
+  askSaathi: 'साथीला विचारा', emergencyCalc: 'आपत्कालीन कैल्क', totalSavingsAssets: 'एकूण बचत व मालमत्ता',
+  monthlySpend: 'मासिक खर्च व अंदाजपत्रक', targetGoal: 'ध्येय बचत योजना',
+  viewLedger: 'पासबुक/लेजर', payUpi: 'UPI भरा', allGoals: 'सर्व ध्येये', startLesson: 'धडा सुरू करा',
+  kisanAgri: 'किसान कृषी व पीक कर्ज सुविधा',
+  pmMudra: 'पीएम मुद्रा एमएसएमई व्यवसाय कर्ज',
+  mahilaShakti: 'महिला शक्ती बचत गट व्यवसाय कर्ज',
+  pmSvanidhi: 'पीएम स्वनिधी फेरीवाला पतपुरवठा',
+  emergencyHealth: 'आपत्कालीन वैद्यकीय व आरोग्य उचल',
+  solarGreen: 'सौर ऊर्जा व सोलर रूफटॉप कर्ज',
+  reducingBalance: 'कमी होणाऱ्या मुद्दलावर व्याज (Reducing Balance)',
+  gestation: 'पीक वाढ / देखरेख कालावधी',
+  harvestBullet: 'पीक काढणी / बाजार समिती विक्री एकरकमी परतफेड',
+  subvention: 'शासकीय व्याज सवलत (Subvention)',
+  foreclosure: 'मुदतपूर्व परतफेड शुल्क (शून्य)',
+  tenure: 'कालावधी', principal: 'मुद्दल', interest: 'व्याज',
+  simulatedDemoMode: 'डेमो सिम्युलेशन मोड',
+  noRealMoney: 'कोणतेही खरे बँक खाते जोडलेले नाही. केवळ प्रात्यक्षिक व लेजर नोंदींसाठी डेमो मोड.',
+  soa: 'अधिकृत कर्ज खाते उतारा (SOA)',
+  taxCert: 'वार्षिक व्याज व कर प्रमाणपत्र',
+  creditHealth: 'पत आरोग्य व क्षमता अहवाल',
+  shgAudit: 'बचत गट संयुक्त हमी व ऑडिट उतारा',
+  rbiAudit: 'आरबीआय सुयोग्य व्यवहार संहिता अनुपालन ऑडिट',
+  grievances: 'तक्रार निवारण (आरबीआय सेल)',
+  lodgeGrievance: 'नवीन तक्रार नोंदवा',
+  ombudsman: 'अंतर्गत लोकपाल व तक्रार निवारण कक्ष',
+}
 
-    // Financial & Product terminology
-    kisanAgri: 'किसान कृषी व पीक कर्ज सुविधा',
-    pmMudra: 'पीएम मुद्रा एमएसएमई व्यवसाय कर्ज',
-    mahilaShakti: 'महिला शक्ती बचत गट व्यवसाय कर्ज',
-    pmSvanidhi: 'पीएम स्वनिधी फेरीवाला पतपुरवठा',
-    emergencyHealth: 'आपत्कालीन वैद्यकीय व आरोग्य उचल',
-    solarGreen: 'सौर ऊर्जा व सोलर रूफटॉप कर्ज',
-    reducingBalance: 'कमी होणाऱ्या मुद्दलावर व्याज (Reducing Balance)',
-    gestation: 'पीक वाढ / देखरेख कालावधी',
-    harvestBullet: 'पीक काढणी / बाजार समिती विक्री एकरकमी परतफेड',
-    subvention: 'शासकीय व्याज सवलत (Subvention)',
-    foreclosure: 'मुदतपूर्व परतफेड शुल्क (शून्य)',
-    tenure: 'कालावधी',
-    principal: 'मुद्दल',
-    interest: 'व्याज',
-    simulatedDemoMode: 'डेमो सिम्युलेशन मोड',
-    noRealMoney: 'कोणतेही खरे बँक खाते जोडलेले नाही. केवळ प्रात्यक्षिक व लेजर नोंदींसाठी डेमो मोड.',
-    soa: 'अधिकृत कर्ज खाते उतारा (SOA)',
-    taxCert: 'वार्षिक व्याज व कर प्रमाणपत्र',
-    creditHealth: 'पत आरोग्य व क्षमता अहवाल',
-    shgAudit: 'बचत गट संयुक्त हमी व ऑडिट उतारा',
-    rbiAudit: 'आरबीआय सुयोग्य व्यवहार संहिता अनुपालन ऑडिट',
-    grievances: 'तक्रार निवारण (आरबीआय सेल)',
-    lodgeGrievance: 'नवीन तक्रार नोंदवा',
-    ombudsman: 'अंतर्गत लोकपाल व तक्रार निवारण कक्ष',
-  },
+const DICTIONARY = {
+  en: { ...legacyEn, ...enData },
+  hi: { ...legacyHi, ...hiData },
+  mr: { ...legacyMr, ...mrData },
 }
 
 const Ctx = createContext(null)
 
 export function LangProvider({ children }) {
   const [lang, setLangState] = useState(localStorage.getItem('lang') || 'en')
-  const setLang = (l) => { localStorage.setItem('lang', l); setLangState(l) }
-  const t = (k) => (D[lang] && D[lang][k]) || D.en[k] || k
-  return <Ctx.Provider value={{ lang, setLang, t }}>{children}</Ctx.Provider>
+
+  const setLang = (l) => {
+    localStorage.setItem('lang', l)
+    setLangState(l)
+  }
+
+  const t = (k, params = {}) => {
+    let str = (DICTIONARY[lang] && DICTIONARY[lang][k]) || DICTIONARY.en[k] || k
+    if (params && typeof params === 'object') {
+      Object.keys(params).forEach((key) => {
+        str = str.replace(new RegExp(`{${key}}`, 'g'), params[key])
+      })
+    }
+    return str
+  }
+
+  // Format currency in Indian numbering system
+  const formatMoney = (amount) => {
+    const num = Number(amount) || 0
+    const locale = lang === 'hi' ? 'hi-IN' : lang === 'mr' ? 'mr-IN' : 'en-IN'
+    try {
+      return new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 0,
+      }).format(num)
+    } catch {
+      return `₹${num.toLocaleString('en-IN')}`
+    }
+  }
+
+  // Format date in user's locale
+  const formatDate = (dateInput) => {
+    if (!dateInput) return '—'
+    const d = new Date(dateInput)
+    if (isNaN(d.getTime())) return String(dateInput)
+    const locale = lang === 'hi' ? 'hi-IN' : lang === 'mr' ? 'mr-IN' : 'en-IN'
+    try {
+      return new Intl.DateTimeFormat(locale, {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      }).format(d)
+    } catch {
+      return d.toLocaleDateString()
+    }
+  }
+
+  // Format localized number
+  const formatNumber = (num) => {
+    const val = Number(num) || 0
+    const locale = lang === 'hi' ? 'hi-IN' : lang === 'mr' ? 'mr-IN' : 'en-IN'
+    try {
+      return new Intl.NumberFormat(locale).format(val)
+    } catch {
+      return val.toLocaleString('en-IN')
+    }
+  }
+
+  const value = useMemo(
+    () => ({
+      lang,
+      setLang,
+      t,
+      formatMoney,
+      formatDate,
+      formatNumber,
+    }),
+    [lang]
+  )
+
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
 
 export const useLang = () => useContext(Ctx)
