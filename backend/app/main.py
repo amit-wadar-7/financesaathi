@@ -46,6 +46,34 @@ def _migrate_sqlite_columns(eng):
             for col_name, col_def in lp_cols:
                 if col_name not in existing_lp:
                     conn.execute(text(f"ALTER TABLE loan_products ADD COLUMN {col_name} {col_def}"))
+
+            # Check loans columns
+            res_l = conn.execute(text("PRAGMA table_info(loans)")).fetchall()
+            existing_l = {row[1] for row in res_l}
+            l_cols = [
+                ("shg_endorsed", "BOOLEAN DEFAULT 0"),
+                ("endorsed_by_id", "INTEGER REFERENCES users(id)"),
+                ("endorsed_at", "DATETIME"),
+                ("endorsement_note", "VARCHAR(300) DEFAULT ''"),
+            ]
+            for col_name, col_def in l_cols:
+                if col_name not in existing_l:
+                    conn.execute(text(f"ALTER TABLE loans ADD COLUMN {col_name} {col_def}"))
+
+            # Check loan_documents columns
+            res_ld = conn.execute(text("PRAGMA table_info(loan_documents)")).fetchall()
+            existing_ld = {row[1] for row in res_ld}
+            ld_cols = [
+                ("status", "VARCHAR(30) DEFAULT 'required'"),
+                ("file_path", "VARCHAR(300) DEFAULT ''"),
+                ("original_name", "VARCHAR(255) DEFAULT ''"),
+                ("file_size", "INTEGER DEFAULT 0"),
+                ("content_type", "VARCHAR(100) DEFAULT ''"),
+                ("reject_reason", "VARCHAR(300) DEFAULT ''"),
+            ]
+            for col_name, col_def in ld_cols:
+                if col_name not in existing_ld:
+                    conn.execute(text(f"ALTER TABLE loan_documents ADD COLUMN {col_name} {col_def}"))
     except Exception:
         pass
 

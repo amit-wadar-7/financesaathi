@@ -208,7 +208,7 @@ export function Profile() {
                 border: '1px solid var(--border-hairline)',
                 borderRadius: '8px',
                 padding: '1rem',
-                background: '#ffffff',
+                background: 'var(--card-bg, #ffffff)',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
@@ -276,7 +276,7 @@ export function Notifications() {
 
       <div
         style={{
-          background: '#ffffff',
+          background: 'var(--card-bg, #ffffff)',
           border: '1px solid var(--border-hairline)',
           borderRadius: '8px',
           padding: '0.6rem 1rem',
@@ -324,7 +324,7 @@ export function Notifications() {
                 border: '1px solid var(--border-hairline)',
                 borderRadius: '8px',
                 marginBottom: '0.5rem',
-                background: x.read ? '#ffffff' : 'var(--teal-soft)',
+                background: x.read ? 'var(--card-bg, #ffffff)' : 'var(--teal-soft)',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>

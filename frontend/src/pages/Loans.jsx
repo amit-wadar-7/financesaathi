@@ -1219,7 +1219,7 @@ export function LoanApply() {
                     style={{ flex: 1, minWidth: '70px', fontSize: '0.8rem' }}
                     onClick={() => setF({ ...f, tenure_months: m })}
                   >
-                    {m} Months
+                    {m} {lang === 'hi' ? 'माह' : lang === 'mr' ? 'महिने' : 'Months'}
                   </button>
                 ))}
               </div>
@@ -1227,7 +1227,7 @@ export function LoanApply() {
 
             <div className="row" style={{ gap: '0.75rem' }}>
               <div style={{ flex: 1 }}>
-                <Field label={`${t('rate')} (% p.a. - Set by institutional policy)`}>
+                <Field label={`${t('rate')} (${lang === 'hi' ? '% प्रति वर्ष - संस्थागत नीति द्वारा निर्धारित' : lang === 'mr' ? '% वार्षिक - संस्थागत नियमानुसार' : '% p.a. - Set by institutional policy'})`}>
                   <input
                     type="number"
                     readOnly
@@ -1255,7 +1255,7 @@ export function LoanApply() {
               <input
                 value={f.purpose}
                 onChange={set('purpose')}
-                placeholder="e.g. Dairy cow purchase, hybrid seeds, inventory"
+                placeholder={lang === 'hi' ? 'उदा. दुधारू गाय खरीद, संकर बीज, दुकान इन्वेंट्री' : lang === 'mr' ? 'उदा. दुभती गाय खरेदी, सुधारित बियाणे, दुकान साहित्य' : 'e.g. Dairy cow purchase, hybrid seeds, inventory'}
                 required
               />
             </Field>
@@ -1376,11 +1376,11 @@ export function LoanApply() {
                           <div style={{ fontSize: '0.82rem', fontWeight: 600 }}>{label}</div>
                           {isAttached ? (
                             <div className="muted small" style={{ fontSize: '0.7rem', color: 'var(--emerald-600)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                              <IconCheckCircle size={12} /> {k}_doc_verified.pdf (320 KB) • OCR Verified
+                              <IconCheckCircle size={12} /> {k}_doc_verified.pdf (320 KB) • {lang === 'hi' ? 'ओसीआर प्रमाणित' : lang === 'mr' ? 'ओसीआर सत्यापित' : 'OCR Verified'}
                             </div>
                           ) : (
                             <div className="muted small" style={{ fontSize: '0.7rem' }}>
-                              Official scanned copy or digilocker pull
+                              {lang === 'hi' ? 'आधिकारिक स्कैन प्रति अथवा डिजिलॉकर' : lang === 'mr' ? 'अधिकृत स्कॅन प्रत किंवा डिजीलॉकर' : 'Official scanned copy or digilocker pull'}
                             </div>
                           )}
                         </div>
@@ -1391,7 +1391,7 @@ export function LoanApply() {
                         style={{ fontSize: '0.72rem', padding: '2px 8px' }}
                         onClick={() => toggleDoc(k)}
                       >
-                        {isAttached ? 'Detach' : 'Attach File'}
+                        {isAttached ? (lang === 'hi' ? 'हटाएँ' : lang === 'mr' ? 'काढून टाका' : 'Detach') : (lang === 'hi' ? 'फ़ाइल जोड़ें' : lang === 'mr' ? 'फाइल जोडा' : 'Attach File')}
                       </button>
                     </div>
                   )
@@ -1412,7 +1412,7 @@ export function LoanApply() {
         {/* Live AI Underwriting Check */}
         <Card title={lang === "hi" ? "साथी लाइव आय-व्यय मूल्यांकन" : lang === "mr" ? "साथी थेट कर्ज क्षमता मूल्यांकन" : "Live AI Affordability Evaluation"}>
           {!preview ? (
-            <p className="muted">{hasProfile ? 'Evaluating repayment capacity…' : t('fillProfile')}</p>
+            <p className="muted">{hasProfile ? (lang === 'hi' ? 'चुकौती क्षमता का मूल्यांकन हो रहा है…' : lang === 'mr' ? 'परतफेड क्षमतेचे मूल्यांकन होत आहे…' : 'Evaluating repayment capacity…') : t('fillProfile')}</p>
           ) : (
             <>
               <div
@@ -1518,6 +1518,14 @@ export function LoanDetail() {
     act(
       () => api('/loans/' + id + '/decision', { method: 'POST', body: { approve, note } }),
       approve ? 'Loan sanction approved.' : 'Loan application rejected.'
+    )
+
+  const [endorseNote, setEndorseNote] = useState('')
+
+  const endorseLoan = () =>
+    act(
+      () => api('/loans/' + id + '/endorse', { method: 'POST', body: { note: endorseNote || undefined } }),
+      'SHG Leader endorsement registered successfully.'
     )
 
   const disburse = () =>
@@ -1739,13 +1747,17 @@ export function LoanDetail() {
                 <IconUsers size={24} />
               </div>
               <div>
-                <div style={{ fontWeight: 600 }}>{t('shgPeerEndorsementActive')}</div>
+                <div style={{ fontWeight: 600 }}>{l.shg_endorsed ? t('shgPeerEndorsementActive') : 'SHG Mutual Guarantee (Pending Endorsement)'}</div>
                 <div className="muted small">
-                  Backed by Self-Help Group #{l.shg_id} mutual guarantee resolution and social collateral under NRLM guidelines.
+                  {l.shg_endorsed
+                    ? `Resolution: "${l.endorsement_note || 'Approved'}" • Certified under NRLM guidelines.`
+                    : `Self-Help Group #${l.shg_id} collective peer guarantee resolution awaiting group leader certification.`}
                 </div>
               </div>
             </div>
-            <Badge tone="approved">{t('verifiedShgBacked')}</Badge>
+            <Badge tone={l.shg_endorsed ? 'approved' : 'pending'}>
+              {l.shg_endorsed ? t('verifiedShgBacked') : 'Pending Endorsement'}
+            </Badge>
           </div>
         </Card>
       )}
@@ -1884,8 +1896,46 @@ export function LoanDetail() {
         </Card>
       </div>
 
-      {staff && l.status === 'pending' && (
+      {(user?.role === 'shg_leader' || user?.role === 'admin') && l.status === 'requested' && l.shg_id && (
+        <Card title="SHG Group Endorsement & Peer Resolution Terminal" style={{ marginBottom: '1.25rem' }}>
+          <p className="muted small" style={{ marginBottom: '0.75rem' }}>
+            As the designated Self-Help Group leader, certify that the group has reviewed this loan application, approved the resolution, and agreed to the mutual peer guarantee.
+          </p>
+          <Field label="SHG Meeting Resolution / Endorsement Note">
+            <input
+              placeholder="e.g. Resolution #4 approved unanimously with peer joint guarantee"
+              value={endorseNote}
+              onChange={(e) => setEndorseNote(e.target.value)}
+            />
+          </Field>
+          <div style={{ marginTop: '0.75rem' }}>
+            <button className="btn emerald" onClick={endorseLoan} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+              <IconCheckCircle size={16} /> Endorse Group Loan Application
+            </button>
+          </div>
+        </Card>
+      )}
+
+      {staff && l.status === 'requested' && (
+        <Card title="Underwriting Notice: Awaiting SHG Endorsement" style={{ marginBottom: '1.25rem' }}>
+          <p className="muted small" style={{ margin: 0, color: 'var(--amber-600, #d97706)', fontWeight: 500 }}>
+            ⏳ This is a group microfinance facility under SHG #{l.shg_id}. Underwriting sanction requires group resolution endorsement by the designated SHG leader first.
+          </p>
+        </Card>
+      )}
+
+      {staff && (l.status === 'pending' || l.status === 'endorsed') && (
         <Card title="Credit Officer Sanction Terminal" style={{ marginBottom: '1.25rem' }}>
+          {l.shg_endorsed && (
+            <div style={{ padding: '0.6rem 0.85rem', background: 'var(--emerald-50)', border: '1px solid var(--emerald-border)', borderRadius: '6px', marginBottom: '0.75rem', fontSize: '0.82rem' }}>
+              ✅ <b>SHG Group Resolution Certified:</b> {l.endorsement_note || 'Approved by SHG Leader'}
+            </div>
+          )}
+          {((l.documents || []).some(d => !d.verified)) && (
+            <div style={{ padding: '0.6rem 0.85rem', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '6px', marginBottom: '0.75rem', fontSize: '0.82rem', color: '#92400e' }}>
+              ⚠️ <b>Verification Required:</b> All required documents must be uploaded by the borrower and authenticated before approval can be executed.
+            </div>
+          )}
           <Field label="Statutory Underwriting Notes / Conditions">
             <input
               placeholder="e.g. Sanctioned subject to peer joint guarantee confirmation"
@@ -1894,7 +1944,11 @@ export function LoanDetail() {
             />
           </Field>
           <div className="row" style={{ gap: '0.75rem', marginTop: '0.75rem' }}>
-            <button className="btn" onClick={() => decide(true)}>
+            <button
+              className="btn"
+              disabled={(l.documents || []).some(d => !d.verified)}
+              onClick={() => decide(true)}
+            >
               <IconCheckCircle size={16} /> Sanction & Approve Loan
             </button>
             <button className="btn danger" onClick={() => decide(false)}>
@@ -2028,22 +2082,27 @@ export function LoanDetail() {
               />
             </Field>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', margin: '1rem 0' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '1rem', marginBottom: '0.5rem' }}>
               <button
                 type="button"
                 className={`btn small ${paySource === 'external_upi' ? '' : 'ghost'}`}
                 onClick={() => setPaySource('external_upi')}
               >
-                📱 UPI / Bank
+                📱 Paid outside app
               </button>
               <button
                 type="button"
                 className={`btn small ${paySource === 'wallet' ? '' : 'ghost'}`}
                 onClick={() => setPaySource('wallet')}
               >
-                💼 Wallet ({money(user?.savings_balance || 0)})
+                💼 Paid from wallet ({money(user?.savings_balance || 0)})
               </button>
             </div>
+            <p className="muted small" style={{ marginBottom: '1rem', textAlign: 'center', fontSize: '0.78rem' }}>
+              {paySource === 'wallet'
+                ? 'Debits directly from your in-app wallet balance.'
+                : 'Settled externally (UPI/Cash); records payment without debiting in-app wallet.'}
+            </p>
 
             {paySource === 'external_upi' ? (
               <Field label="Bank / UPI Reference No. (UTR)">

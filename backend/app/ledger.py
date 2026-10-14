@@ -208,6 +208,21 @@ def record_thrift_contribution(
 
 
 
+def compute_ledger_balance(db: Session, user_id: int) -> float:
+    """Derives wallet balance directly from the sum of immutable ledger entries."""
+    txs = db.scalars(select(models.Transaction).where(models.Transaction.user_id == user_id)).all()
+    credits = sum(t.amount for t in txs if t.is_credit)
+    debits = sum(t.amount for t in txs if not t.is_credit)
+    return round(credits - debits, 2)
+
+
+def sync_user_savings_balance(db: Session, user: models.User) -> float:
+    """Ensures user's cached wallet balance field strictly matches the ledger sum."""
+    balance = compute_ledger_balance(db, user.id)
+    user.savings_balance = balance
+    return balance
+
+
 def get_user_ledger_summary(db: Session, user_id: int) -> dict:
     """Computes total credits, debits, and verifies mathematical integrity of wallet balance."""
     txs = db.scalars(select(models.Transaction).where(models.Transaction.user_id == user_id)).all()

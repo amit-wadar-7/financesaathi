@@ -19,6 +19,7 @@ STAFF = ("officer", "admin")
 def loan_out(loan: models.Loan) -> schemas.LoanOut:
     out = schemas.LoanOut.model_validate(loan)
     out.borrower_name = loan.user.name if loan.user else ""
+    out.endorsed_by_name = loan.endorsed_by.name if loan.endorsed_by else ""
     return out
 
 
@@ -102,6 +103,7 @@ def apply_for_loan(body: schemas.LoanIn, user: models.User = Depends(get_current
         body.amount, annual_rate, body.tenure_months
     )
 
+    initial_status = "requested" if (body.group_loan and user.shg_id) else "pending"
     loan = models.Loan(
         user_id=user.id,
         shg_id=user.shg_id if body.group_loan else None,
@@ -112,7 +114,7 @@ def apply_for_loan(body: schemas.LoanIn, user: models.User = Depends(get_current
         purpose=body.purpose,
         product_type=product.code,
         schedule_type=sched_type,
-        status="pending",
+        status=initial_status,
         emi=result["emi"],
         ai_score=result["score"],
         ai_band=result["band"],
@@ -121,11 +123,19 @@ def apply_for_loan(body: schemas.LoanIn, user: models.User = Depends(get_current
 
     docs_to_add = body.documents if body.documents else (product.required_documents or ["aadhaar"])
     for d in docs_to_add:
-        loan.documents.append(models.LoanDocument(doc_type=d, status="uploaded"))
+        loan.documents.append(models.LoanDocument(
+            doc_type=d,
+            status="required",
+            file_path="",
+            original_name="",
+            file_size=0,
+            content_type="",
+            verified=False,
+        ))
 
     db.add(loan)
     db.flush()
-    audit(db, user.id, "apply", "loan", loan.id, f"product={product.code} amount={body.amount} band={result['band']}")
+    audit(db, user.id, "apply", "loan", loan.id, f"product={product.code} amount={body.amount} status={initial_status} band={result['band']}")
     db.commit()
     db.refresh(loan)
     return loan_out(loan)
@@ -170,7 +180,7 @@ def edit_pending_loan(loan_id: int, body: schemas.LoanIn, user: models.User = De
 @router.post("/loans/{loan_id}/withdraw", response_model=schemas.LoanOut)
 def withdraw_loan(loan_id: int, user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
     loan = get_loan_or_404(loan_id, user, db)
-    if loan.status != "pending":
+    if loan.status not in ("pending", "requested"):
         raise HTTPException(400, f"Only pending loans may be withdrawn (current status: {loan.status})")
     if user.id != loan.user_id:
         raise HTTPException(403, "Only the borrower can withdraw their loan application.")
@@ -182,12 +192,49 @@ def withdraw_loan(loan_id: int, user: models.User = Depends(get_current_user), d
     return loan_out(loan)
 
 
+@router.post("/loans/{loan_id}/endorse", response_model=schemas.LoanOut)
+def endorse_loan(
+    loan_id: int,
+    body: schemas.EndorsementIn | None = None,
+    user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """SHG Group Endorsement: Group leader verifies resolution and peer guarantee."""
+    loan = db.get(models.Loan, loan_id)
+    if not loan:
+        raise HTTPException(404, "Loan not found")
+    if not loan.shg_id:
+        raise HTTPException(400, "Only group loans require SHG endorsement")
+    shg = db.get(models.SHG, loan.shg_id)
+    if not shg or (shg.leader_id != user.id and user.role != "admin"):
+        raise HTTPException(403, "Only the designated SHG group leader can endorse member loan applications.")
+    if loan.status != "requested":
+        raise HTTPException(409, f"Loan is already in '{loan.status}' status (cannot endorse)")
+
+    loan.status = "endorsed"
+    loan.shg_endorsed = True
+    loan.endorsed_by_id = user.id
+    loan.endorsed_at = models.now()
+    note = body.note if body and body.note else "SHG Group Resolution & Peer Guarantee Endorsed"
+    loan.endorsement_note = note
+
+    audit(db, user.id, "endorse_loan", "loan", loan.id, f"shg={shg.name} note={note}")
+    notify(db, loan.user_id, f"Your group loan #{loan.id} has been endorsed by your SHG Leader ({user.name}) and forwarded to credit underwriting.")
+    db.commit()
+    db.refresh(loan)
+    return loan_out(loan)
+
+
 @router.post("/loans/{loan_id}/decision", response_model=schemas.LoanOut)
 def decide(loan_id: int, body: schemas.DecisionIn, officer: models.User = Depends(require_roles(*STAFF)), db: Session = Depends(get_db)):
     loan = db.get(models.Loan, loan_id)
     if not loan:
         raise HTTPException(404, "Loan not found")
-    if loan.status != "pending":
+    # Group loan endorsement invariant
+    if (loan.shg_id and not loan.shg_endorsed) or loan.status == "requested":
+        raise HTTPException(400, "Group loan requires SHG leader endorsement before officer underwriting decision.")
+
+    if loan.status not in ("pending", "endorsed"):
         raise HTTPException(409, f"Loan is already {loan.status}")
 
     # Maker-Checker Invariant: Officer cannot approve or reject their own loan
@@ -195,6 +242,15 @@ def decide(loan_id: int, body: schemas.DecisionIn, officer: models.User = Depend
         audit(db, officer.id, "maker_checker_violation", "loan", loan.id, "Officer attempted to decide on their own loan")
         db.commit()
         raise HTTPException(403, "Maker-checker violation: An officer cannot approve or reject their own loan application.")
+
+    # Approval invariant: all required documents must be uploaded and verified
+    if body.approve:
+        unverified_docs = [d.doc_type for d in loan.documents if not d.verified]
+        if unverified_docs:
+            raise HTTPException(
+                400,
+                f"Cannot approve loan #{loan.id}: Required documents [{', '.join(unverified_docs)}] are not yet uploaded and verified by underwriting."
+            )
 
     loan.officer_id = officer.id
     loan.officer_note = body.note
@@ -234,7 +290,7 @@ def decide(loan_id: int, body: schemas.DecisionIn, officer: models.User = Depend
 def cancel_loan(loan_id: int, user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Allows a borrower or staff to cancel a pending loan application."""
     loan = get_loan_or_404(loan_id, user, db)
-    if loan.status != "pending":
+    if loan.status not in ("pending", "requested"):
         raise HTTPException(400, f"Cannot cancel a loan with status '{loan.status}'. Only pending loans can be cancelled.")
     loan.status = "withdrawn"
     audit(db, user.id, "cancel", "loan", loan.id, "Loan application withdrawn")
@@ -311,21 +367,12 @@ def pay(loan_id: int, number: int, body: schemas.PayIn, user: models.User = Depe
             amount=amount,
             category="emi_payment",
             title=f"EMI Payment: Loan #{loan.id} (Instalment #{number})",
-            mode="Wallet Balance",
+            mode="Paid from wallet",
             reference_id=body.reference_id or f"LOAN-{loan.id}-INST-{number}",
         )
     else:
-        # External payment (UPI / Cash / Bank)
-        mode_label = f"External UPI ({body.reference_id or 'Gateway'})"
-        db.add(models.Transaction(
-            user_id=loan.user_id,
-            category="emi_payment",
-            title=f"EMI Payment: Loan #{loan.id} (Instalment #{number})",
-            amount=amount,
-            is_credit=False,
-            mode=mode_label,
-            reference_id=body.reference_id or f"LOAN-{loan.id}-INST-{number}",
-        ))
+        # External payment (UPI / Cash / Bank outside the app) - Record only, no debit to wallet
+        audit(db, user.id, "payment_external", "loan", loan.id, f"installment={number} amount={amount} source={body.source} note=Paid outside the app")
 
     inst.paid_amount = round(inst.paid_amount + amount, 2)
     inst.paid_on = date.today()
@@ -484,11 +531,13 @@ def verify_document(loan_id: int, doc_id: int, officer=Depends(require_roles(*ST
     loan = db.get(models.Loan, loan_id)
     if not loan:
         raise HTTPException(404, "Loan not found")
-    if loan.status not in ("pending", "approved"):
+    if loan.status not in ("pending", "requested", "endorsed", "approved"):
         raise HTTPException(409, f"Cannot verify documents on a {loan.status} loan")
     doc = db.get(models.LoanDocument, doc_id)
     if not doc or doc.loan_id != loan_id:
         raise HTTPException(404, "Document not found")
+    if not doc.file_path or doc.status != "uploaded" or not doc.original_name:
+        raise HTTPException(400, f"Cannot verify document '{doc.doc_type}': No authentic file has been uploaded yet.")
 
     doc.verified = True
     doc.status = "verified"

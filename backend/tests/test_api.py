@@ -3,6 +3,14 @@ from datetime import date
 from .conftest import login, make_user
 
 
+def verify_loan_documents(client, lid, user_h, officer_h):
+    loan = client.get(f"/loans/{lid}", headers=user_h).json()
+    for d in loan.get("documents", []):
+        if not d.get("verified"):
+            client.post(f"/loans/{lid}/documents/{d['id']}/upload", headers=user_h, files={"file": (f"{d['doc_type']}.pdf", b"%PDF mock doc", "application/pdf")})
+            client.post(f"/loans/{lid}/documents/{d['id']}/verify", headers=officer_h)
+
+
 def test_calculators(client):
     r = client.get("/calc/emi", params={"amount": 100000, "rate": 12, "months": 12}).json()
     assert r["emi"] == 8884.88
@@ -49,14 +57,31 @@ def test_full_loan_lifecycle(client, staff):
     loan = r.json()
     assert loan["status"] == "pending" and loan["ai_band"] in ("ready", "caution", "not_ready")
     lid = loan["id"]
+    doc_id = loan["documents"][0]["id"]
 
     # privacy + permissions
     assert client.get(f"/loans/{lid}", headers=other).status_code == 404
     assert client.post(f"/loans/{lid}/decision", headers=borrower, json={"approve": True}).status_code == 403
 
+    # Officer cannot approve before required documents are uploaded and verified
+    d_early = client.post(f"/loans/{lid}/decision", headers=staff["officer"], json={"approve": True, "note": "ok"})
+    assert d_early.status_code == 400
+    assert "not yet uploaded and verified" in d_early.text
+
+    # Upload and verify the document
+    up_res = client.post(f"/loans/{lid}/documents/{doc_id}/upload", headers=borrower, files={"file": ("aadhaar.pdf", b"%PDF mock doc", "application/pdf")})
+    assert up_res.status_code == 200
+    vf_res = client.post(f"/loans/{lid}/documents/{doc_id}/verify", headers=staff["officer"])
+    assert vf_res.status_code == 200
+
+    # Now officer approval succeeds
     d = client.post(f"/loans/{lid}/decision", headers=staff["officer"], json={"approve": True, "note": "ok"})
     assert d.status_code == 200 and d.json()["status"] == "approved"
     assert client.post(f"/loans/{lid}/decision", headers=staff["officer"], json={"approve": False}).status_code == 409
+
+    # Disburse loan
+    disb = client.post(f"/loans/{lid}/disburse", headers=staff["officer"])
+    assert disb.status_code == 200 and disb.json()["status"] == "disbursed"
 
     sched = client.get(f"/loans/{lid}/schedule", headers=borrower).json()
     assert len(sched) == 3
@@ -73,6 +98,95 @@ def test_full_loan_lifecycle(client, staff):
     assert any("approved" in n["message"] for n in notes)
     audit = client.get("/admin/audit", headers=staff["admin"]).json()
     assert {"apply", "approve", "payment"} <= {a["action"] for a in audit}
+
+
+def test_group_loan_endorsement_lifecycle(client, staff):
+    leader = staff["leader"]
+    # Setup SHG with leader and member
+    shg = client.post("/shgs", headers=leader, json={"name": "Kiran Bachat Gat", "village": "Sangli"}).json()
+    shg_id = shg["id"]
+    member = make_user(client, "shg_member_test@x.com")
+    client.post(f"/shgs/{shg_id}/members", headers=leader, json={"email": "shg_member_test@x.com"})
+
+    # Setup other leader for negative test
+    other_leader_h = make_user(client, "other_leader_test@x.com")
+    other_u = client.get("/auth/me", headers=other_leader_h).json()
+    client.post(f"/admin/users/{other_u['id']}/role", headers=staff["admin"], json={"role": "shg_leader"})
+
+    # Member applies for group loan
+    r_loan = client.post("/loans", headers=member, json={"amount": 25000, "tenure_months": 6, "purpose": "Dairy animal feed", "group_loan": True, "documents": []})
+    assert r_loan.status_code == 201
+    loan = r_loan.json()
+    lid = loan["id"]
+    assert loan["status"] == "requested"
+
+    # Officer cannot decide before SHG endorsement
+    r_dec_early = client.post(f"/loans/{lid}/decision", headers=staff["officer"], json={"approve": True})
+    assert r_dec_early.status_code == 400
+    assert "requires SHG leader endorsement" in r_dec_early.text
+
+    # Other leader cannot endorse
+    r_end_bad = client.post(f"/loans/{lid}/endorse", headers=other_leader_h, json={"note": "unauthorized"})
+    assert r_end_bad.status_code == 403
+
+    # Designated leader endorses
+    r_end = client.post(f"/loans/{lid}/endorse", headers=leader, json={"note": "Resolution #4 approved unanimously"})
+    assert r_end.status_code == 200
+    assert r_end.json()["status"] == "endorsed"
+    assert r_end.json()["shg_endorsed"] is True
+
+    # Upload and verify documents
+    verify_loan_documents(client, lid, member, staff["officer"])
+
+    # Now officer can approve
+    r_app = client.post(f"/loans/{lid}/decision", headers=staff["officer"], json={"approve": True, "note": "Sanctioned"})
+    assert r_app.status_code == 200
+    assert r_app.json()["status"] == "approved"
+
+
+def test_wallet_balance_backed_by_ledger(client, staff):
+    user = make_user(client, "wallet_ledger@x.com", income=20000, expenses=8000, initial_balance=0)
+    # Check that initial balance is 0 and matches ledger
+    summary = client.get("/reports/ledger-audit", headers=user).json()
+    assert summary["recorded_balance"] == 0.0
+    assert summary["is_reconciled"] is True
+
+    # Record income
+    client.post("/money/income", headers=user, json={"amount": 10000, "category": "farming", "title": "Wheat sale", "mode": "Direct Credit"})
+    summary1 = client.get("/reports/ledger-audit", headers=user).json()
+    assert summary1["recorded_balance"] == 10000.0
+    assert summary1["computed_net"] == 10000.0
+    assert summary1["is_reconciled"] is True
+
+    # Apply, approve, and disburse a loan
+    r_loan = client.post("/loans", headers=user, json={"amount": 20000, "tenure_months": 4, "purpose": "Fertilizer", "documents": []})
+    lid = r_loan.json()["id"]
+    verify_loan_documents(client, lid, user, staff["officer"])
+    client.post(f"/loans/{lid}/decision", headers=staff["officer"], json={"approve": True})
+    client.post(f"/loans/{lid}/disburse", headers=staff["officer"])
+
+    summary2 = client.get("/reports/ledger-audit", headers=user).json()
+    assert summary2["recorded_balance"] == 30000.0
+    assert summary2["computed_net"] == 30000.0
+    assert summary2["is_reconciled"] is True
+
+    # Pay EMI from wallet -> wallet balance debited, matches ledger exactly
+    r_pay = client.post(f"/loans/{lid}/installments/1/pay", headers=user, json={"source": "wallet"})
+    assert r_pay.status_code == 200
+    emi_amt = r_pay.json()["amount"]
+    summary3 = client.get("/reports/ledger-audit", headers=user).json()
+    assert abs(summary3["recorded_balance"] - (30000.0 - emi_amt)) < 0.01
+    assert abs(summary3["computed_net"] - (30000.0 - emi_amt)) < 0.01
+    assert summary3["is_reconciled"] is True
+
+    # Pay EMI outside the app -> recorded only, no debit to wallet, stays reconciled!
+    summary4_before = client.get("/reports/ledger-audit", headers=user).json()
+    r_pay2 = client.post(f"/loans/{lid}/installments/2/pay", headers=user, json={"source": "external_upi"})
+    assert r_pay2.status_code == 200
+    summary4_after = client.get("/reports/ledger-audit", headers=user).json()
+    assert summary4_after["recorded_balance"] == summary4_before["recorded_balance"]
+    assert summary4_after["is_reconciled"] is True
+
 
 
 def test_requires_profile_before_applying(client):
@@ -181,7 +295,8 @@ def test_harvest_bullet_loan_lifecycle(client, staff):
     assert r.status_code == 201
     loan = r.json()
     assert loan["product_type"] == "kisan_agri"
-    assert loan["schedule_type"] == "harvest_bullet"
+    # Verify required documents
+    verify_loan_documents(client, loan["id"], farmer, staff["officer"])
 
     # Officer approves loan
     d = client.post(f"/loans/{loan['id']}/decision", headers=staff["officer"], json={"approve": True, "note": "Kisan subvention approved"})
@@ -380,7 +495,16 @@ def test_document_verification_status_guard(client, staff):
     loan_detail = client.get(f"/loans/{lid}", headers=user).json()
     doc_id = loan_detail["documents"][0]["id"]
 
-    # While pending: verification is permitted
+    # Before upload: verification is rejected with 400
+    v_early = client.post(f"/loans/{lid}/documents/{doc_id}/verify", headers=staff["officer"])
+    assert v_early.status_code == 400
+    assert "No authentic file has been uploaded" in v_early.text
+
+    # Upload authentic document
+    up = client.post(f"/loans/{lid}/documents/{doc_id}/upload", headers=user, files={"file": ("aadhaar.pdf", b"%PDF mock doc", "application/pdf")})
+    assert up.status_code == 200
+
+    # While pending: verification is permitted once uploaded
     v1 = client.post(f"/loans/{lid}/documents/{doc_id}/verify", headers=staff["officer"])
     assert v1.status_code == 200
     assert v1.json()["verified"] is True
@@ -422,7 +546,8 @@ def test_maker_checker_officer_cannot_approve_own_loan(client, staff):
     assert dec.status_code == 403
     assert "Maker-checker violation" in dec.json()["detail"]
 
-    # 3. Super Admin approves it -> 200 OK
+    # 3. Upload & verify document, then Super Admin approves it -> 200 OK
+    verify_loan_documents(client, lid, staff["officer"], staff["admin"])
     dec_admin = client.post(f"/loans/{lid}/decision", headers=staff["admin"], json={"approve": True, "note": "Admin approved"})
     assert dec_admin.status_code == 200
     assert dec_admin.json()["status"] == "approved"
@@ -534,7 +659,8 @@ def test_loan_withdrawal_and_foreclosure(client, staff):
     assert r_apply2.status_code == 201
     lid2 = r_apply2.json()["id"]
 
-    # Underwriter approves loan
+    # Underwriter verifies documents and approves loan
+    verify_loan_documents(client, lid2, user, staff["officer"])
     r_appr = client.post(f"/loans/{lid2}/decision", headers=staff["officer"], json={"approve": True, "note": "Sanctioned"})
     assert r_appr.status_code == 200
 

@@ -288,7 +288,7 @@ def seed_demo(db: Session):
                 monthly_income=inc,
                 monthly_expenses=exp,
                 declared_savings=sav,
-                savings_balance=sav,
+                savings_balance=0.0,
                 shg_id=shg.id if role in ("user", "shg_leader") else None,
                 kyc_status="verified",
                 kyc_aadhaar_last4="5432",
@@ -301,10 +301,31 @@ def seed_demo(db: Session):
             if u.monthly_income <= 0:
                 u.monthly_income = inc
                 u.monthly_expenses = exp
-                u.savings_balance = sav
                 u.declared_savings = sav
             if not u.shg_id and role in ("user", "shg_leader"):
                 u.shg_id = shg.id
+
+        if sav > 0:
+            existing_open = db.scalar(
+                select(models.Transaction).where(
+                    models.Transaction.user_id == u.id,
+                    models.Transaction.category == "opening_balance"
+                )
+            )
+            if not existing_open:
+                db.add(models.Transaction(
+                    user_id=u.id,
+                    category="opening_balance",
+                    title="Opening Ledger Balance",
+                    amount=sav,
+                    is_credit=True,
+                    mode="Opening Deposit",
+                    reference_id=f"OPEN-{u.id}",
+                ))
+                db.flush()
+
+        txs = db.scalars(select(models.Transaction).where(models.Transaction.user_id == u.id)).all()
+        u.savings_balance = round(sum(t.amount for t in txs if t.is_credit) - sum(t.amount for t in txs if not t.is_credit), 2)
         user_objs[email] = u
 
     # Link Leader to SHG

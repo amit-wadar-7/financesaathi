@@ -116,6 +116,13 @@ def get_catalog(user: models.User = Depends(get_current_user)):
     }
 
 
+@router.get("/ledger-audit")
+def get_ledger_audit(user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Returns ledger summary, mathematical integrity reconciliation, and transaction aggregates."""
+    from .. import ledger
+    return ledger.get_user_ledger_summary(db, user.id)
+
+
 @router.get("/data/{slug}")
 def get_report_data(
     slug: str,

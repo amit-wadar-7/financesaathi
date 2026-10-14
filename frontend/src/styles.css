@@ -48,6 +48,9 @@
   --amber-50:      #fffbeb;
   --rose-600:      #e11d48;
   --rose-50:       #fff1f2;
+  --callout-danger-bg: #fef2f2;
+  --callout-danger-border: #fecaca;
+  --callout-danger-text: #7f1d1d;
 
   /* Elevation & Curves */
   --radius-xs: 4px;
@@ -1603,6 +1606,9 @@ html[data-theme="dark"],
   --emerald-800:      #a7f3d0;
   --emerald-900:      #d1fae5;
   --text-emerald:     #34d399;
+  --callout-danger-bg: #450a0a;
+  --callout-danger-border: #7f1d1d;
+  --callout-danger-text: #fecaca;
 }
 
 [data-theme="dark"] body {
@@ -4008,6 +4014,17 @@ html[data-theme="dark"],
     padding: 0 0.75rem;
   }
 
+  .top-bar-left {
+    flex: 1;
+    min-width: 0;
+    gap: 0.5rem;
+  }
+
+  .top-bar-right {
+    gap: 0.35rem;
+    flex-shrink: 0;
+  }
+
   .context-breadcrumb {
     max-width: none;
     flex: 1;
@@ -4019,7 +4036,7 @@ html[data-theme="dark"],
   }
 
   .context-current {
-    font-size: 0.88rem;
+    font-size: 0.84rem;
     white-space: normal;
     line-height: 1.2;
     display: -webkit-box;

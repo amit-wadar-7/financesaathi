@@ -1,6 +1,7 @@
 import jwt
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from . import models
@@ -20,6 +21,8 @@ def get_current_user(cred: HTTPAuthorizationCredentials | None = Depends(bearer)
     user = db.get(models.User, int(data["sub"]))
     if not user:
         raise HTTPException(401, "User not found")
+    txs = db.scalars(select(models.Transaction).where(models.Transaction.user_id == user.id)).all()
+    user.savings_balance = round(sum(t.amount for t in txs if t.is_credit) - sum(t.amount for t in txs if not t.is_credit), 2)
     return user
 
 

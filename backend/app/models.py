@@ -173,6 +173,10 @@ class Loan(Base):
     ai_factors: Mapped[list] = mapped_column(JSON, default=list)
     officer_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     officer_note: Mapped[str] = mapped_column(Text, default="")
+    shg_endorsed: Mapped[bool] = mapped_column(Boolean, default=False)
+    endorsed_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    endorsed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    endorsement_note: Mapped[str] = mapped_column(String(300), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=now)
     decided_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     disbursed_on: Mapped[date | None] = mapped_column(Date, nullable=True)
@@ -182,6 +186,7 @@ class Loan(Base):
     )
     documents: Mapped[list["LoanDocument"]] = relationship(cascade="all, delete-orphan")
     user: Mapped["User"] = relationship(foreign_keys=[user_id])
+    endorsed_by: Mapped["User | None"] = relationship(foreign_keys=[endorsed_by_id])
     product: Mapped["LoanProduct | None"] = relationship()
 
     @property
@@ -199,7 +204,7 @@ class LoanDocument(Base):
     file_size: Mapped[int] = mapped_column(Integer, default=0)
     content_type: Mapped[str] = mapped_column(String(100), default="")
     reference: Mapped[str] = mapped_column(String(200), default="")
-    status: Mapped[str] = mapped_column(String(20), default="uploaded")  # uploaded | verified | rejected
+    status: Mapped[str] = mapped_column(String(20), default="required")  # required | uploaded | verified | rejected
     reject_reason: Mapped[str] = mapped_column(String(300), default="")
     verified: Mapped[bool] = mapped_column(Boolean, default=False)
     verified_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)

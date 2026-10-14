@@ -1851,22 +1851,27 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
               </div>
 
               {/* Payment Mode Selector */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.75rem' }}>
                 <button
                   type="button"
                   className={`btn small ${payMode === 'upi_qr' ? '' : 'ghost'}`}
                   onClick={() => setPayMode('upi_qr')}
                 >
-                  📱 UPI QR / App
+                  📱 Paid outside app (UPI)
                 </button>
                 <button
                   type="button"
                   className={`btn small ${payMode === 'wallet' ? '' : 'ghost'}`}
                   onClick={() => setPayMode('wallet')}
                 >
-                  💼 Syra Wallet
+                  💼 Paid from wallet
                 </button>
               </div>
+              <p className="muted small" style={{ marginBottom: '1rem', textAlign: 'center', fontSize: '0.78rem' }}>
+                {payMode === 'wallet'
+                  ? 'Debits directly from your wallet balance.'
+                  : 'Settled outside via UPI/Cash; records repayment without debiting wallet.'}
+              </p>
 
               {payMode === 'upi_qr' ? (
                 <div style={{ textAlign: 'center', marginBottom: '1rem' }}>

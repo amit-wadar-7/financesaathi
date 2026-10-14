@@ -191,6 +191,10 @@ class DecisionIn(BaseModel):
     note: str = Field(default="", max_length=500)
 
 
+class EndorsementIn(BaseModel):
+    note: str = Field(default="SHG Group Resolution & Peer Guarantee Endorsed", max_length=300)
+
+
 class DocumentOut(ORM):
     id: int
     loan_id: int
@@ -199,7 +203,7 @@ class DocumentOut(ORM):
     original_name: str = ""
     file_size: int = 0
     content_type: str = ""
-    status: str = "uploaded"
+    status: str = "required"
     reject_reason: str = ""
     verified: bool = False
     verified_by: int | None = None
@@ -245,6 +249,11 @@ class LoanOut(ORM):
     ai_band: str
     ai_factors: list[dict] = []
     officer_note: str
+    shg_endorsed: bool = False
+    endorsed_by_id: int | None = None
+    endorsed_by_name: str = ""
+    endorsed_at: datetime | None = None
+    endorsement_note: str = ""
     created_at: datetime
     decided_at: datetime | None
     disbursed_on: date | None = None
@@ -253,7 +262,7 @@ class LoanOut(ORM):
 
 class PayIn(BaseModel):
     amount: float | None = Field(default=None, gt=0)
-    source: Literal["wallet", "external_upi", "cash"] = "external_upi"
+    source: Literal["wallet", "external_upi", "cash"] = "wallet"
     reference_id: str | None = None
 
 

@@ -144,8 +144,8 @@ function SahukarTrap() {
         <div style={{ marginTop: '1.25rem' }}>
           <div
             style={{
-              background: '#fef2f2',
-              border: '1px solid #fecaca',
+              background: 'var(--callout-danger-bg, #fef2f2)',
+              border: '1px solid var(--callout-danger-border, #fecaca)',
               borderRadius: '8px',
               padding: '1rem',
               marginBottom: '1.25rem',
@@ -160,7 +160,7 @@ function SahukarTrap() {
               </div>
               <Badge tone="not_ready">{t("predatoryDebt")}</Badge>
             </div>
-            <p style={{ margin: 0, fontSize: '0.85rem', color: '#7f1d1d' }}>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--callout-danger-text, #7f1d1d)' }}>
               On a ₹{amount.toLocaleString()} loan, the moneylender gives you only <b>{money(res.in_hand_amount)}</b> in hand while taking <b>{money(res.sahukar.total_interest)}</b> in raw interest. You pay <b>{res.wealth_loss.interest_multiple}x times</b> more interest than through an SHG!
             </p>
           </div>
@@ -185,7 +185,7 @@ function SahukarTrap() {
 
           <div
             style={{
-              background: '#ffffff',
+              background: 'var(--card-bg, #ffffff)',
               border: '1px solid var(--border-hairline)',
               borderRadius: '8px',
               padding: '1.2rem',
@@ -703,9 +703,9 @@ export function Tools() {
               alignItems: 'center',
               gap: '0.4rem',
               padding: '0.55rem 0.95rem',
-              border: tab === k ? '1px solid #047857' : '1px solid #cbd5e1',
-              background: tab === k ? '#ecfdf5' : '#ffffff',
-              color: tab === k ? '#047857' : '#475569',
+              border: tab === k ? '1px solid var(--emerald-600)' : '1px solid var(--border-hairline)',
+              background: tab === k ? 'var(--emerald-soft)' : 'var(--card-bg, #ffffff)',
+              color: tab === k ? 'var(--emerald-brand)' : 'var(--text-muted, var(--slate-600))',
               fontWeight: 600,
               borderRadius: '6px',
               cursor: 'pointer',

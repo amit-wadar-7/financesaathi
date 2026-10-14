@@ -33,9 +33,14 @@ def staff(client):
     }
 
 
-def make_user(client, email, income=25000, expenses=12000):
+def make_user(client, email, income=25000, expenses=12000, initial_balance=None):
+    if initial_balance is None:
+        initial_balance = 30000 if (income > 0 or expenses > 0) else 0
     client.post("/auth/register", json={"name": "Test User", "email": email, "password": "secret123"})
     h = login(client, email, "secret123")
     client.patch("/auth/me", headers=h, json={"monthly_income": income, "monthly_expenses": expenses,
-                                              "existing_emi": 0, "savings_balance": 30000})
+                                              "existing_emi": 0, "declared_savings": initial_balance})
+    if initial_balance > 0:
+        client.post("/money/income", headers=h, json={"amount": initial_balance, "category": "opening_balance", "title": "Opening Savings", "mode": "Direct Credit"})
     return h
+
