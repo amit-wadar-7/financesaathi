@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from . import finance, models
-from .config import ADMIN_EMAIL, ADMIN_PASSWORD, SEED_DEMO
+from .config import ADMIN_EMAIL, ADMIN_PASSWORD, SEED_DEMO, APP_ENV
 from .security import hash_password
 from .seed_data import COURSES, SCHEMES
 
@@ -251,7 +251,7 @@ def seed_content(db: Session):
 
 
 def seed_demo(db: Session):
-    """Only executed when SEED_DEMO=true. Creates mathematically correct, neutral demo personas."""
+    """Creates mathematically correct, verified demo personas across all 4 platform roles."""
     # Ensure neutral SHG exists
     shg = db.scalar(select(models.SHG).where(models.SHG.name == "Kalyani Mahila Bachat Gat"))
     if not shg:
@@ -259,8 +259,17 @@ def seed_demo(db: Session):
         db.add(shg)
         db.flush()
 
-    # Neutral fictional personas
+    # Verified demo personas across both .in (primary) and .org (legacy) domains
     demo_users = [
+        # Primary .in platform roles
+        ("Rajesh Sharma", "admin@financesaathi.in", "Admin#2025!", "admin", "+91 98200 11001", 45000.0, 22000.0, 52000.0),
+        ("Ramesh Deshmukh", "officer@financesaathi.in", "Officer#2025!", "officer", "+91 98200 22002", 38000.0, 19000.0, 41000.0),
+        ("Kavita Rao", "leader@financesaathi.in", "Leader#2025!", "shg_leader", "+91 97654 32100", 22000.0, 11000.0, 34800.0),
+        ("Asha Verma", "borrower@financesaathi.in", "Borrower#2025!", "user", "+91 94231 88201", 18000.0, 8500.0, 14500.0),
+        ("Vikas Sharma", "farmer@financesaathi.in", "Farmer#2025!", "user", "+91 98220 14829", 20000.0, 9300.0, 24500.0),
+        # Platform developer / admin account
+        ("AMIT WADAR", "amit.govind.wadar@gmail.com", "Admin#2025!", "admin", "+91 98200 00000", 50000.0, 20000.0, 60000.0),
+        # Legacy .org aliases
         ("Rajesh Sharma", "admin@financesaathi.org", "AdminSecure#2026", "admin", "+91 98200 11001", 45000.0, 22000.0, 52000.0),
         ("Ramesh Deshmukh", "officer@financesaathi.org", "OfficerSecure#2026", "officer", "+91 98200 22002", 38000.0, 19000.0, 41000.0),
         ("Kavita Rao", "leader@financesaathi.org", "LeaderSecure#2026", "shg_leader", "+91 97654 32100", 22000.0, 11000.0, 34800.0),
@@ -288,11 +297,149 @@ def seed_demo(db: Session):
             )
             db.add(u)
             db.flush()
+        else:
+            u.password_hash = hash_password(pw)
+            u.role = role
+            if u.monthly_income <= 0:
+                u.monthly_income = inc
+                u.monthly_expenses = exp
+                u.savings_balance = sav
+                u.declared_savings = sav
+            if not u.shg_id and role in ("user", "shg_leader"):
+                u.shg_id = shg.id
         user_objs[email] = u
 
-    # Link Leader
-    if "leader@financesaathi.org" in user_objs:
-        shg.leader_id = user_objs["leader@financesaathi.org"].id
+    # Link Leader to SHG
+    leader = user_objs.get("leader@financesaathi.in") or user_objs.get("leader@financesaathi.org")
+    if leader:
+        shg.leader_id = leader.id
+
+    # Seed interactive data for primary borrower
+    borrower = user_objs.get("borrower@financesaathi.in") or user_objs.get("borrower@financesaathi.org")
+    if borrower:
+        existing_loan = db.scalar(select(models.Loan).where(models.Loan.user_id == borrower.id))
+        if not existing_loan:
+            prod = db.scalar(select(models.LoanProduct).where(models.LoanProduct.code == "kisan_agri")) or db.scalars(select(models.LoanProduct)).first()
+            rate = prod.annual_rate if prod else 7.0
+            loan = models.Loan(
+                user_id=borrower.id,
+                shg_id=shg.id,
+                product_id=prod.id if prod else None,
+                amount=30000.0,
+                annual_rate=rate,
+                tenure_months=6,
+                purpose="Kharif Hybrid Seeds & Organic Fertilizers",
+                product_type="kisan_agri",
+                schedule_type="monthly",
+                status="approved",
+                emi=5102.50,
+                ai_score=84.0,
+                ai_band="ready",
+                ai_factors=[
+                    {"name": "Net Disposable Surplus", "score": 90, "weight": 0.35, "impact": "positive", "message": "Strong monthly cashflow buffer"},
+                    {"name": "SHG Thrift Track Record", "score": 85, "weight": 0.25, "impact": "positive", "message": "Punctual group meeting attendance and savings"}
+                ],
+                disbursed_on=date.today() - timedelta(days=45),
+            )
+            db.add(loan)
+            db.flush()
+
+            sched = finance.amortization(30000.0, rate, 6, date.today() - timedelta(days=45))
+            for i_data in sched:
+                inst = models.Installment(
+                    loan_id=loan.id,
+                    number=i_data["number"],
+                    due_date=i_data["due_date"],
+                    amount=i_data["amount"],
+                    principal_part=i_data["principal_part"],
+                    interest_part=i_data["interest_part"],
+                    status="paid" if i_data["number"] == 1 else "pending",
+                    paid_amount=i_data["amount"] if i_data["number"] == 1 else 0.0,
+                    paid_on=i_data["due_date"] if i_data["number"] == 1 else None,
+                    is_harvest=i_data.get("is_harvest", False)
+                )
+                db.add(inst)
+
+            db.add(models.LoanDocument(
+                loan_id=loan.id,
+                doc_type="aadhaar",
+                original_name="aadhaar_asha_verma.pdf",
+                status="verified",
+                verified=True
+            ))
+
+        # Pending loan for officer sanction queue
+        farmer = user_objs.get("farmer@financesaathi.in") or user_objs.get("farmer@financesaathi.org")
+        if farmer:
+            existing_f_loan = db.scalar(select(models.Loan).where(models.Loan.user_id == farmer.id))
+            if not existing_f_loan:
+                f_loan = models.Loan(
+                    user_id=farmer.id,
+                    shg_id=shg.id,
+                    amount=25000.0,
+                    annual_rate=8.5,
+                    tenure_months=12,
+                    purpose="Drip Irrigation Tube Setup",
+                    product_type="pm_mudra",
+                    schedule_type="monthly",
+                    status="pending",
+                    emi=2180.50,
+                    ai_score=78.0,
+                    ai_band="ready",
+                    ai_factors=[{"name": "Cashflow Sufficiency", "score": 80, "weight": 0.35, "impact": "positive", "message": "Adequate surplus for EMI"}]
+                )
+                db.add(f_loan)
+                db.flush()
+                db.add(models.LoanDocument(
+                    loan_id=f_loan.id,
+                    doc_type="aadhaar",
+                    original_name="aadhaar_vikas_sharma.pdf",
+                    status="uploaded",
+                    verified=False
+                ))
+
+        # Savings Goal for borrower
+        existing_goal = db.scalar(select(models.SavingsGoal).where(models.SavingsGoal.user_id == borrower.id))
+        if not existing_goal:
+            db.add(models.SavingsGoal(
+                user_id=borrower.id,
+                title="Gir Cow Purchase",
+                target_amount=40000.0,
+                saved_amount=12000.0,
+                deadline=date.today() + timedelta(days=120)
+            ))
+
+        # Passbook Transactions
+        existing_tx = db.scalar(select(models.Transaction).where(models.Transaction.user_id == borrower.id))
+        if not existing_tx:
+            db.add(models.Transaction(
+                user_id=borrower.id,
+                category="loan_disbursement",
+                title="Loan Disbursement #1 (Kisan Agri)",
+                amount=30000.0,
+                is_credit=True,
+                mode="Bank Transfer",
+                reference_id="DISB20261014001",
+            ))
+            db.add(models.Transaction(
+                user_id=borrower.id,
+                category="loan_repayment",
+                title="EMI #1 Settlement (Kisan Agri)",
+                amount=5102.50,
+                is_credit=False,
+                mode="UPI",
+                reference_id="UPI20261014002",
+            ))
+            db.add(models.Transaction(
+                user_id=borrower.id,
+                category="savings_deposit",
+                title="Thrift Deposit - Gir Cow Purchase",
+                amount=2000.0,
+                is_credit=False,
+                mode="UPI",
+                reference_id="UPI20261014003",
+            ))
+            borrower.savings_balance = 37397.50
 
     db.commit()
 
@@ -300,5 +447,5 @@ def seed_demo(db: Session):
 def seed(db: Session):
     """Main seed entry point called during startup."""
     seed_content(db)
-    if SEED_DEMO:
+    if APP_ENV != "production" or SEED_DEMO:
         seed_demo(db)

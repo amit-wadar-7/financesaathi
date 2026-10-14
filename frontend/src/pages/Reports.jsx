@@ -15,12 +15,13 @@ import {
   IconClock,
   IconAlertTriangle,
   IconTrendingUp,
+  IconLock,
 } from '../icons'
 
 export default function Reports() {
   const { user } = useAuth()
   const { t } = useLang()
-  const [selectedCategory, setSelectedCategory] = useState('all')
+  const [selectedCategory, setSelectedCategory] = useState(user?.role === 'user' ? 'borrower' : 'all')
   const [searchQuery, setSearchQuery] = useState('')
   const [activeReportSlug, setActiveReportSlug] = useState(null)
 
@@ -209,13 +210,24 @@ export default function Reports() {
                   ))}
                 </div>
 
-                <button
-                  className="btn small"
-                  style={{ width: '100%', justifyContent: 'center' }}
-                  onClick={() => setActiveReportSlug(report.id)}
-                >
-                  <IconFileText size={15} /> Generate & View Report →
-                </button>
+                {report.target_roles && !report.target_roles.includes(user?.role) ? (
+                  <button
+                    className="btn small ghost"
+                    style={{ width: '100%', justifyContent: 'center', opacity: 0.65, cursor: 'not-allowed' }}
+                    disabled
+                    title={`Restricted to ${report.target_roles.join(', ')}`}
+                  >
+                    <IconLock size={14} /> Restricted ({report.target_roles.join('/')})
+                  </button>
+                ) : (
+                  <button
+                    className="btn small"
+                    style={{ width: '100%', justifyContent: 'center' }}
+                    onClick={() => setActiveReportSlug(report.id)}
+                  >
+                    <IconFileText size={15} /> Generate & View Report →
+                  </button>
+                )}
               </div>
             </div>
           ))}
