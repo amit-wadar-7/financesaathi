@@ -327,7 +327,9 @@ function DesktopLayout({ children }) {
           <div className="brand-logo-icon"><IconLogo size={22} /></div>
           <div className="brand-text-wrap">
             <h1 className="brand-title">FinanceSaathi</h1>
-            <span className="brand-tagline">Your Money • Your Goals • Your Future</span>
+            <span className="brand-tagline">
+              {lang === 'hi' ? 'आपका पैसा • आपके लक्ष्य • आपका भविष्य' : lang === 'mr' ? 'तुमचा पैसा • तुमची उद्दिष्टे • तुमचे भविष्य' : 'Your Money • Your Goals • Your Future'}
+            </span>
           </div>
         </div>
 
@@ -463,7 +465,13 @@ function DesktopLayout({ children }) {
         {/* Global Footer */}
         <footer className="desktop-global-footer">
           <div className="footer-left">
-            <span>FinanceSaathi Platform © {new Date().getFullYear()} • Institutional SHG & Microfinance Network (RBI Fair Practices Compliant)</span>
+            <span>
+              {lang === 'hi'
+                ? `फाइनेंससाथी प्लेटफॉर्म © ${new Date().getFullYear()} • संस्थागत एसएचजी और माइक्रोफाइनेंस नेटवर्क (आरबीआई उचित व्यवहार संहिता अनुपालित)`
+                : lang === 'mr'
+                ? `फायनान्ससाथी प्लॅटफॉर्म © ${new Date().getFullYear()} • संस्थात्मक बचत गट व मायक्रोफायनान्स नेटवर्क (आरबीआय मार्गदर्शक तत्त्वांचे पालन)`
+                : `FinanceSaathi Platform © ${new Date().getFullYear()} • Institutional SHG & Microfinance Network (RBI Fair Practices Compliant)`}
+            </span>
           </div>
           <div className="legal-links">
             <Link to="/grievances">{t('grievance_cell') || 'Grievance Cell'}</Link>

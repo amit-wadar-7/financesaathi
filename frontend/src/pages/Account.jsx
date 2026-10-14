@@ -438,6 +438,7 @@ export function AtRisk() {
 }
 
 export function Admin() {
+  const { t } = useLang()
   const users = useLoad(() => api('/admin/users'))
   const audit = useLoad(() => api('/admin/audit?limit=50'))
   const loanProducts = useLoad(() => api('/loans/products'))

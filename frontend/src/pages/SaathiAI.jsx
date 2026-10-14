@@ -27,7 +27,7 @@ import {
 
 export default function SaathiAI({ isWidget = false, onClose }) {
   const { user } = useAuth()
-  const { lang, setLang } = useLang()
+  const { lang, setLang, t } = useLang()
   const toast = useToast()
   const navigate = useNavigate()
   const chatEndRef = useRef(null)

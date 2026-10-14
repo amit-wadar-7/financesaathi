@@ -6,7 +6,7 @@ import { Alert, Field } from '../ui'
 import { IconLogo } from '../icons'
 
 function Shell({ title, children }) {
-  const { lang, setLang } = useLang()
+  const { lang, setLang, t } = useLang()
   return (
     <div className="center">
       <div className="auth card" style={{ maxWidth: '440px', width: '100%', padding: '2rem' }}>

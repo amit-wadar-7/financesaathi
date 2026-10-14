@@ -246,6 +246,7 @@ export default function Reports() {
 }
 
 function ReportViewerModal({ slug, onClose }) {
+  const { t } = useLang()
   const { data, loading, error } = useLoad(() => api(`/reports/data/${slug}`))
 
   const handlePrint = () => {

@@ -36,6 +36,58 @@ import {
   IconPiggyBank,
 } from '../icons'
 
+const MONTH_NAMES = {
+  hi: { May: 'मई', Jun: 'जून', Jul: 'जुलाई', Aug: 'अगस्त', Sep: 'सितंबर', Oct: 'अक्टूबर', Nov: 'नवंबर', Dec: 'दिसंबर', Jan: 'जनवरी', Feb: 'फ़रवरी', Mar: 'मार्च', Apr: 'अप्रैल' },
+  mr: { May: 'मे', Jun: 'जून', Jul: 'जुलै', Aug: 'ऑगस्ट', Sep: 'सप्टेंबर', Oct: 'ऑक्टोबर', Nov: 'नोव्हेंबर', Dec: 'डिसेंबर', Jan: 'जानेवारी', Feb: 'फेब्रुवारी', Mar: 'मार्च', Apr: 'एप्रिल' },
+}
+
+const SEASONAL_TIPS_I18N = {
+  hi: {
+    'Post-Monsoon & Mandi Sales Buffer': {
+      title: 'मानसून उपरांत एवं मंडी बिक्री बफर',
+      description: 'फसल की शुरुआती बिक्री और त्योहारी सीजन की वित्तीय योजना। बिक्री से प्राप्त राशि का 20% अपने बचत गट (एसएचजी) बचत खाते में सुरक्षित रखें।',
+      action_label: 'एसएचजी पासबुक देखें →',
+    },
+    'Rabi Sowing & Harvest Advisory': {
+      title: 'रबी बुवाई एवं फसल सुरक्षा परामर्श',
+      description: 'रबी फसल देखभाल एवं कटाई की अवधि। आगामी खरीफ बुवाई से पहले फसल आय में से एक आपातकालीन बचत फंड तैयार करें।',
+      action_label: 'फसल योजना कैलकुलेटर →',
+    },
+    'Pre-Monsoon & Summer Preparation': {
+      title: 'मानसून पूर्व एवं ग्रीष्मकालीन तैयारी',
+      description: 'मानसून से पहले कृषि खाद-बीज और मिट्टी परीक्षण की तैयारी करें। पीएम-कुसुम के तहत रियायती सोलर पंप योजनाओं का लाभ लें।',
+      action_label: 'सोलर योजनाएं देखें →',
+    },
+    'Kharif Monsoon Sowing Advisory': {
+      title: 'खरीफ मानसून बुवाई परामर्श',
+      description: 'अंतिम तिथि से पहले प्रधानमंत्री फसल बीमा योजना (PMFBY) में नामांकन सुनिश्चित करें। सरकारी खाद सब्सिडी सत्यापन हेतु रसीदें सुरक्षित रखें।',
+      action_label: 'फसल बीमा देखें →',
+    },
+  },
+  mr: {
+    'Post-Monsoon & Mandi Sales Buffer': {
+      title: 'पावसाळ्यानंतरचा काळ व बाजार समिती विक्री राखीव निधी',
+      description: 'सुरुवातीची पीक विक्री व सणासुदीचे आर्थिक नियोजन. पीक विक्रीतून मिळालेल्या पैशांमधील २०% रक्कम बचत गट खात्यात सुरक्षित ठेवा.',
+      action_label: 'बचत गट पासबुक पहा →',
+    },
+    'Rabi Sowing & Harvest Advisory': {
+      title: 'रब्बी पेरणी व पीक सल्ला',
+      description: 'रब्बी पिकांची निगा व काढणीचा काळ. पुढील खरीप हंगामापूर्वी पीक उत्पन्नातून आणीबाणीसाठी रोख रक्कम बाजूला ठेवा.',
+      action_label: 'पीक नियोजन कॅल्क्युलेटर →',
+    },
+    'Pre-Monsoon & Summer Preparation': {
+      title: 'पावसाळापूर्व व उन्हाळी पूर्वतयारी',
+      description: 'पावसाळ्यापूर्वी शेती साहित्य व माती परीक्षण करा. पीएम-कुसुम योजनेअंतर्गत सौर कृषी पंपाच्या सवलतींचा लाभ घ्या.',
+      action_label: 'सौर योजना पहा →',
+    },
+    'Kharif Monsoon Sowing Advisory': {
+      title: 'खरीप पेरणी सल्ला',
+      description: 'मुदतीपूर्वी प्रधानमंत्री पीक विमा योजनेत (PMFBY) नाव नोंदवा. शासकीय खत अनुदानासाठी पावत्या जपून ठेवा.',
+      action_label: 'पीक विमा पहा →',
+    },
+  },
+}
+
 /* =========================================================================
    1. ADMIN DASHBOARD WORKSPACE
    ========================================================================= */
@@ -873,7 +925,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
   }
   const seasonalTip = data?.seasonal_tip || null
 
-  const todayDateStr = new Date().toLocaleDateString('en-IN', {
+  const todayDateStr = new Date().toLocaleDateString(lang === 'hi' ? 'hi-IN' : lang === 'mr' ? 'mr-IN' : 'en-IN', {
     weekday: 'long',
     year: 'numeric',
     month: 'short',
@@ -1064,9 +1116,10 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
       {/* 1. Header Row */}
       <div className="page-header-row" style={{ marginBottom: '1.25rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Namaskar, {userName} 👋</h2>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>{lang === 'hi' ? `नमस्ते, ${userName}` : lang === 'mr' ? `नमस्कार, ${userName}` : `Namaskar, ${userName}`} 👋</h2>
           <p className="page-subtitle" style={{ marginTop: '2px', fontSize: '0.9rem' }}>
-            Here's your financial picture for today • <span className="muted">{todayDateStr}</span>
+            {lang === 'hi' ? 'आज का आपका वित्तीय विवरण • ' : lang === 'mr' ? 'आजचे तुमचे आर्थिक चित्र • ' : "Here's your financial picture for today • "}
+            <span className="muted">{todayDateStr}</span>
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
@@ -1100,10 +1153,10 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
             <IconTrendingUp size={14} />
             <span>
               {recentNet > 0
-                ? `+₹${recentNet.toLocaleString('en-IN')} net activity`
+                ? (lang === 'hi' ? `+₹${recentNet.toLocaleString('en-IN')} शुद्ध गतिविधि` : lang === 'mr' ? `+₹${recentNet.toLocaleString('en-IN')} निव्वळ जमा` : `+₹${recentNet.toLocaleString('en-IN')} net activity`)
                 : recentNet < 0
-                ? `-₹${Math.abs(recentNet).toLocaleString('en-IN')} net outflow`
-                : (transactions && transactions.length > 0 ? 'Ledger Reconciled' : 'No transactions yet')}
+                ? (lang === 'hi' ? `-₹${Math.abs(recentNet).toLocaleString('en-IN')} शुद्ध निकासी` : lang === 'mr' ? `-₹${Math.abs(recentNet).toLocaleString('en-IN')} निव्वळ खर्च` : `-₹${Math.abs(recentNet).toLocaleString('en-IN')} net outflow`)
+                : (transactions && transactions.length > 0 ? (lang === 'hi' ? 'खाता संतुलित' : lang === 'mr' ? 'खाते संतुलित' : 'Ledger Reconciled') : (lang === 'hi' ? 'कोई लेन-देन नहीं' : lang === 'mr' ? 'कोणतेही व्यवहार नाहीत' : 'No transactions yet'))}
             </span>
           </div>
         </div>
@@ -1133,28 +1186,28 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
             className="hero-action-btn"
             onClick={() => setShowIncomeModal(true)}
           >
-            <IconPlus size={16} /> Add Income
+            <IconPlus size={16} /> {lang === 'hi' ? 'आय जोड़ें' : lang === 'mr' ? 'उत्पन्न जोडा' : 'Add Income'}
           </button>
           <button
             type="button"
             className="hero-action-btn"
             onClick={() => setShowExpenseModal(true)}
           >
-            <span style={{ fontSize: '1.2rem', lineHeight: 0.8, fontWeight: 800 }}>−</span> Add Expense
+            <span style={{ fontSize: '1.2rem', lineHeight: 0.8, fontWeight: 800 }}>−</span> {lang === 'hi' ? 'खर्च दर्ज करें' : lang === 'mr' ? 'खर्च नोंदवा' : 'Add Expense'}
           </button>
           <button
             type="button"
             className="hero-action-btn"
             onClick={() => setShowTransferModal(true)}
           >
-            <span style={{ fontSize: '1.1rem', lineHeight: 0.9 }}>⇄</span> Transfer
+            <span style={{ fontSize: '1.1rem', lineHeight: 0.9 }}>⇄</span> {lang === 'hi' ? 'स्थानांतरण' : lang === 'mr' ? 'पैसे पाठवा' : 'Transfer'}
           </button>
           <button
             type="button"
             className="hero-action-btn secondary"
             onClick={() => navigate('/transactions')}
           >
-            <IconFileText size={15} /> View Statement
+            <IconFileText size={15} /> {lang === 'hi' ? 'पासबुक देखें' : lang === 'mr' ? 'पासबुक पहा' : 'View Statement'}
           </button>
         </div>
       </div>
@@ -1246,7 +1299,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
                     />
                   </div>
                   <span className="month-label" style={{ color: isHovered ? '#059669' : undefined }}>
-                    {item.month}
+                    {(MONTH_NAMES[lang] && MONTH_NAMES[lang][item.month]) || item.month}
                   </span>
                 </div>
               )
@@ -1274,10 +1327,10 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
             <div className="savings-goal-banner">
               <div className="goal-banner-header">
                 <div>
-                  <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#047857', fontWeight: 700 }}>
-                    SAVINGS GOAL
+                  <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--emerald-600, #047857)', fontWeight: 700 }}>
+                    {lang === 'hi' ? 'बचत लक्ष्य' : lang === 'mr' ? 'बचत उद्दिष्ट' : 'SAVINGS GOAL'}
                   </span>
-                  <h4 style={{ margin: '2px 0 0 0', fontSize: '1.05rem', color: '#064e3b' }}>
+                  <h4 style={{ margin: '2px 0 0 0', fontSize: '1.05rem', color: 'var(--slate-900, #064e3b)' }}>
                     {topGoal.title}
                   </h4>
                 </div>
@@ -1288,9 +1341,9 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '0.84rem' }}>
                 <span>
-                  <b>₹{Number(topGoal.saved_amount || 0).toLocaleString('en-IN')}</b> of ₹{Number(topGoal.target_amount || 0).toLocaleString('en-IN')}
+                  <b>₹{Number(topGoal.saved_amount || 0).toLocaleString('en-IN')}</b> {lang === 'hi' ? 'में से' : lang === 'mr' ? 'पैकी' : 'of'} ₹{Number(topGoal.target_amount || 0).toLocaleString('en-IN')}
                 </span>
-                <span style={{ fontWeight: 700, color: '#059669' }}>
+                <span style={{ fontWeight: 700, color: 'var(--emerald-600, #059669)' }}>
                   {Math.round(topGoal.progress_pct || ((topGoal.saved_amount || 0) / (topGoal.target_amount || 1) * 100))}%
                 </span>
               </div>
@@ -1310,7 +1363,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
                   onClick={() => handleGoalDepositQuick(500)}
                   disabled={busyAction}
                 >
-                  + Deposit ₹500
+                  {lang === 'hi' ? '+ ₹500 जमा करें' : lang === 'mr' ? '+ ₹500 जमा करा' : '+ Deposit ₹500'}
                 </button>
                 <button
                   type="button"
@@ -1318,7 +1371,7 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
                   style={{ flex: 1, padding: '0.45rem', fontSize: '0.8rem' }}
                   onClick={() => setShowDepositModal(true)}
                 >
-                  Custom Deposit
+                  {lang === 'hi' ? 'अन्य राशि' : lang === 'mr' ? 'इतर रक्कम' : 'Custom Deposit'}
                 </button>
               </div>
             </div>
@@ -1327,19 +1380,19 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
               <div className="goal-banner-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--slate-500)', fontWeight: 700 }}>
-                    SAVINGS GOAL
+                    {lang === 'hi' ? 'बचत लक्ष्य' : lang === 'mr' ? 'बचत उद्दिष्ट' : 'SAVINGS GOAL'}
                   </span>
                   <h4 style={{ margin: '2px 0 0 0', fontSize: '1rem', color: 'var(--slate-800)' }}>
-                    Set your first savings goal
+                    {lang === 'hi' ? 'अपना पहला बचत लक्ष्य निर्धारित करें' : lang === 'mr' ? 'तुमचे पहिले बचत उद्दिष्ट ठरवा' : 'Set your first savings goal'}
                   </h4>
                 </div>
                 <div className="goal-jar-badge" style={{ fontSize: '1.4rem' }}>🎯</div>
               </div>
               <p className="muted small" style={{ margin: '0.5rem 0 0.85rem' }}>
-                Build an emergency buffer, crop input fund, or family savings with dedicated target jars.
+                {lang === 'hi' ? 'समर्पित लक्ष्य जार के साथ आपातकालीन फंड, फसल इनपुट या पारिवारिक बचत बनाएं।' : lang === 'mr' ? 'विशिष्ट उद्दिष्टांच्या मदतीने आणीबाणी निधी किंवा कौटुंबिक बचत उभारा.' : 'Build an emergency buffer, crop input fund, or family savings with dedicated target jars.'}
               </p>
               <Link to="/savings" className="btn small btn-primary" style={{ display: 'inline-flex', width: '100%', justifyContent: 'center' }}>
-                + Set Your First Goal
+                {lang === 'hi' ? '+ पहला लक्ष्य निर्धारित करें' : lang === 'mr' ? '+ पहिले उद्दिष्ट ठरवा' : '+ Set Your First Goal'}
               </Link>
             </div>
           )}
@@ -1379,9 +1432,9 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
               <Link
                 to="/saathi"
                 className="small"
-                style={{ fontWeight: 700, color: '#059669', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                style={{ fontWeight: 700, color: 'var(--emerald-600, #059669)', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
               >
-                Ask Saathi →
+                {lang === 'hi' ? 'साथी से पूछें →' : lang === 'mr' ? 'साथीला विचारा →' : 'Ask Saathi →'}
               </Link>
             </div>
           </div>
@@ -1394,16 +1447,25 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
         <div className="dashboard-card-box">
           <div className="row between" style={{ alignItems: 'center', marginBottom: '0.85rem' }}>
             <h3 style={{ margin: 0, fontSize: '1.02rem', fontWeight: 700 }}>{t("upcomingRepayments")}</h3>
-            <span className="badge neutral small">{upcomingRepayments.length} due</span>
+            <span className="badge neutral small">{upcomingRepayments.length} {lang === 'hi' ? 'बाकी' : lang === 'mr' ? 'थकबाकी' : 'due'}</span>
           </div>
 
           <div>
-            {upcomingRepayments.slice(0, 3).map((rep) => (
+            {upcomingRepayments.slice(0, 3).map((rep) => {
+              const localizedTitle = rep.title
+                ? rep.title.replace(/^Loan Repayment:\s*/i, lang === 'hi' ? 'ऋण पुनर्भुगतान: ' : lang === 'mr' ? 'कर्ज परतफेड: ' : 'Loan Repayment: ')
+                : rep.title
+              const statusDisplay = rep.overdue || rep.status_text === 'Overdue'
+                ? (lang === 'hi' ? 'अतिदेय' : lang === 'mr' ? 'थकीत' : 'Overdue')
+                : rep.status_text === 'Scheduled'
+                ? (lang === 'hi' ? 'निर्धारित' : lang === 'mr' ? 'नियोजित' : 'Scheduled')
+                : rep.status_text
+              return (
               <div key={rep.id} className="table-subtle-row">
                 <div className="repayment-left-info">
-                  <span className="repayment-title">{rep.title}</span>
+                  <span className="repayment-title">{localizedTitle}</span>
                   <span className="repayment-date">
-                    Due {rep.due_date} • <span style={{ color: rep.overdue ? '#e11d48' : '#059669', fontWeight: 600 }}>{rep.status_text}</span>
+                    {lang === 'hi' ? 'अंतिम तिथि' : lang === 'mr' ? 'देय तारीख' : 'Due'} {rep.due_date} • <span style={{ color: rep.overdue ? '#e11d48' : 'var(--emerald-600, #059669)', fontWeight: 600 }}>{statusDisplay}</span>
                   </span>
                 </div>
                 <div className="repayment-right-action">
@@ -1414,11 +1476,11 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
                     style={{ padding: '0.35rem 0.65rem', fontSize: '0.78rem' }}
                     onClick={() => openRepayModal(rep)}
                   >
-                    Pay UPI
+                    {lang === 'hi' ? 'यूपीआई भुगतान' : lang === 'mr' ? 'यूपीआय भरा' : 'Pay UPI'}
                   </button>
                 </div>
               </div>
-            ))}
+            )})}
 
             {upcomingRepayments.length === 0 && (
               <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
@@ -1462,44 +1524,50 @@ function BorrowerDashboardView({ data, user, refresh, reload }) {
 
             {transactions.length === 0 && (
               <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
-                <p className="muted small">No recent passbook transactions.</p>
+                <p className="muted small">{lang === 'hi' ? 'कोई हालिया पासबुक लेनदेन नहीं।' : lang === 'mr' ? 'कोणतेही अलीकडील पासबुक व्यवहार नाहीत.' : 'No recent passbook transactions.'}</p>
               </div>
             )}
           </div>
         </div>
 
         {/* Card 3: Seasonal Income Tip */}
-        <div className="seasonal-tip-box">
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.65rem' }}>
-              <span style={{ fontSize: '1.3rem' }}>🌾</span>
-              <h4 style={{ margin: 0, fontSize: '0.96rem', color: '#92400e', fontWeight: 700 }}>
-                {seasonalTip.title}
-              </h4>
-            </div>
-            <p style={{ fontSize: '0.84rem', color: '#78350f', lineHeight: 1.45, margin: 0 }}>
-              {seasonalTip.description}
-            </p>
-          </div>
+        {(() => {
+          const locTip = (seasonalTip && SEASONAL_TIPS_I18N[lang] && SEASONAL_TIPS_I18N[lang][seasonalTip.title]) || seasonalTip
+          if (!locTip) return null
+          return (
+            <div className="seasonal-tip-box">
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.65rem' }}>
+                  <span style={{ fontSize: '1.3rem' }}>🌾</span>
+                  <h4 style={{ margin: 0, fontSize: '0.96rem', color: '#92400e', fontWeight: 700 }}>
+                    {locTip.title}
+                  </h4>
+                </div>
+                <p style={{ fontSize: '0.84rem', color: '#78350f', lineHeight: 1.45, margin: 0 }}>
+                  {locTip.description}
+                </p>
+              </div>
 
-          <div style={{ marginTop: '1rem' }}>
-            <Link
-              to={seasonalTip.action_target}
-              className="btn small"
-              style={{
-                background: '#d97706',
-                color: '#ffffff',
-                border: 'none',
-                width: '100%',
-                display: 'block',
-                textAlign: 'center',
-                boxShadow: 'none',
-              }}
-            >
-              {seasonalTip.action_label}
-            </Link>
-          </div>
-        </div>
+              <div style={{ marginTop: '1rem' }}>
+                <Link
+                  to={locTip.action_target}
+                  className="btn small"
+                  style={{
+                    background: '#d97706',
+                    color: '#ffffff',
+                    border: 'none',
+                    width: '100%',
+                    display: 'block',
+                    textAlign: 'center',
+                    boxShadow: 'none',
+                  }}
+                >
+                  {locTip.action_label}
+                </Link>
+              </div>
+            </div>
+          )
+        })()}
       </div>
 
       {/* =========================================================================

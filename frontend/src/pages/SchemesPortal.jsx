@@ -323,26 +323,30 @@ export default function SchemesPortal() {
 
     return sourceData.map((s) => {
       const code = s.code || 'general'
-      const meta = SCHEME_METADATA[code] || {}
+      const locMeta = (LOCALIZED_SCHEME_METADATA[lang] && LOCALIZED_SCHEME_METADATA[lang][code]) || SCHEME_METADATA[code] || {}
       return {
         id: code,
         code: (s.code || '').toUpperCase().replace('_', '-'),
         name: s.name,
         category: s.category || 'general',
-        nodalMinistry: meta.nodalMinistry || 'Government of India',
-        tag: meta.tag || 'Central Welfare Scheme',
+        nodalMinistry: locMeta.nodalMinistry || (lang === 'hi' ? 'भारत सरकार' : lang === 'mr' ? 'भारत सरकार' : 'Government of India'),
+        tag: locMeta.tag || (lang === 'hi' ? 'केंद्रीय कल्याणकारी योजना' : lang === 'mr' ? 'केंद्रीय कल्याणकारी योजना' : 'Central Welfare Scheme'),
         valueNum: Number(s.benefit_value) || 0,
-        benefitHighlight: s.benefit_summary || (s.benefit_value > 0 ? `Direct financial assistance up to ₹${Number(s.benefit_value).toLocaleString('en-IN')}` : 'Institutional Support'),
+        benefitHighlight: lang === 'hi'
+          ? (s.benefit_value > 0 ? `₹${Number(s.benefit_value).toLocaleString('en-IN')} तक की प्रत्यक्ष वित्तीय सहायता` : 'संस्थागत वित्तीय सहायता एवं सामाजिक सुरक्षा')
+          : lang === 'mr'
+          ? (s.benefit_value > 0 ? `₹${Number(s.benefit_value).toLocaleString('en-IN')} पर्यंत थेट आर्थिक सहाय्य अनुदान` : 'संस्थात्मक आर्थिक मदत व सामाजिक सुरक्षा')
+          : s.benefit_summary || (s.benefit_value > 0 ? `Direct financial assistance up to ₹${Number(s.benefit_value).toLocaleString('en-IN')}` : 'Institutional Support'),
         summary: s.description || '',
-        eligibilityCriteria: s.eligibility ? s.eligibility.split('. ').filter(Boolean) : ['Indian citizens meeting specific program criteria'],
-        documents: meta.documents || ['Aadhaar Card', 'Bank Passbook'],
-        applicationSteps: meta.applicationSteps || 'Apply at official government portal or local Common Service Centre (CSC).',
-        portalUrl: s.url || meta.defaultUrl || 'https://www.india.gov.in',
+        eligibilityCriteria: s.eligibility ? s.eligibility.split('. ').filter(Boolean) : (lang === 'hi' ? ['विशिष्ट सरकारी पात्रता मानदंडों को पूरा करने वाले नागरिक'] : lang === 'mr' ? ['विशिष्ट शासकीय निकष पूर्ण करणारे नागरिक'] : ['Indian citizens meeting specific program criteria']),
+        documents: locMeta.documents || (lang === 'hi' ? ['आधार कार्ड', 'बैंक पासबुक'] : lang === 'mr' ? ['आधार कार्ड', 'बँक पासबुक'] : ['Aadhaar Card', 'Bank Passbook']),
+        applicationSteps: locMeta.applicationSteps || (lang === 'hi' ? 'आधिकारिक सरकारी पोर्टल अथवा स्थानीय सीएससी केंद्र पर आवेदन करें।' : lang === 'mr' ? 'अधिकृत शासकीय पोर्टलवर किंवा महा-ई-सेवा केंद्रावर अर्ज सादर करा.' : 'Apply at official government portal or local Common Service Centre (CSC).'),
+        portalUrl: s.url || locMeta.defaultUrl || 'https://www.india.gov.in',
         last_verified: s.last_verified || '2026-10-01',
         matchCriteria: s.eligibility_rules || { occupations: ['farmer', 'vendor', 'artisan', 'dairy', 'general'] },
       }
     })
-  }, [serverSchemes])
+  }, [serverSchemes, lang])
 
   // Matching logic
   const isEligible = (sch) => {
@@ -484,13 +488,13 @@ export default function SchemesPortal() {
       <div className="card filter-bar-card" style={{ marginTop: '1.25rem' }}>
         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
           {[
-            { id: 'all', label: 'All Schemes' },
-            { id: 'agri', label: 'Agriculture & Allied' },
-            { id: 'msme', label: 'MSME & Vendors' },
-            { id: 'women', label: 'Women & SHG' },
-            { id: 'solar', label: 'Clean Energy & Solar' },
-            { id: 'housing', label: 'Housing Grants' },
-            { id: 'savings', label: 'Savings & Deposit' },
+            { id: 'all', label: lang === 'hi' ? 'सभी योजनाएँ' : lang === 'mr' ? 'सर्व योजना' : 'All Schemes' },
+            { id: 'agri', label: lang === 'hi' ? 'कृषि एवं संबद्ध' : lang === 'mr' ? 'कृषी व संबंधित' : 'Agriculture & Allied' },
+            { id: 'msme', label: lang === 'hi' ? 'एमएसएमई व विक्रेता' : lang === 'mr' ? 'एमएसएमई व फेरीवाले' : 'MSME & Vendors' },
+            { id: 'women', label: lang === 'hi' ? 'महिला व बचत गट' : lang === 'mr' ? 'महिला व बचत गट' : 'Women & SHG' },
+            { id: 'solar', label: lang === 'hi' ? 'स्वच्छ ऊर्जा व सौर' : lang === 'mr' ? 'स्वच्छ ऊर्जा व सौर' : 'Clean Energy & Solar' },
+            { id: 'housing', label: lang === 'hi' ? 'आवास अनुदान' : lang === 'mr' ? 'घरकुल अनुदान' : 'Housing Grants' },
+            { id: 'savings', label: lang === 'hi' ? 'बचत व जमा' : lang === 'mr' ? 'बचत व ठेव' : 'Savings & Deposit' },
           ].map((cat) => (
             <button
               key={cat.id}
@@ -526,7 +530,7 @@ export default function SchemesPortal() {
                 </div>
                 <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                   <span className="muted small" style={{ fontSize: '0.72rem' }}>
-                    Verified: {s.last_verified}
+                    {lang === 'hi' ? 'सत्यापित:' : lang === 'mr' ? 'सत्यापित:' : 'Verified:'} {s.last_verified}
                   </span>
                   {matched && (
                     <span className="badge approved" style={{ fontSize: '0.7rem' }}>
@@ -596,7 +600,7 @@ export default function SchemesPortal() {
                 <h3 style={{ margin: '0.3rem 0 0 0' }}>{selectedScheme.name}</h3>
                 <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', marginTop: '0.2rem' }}>
                   <span className="muted small">{selectedScheme.nodalMinistry}</span>
-                  <span className="muted small">• Verified: {selectedScheme.last_verified}</span>
+                  <span className="muted small">• {lang === 'hi' ? 'सत्यापित: ' : lang === 'mr' ? 'सत्यापित: ' : 'Verified: '} {selectedScheme.last_verified}</span>
                 </div>
               </div>
               <button className="icon-btn" onClick={() => setSelectedScheme(null)} aria-label="Close modal">✕</button>
@@ -612,7 +616,7 @@ export default function SchemesPortal() {
             </div>
 
             <div style={{ marginBottom: '1rem' }}>
-              <h4 style={{ fontSize: '0.88rem', marginBottom: '0.4rem', color: 'var(--slate-900)' }}>Eligibility Criteria:</h4>
+              <h4 style={{ fontSize: '0.88rem', marginBottom: '0.4rem', color: 'var(--slate-900)' }}>{lang === 'hi' ? 'पात्रता मानदंड:' : lang === 'mr' ? 'पात्रता निकष:' : 'Eligibility Criteria:'}</h4>
               <ul className="factors-list" style={{ paddingLeft: '1rem' }}>
                 {selectedScheme.eligibilityCriteria.map((c, i) => (
                   <li key={i}>{c}</li>
@@ -621,7 +625,7 @@ export default function SchemesPortal() {
             </div>
 
             <div style={{ marginBottom: '1rem' }}>
-              <h4 style={{ fontSize: '0.88rem', marginBottom: '0.4rem', color: 'var(--slate-900)' }}>Required KYC & Application Documents:</h4>
+              <h4 style={{ fontSize: '0.88rem', marginBottom: '0.4rem', color: 'var(--slate-900)' }}>{lang === 'hi' ? 'आवश्यक पहचान व आवेदन दस्तावेज़:' : lang === 'mr' ? 'आवश्यक कागदपत्रे व ओळख पुरावा:' : 'Required KYC & Application Documents:'}</h4>
               <ul className="factors-list" style={{ paddingLeft: '1rem' }}>
                 {selectedScheme.documents.map((d, i) => (
                   <li key={i}>{d}</li>
@@ -631,7 +635,7 @@ export default function SchemesPortal() {
 
             <div style={{ background: 'var(--card-bg-subtle)', padding: '0.85rem', borderRadius: '6px', border: '1px solid var(--border-color)', marginBottom: '1.25rem' }}>
               <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--slate-800)' }}>
-                Step-by-Step Application Process:
+                {lang === 'hi' ? 'चरणबद्ध आवेदन प्रक्रिया:' : lang === 'mr' ? 'टप्प्याटप्प्याने अर्ज प्रक्रिया:' : 'Step-by-Step Application Process:'}
               </div>
               <p className="muted small" style={{ margin: '0.3rem 0 0 0' }}>
                 {selectedScheme.applicationSteps}
@@ -640,7 +644,7 @@ export default function SchemesPortal() {
 
             <div className="modal-actions">
               <button type="button" className="btn ghost" onClick={() => setSelectedScheme(null)}>
-                Close
+                {lang === 'hi' ? 'बंद करें' : lang === 'mr' ? 'बंद करा' : 'Close'}
               </button>
               <a
                 href={selectedScheme.portalUrl}
